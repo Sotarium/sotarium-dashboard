@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
+import { AuthProvider } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Dashboard | Soteria",
@@ -16,13 +17,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-black text-white min-h-screen flex antialiased select-text">
-        <Sidebar />
-        <div className="flex-1 ml-[260px] min-h-screen flex flex-col bg-ambient">
-          <Header />
-          <main className="p-8 max-w-[1240px] w-full mx-auto">
-            {children}
-          </main>
-        </div>
+        <AuthProvider>
+          <Sidebar />
+          <div className="flex-1 ml-[260px] min-h-screen flex flex-col bg-ambient">
+            <Header />
+            <main className="p-8 max-w-[1240px] w-full mx-auto">
+              {children}
+            </main>
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );

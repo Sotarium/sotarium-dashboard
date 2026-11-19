@@ -34,14 +34,6 @@ const HOUSE_WALLETS_CONFIG: HouseWalletConfig[] = [
     iconUrl: '/assets/ltc.svg',
     explorerUrl: 'https://blockchair.com/litecoin/address/LedANhtpWzfX8Ug35mMQfthfe5ofDW5eMs',
   },
-  {
-    symbol: 'BTC',
-    name: 'Bitcoin',
-    network: 'Bitcoin Mainnet',
-    address: 'bc1qrnwnya68s9k5j0qfgeev65tpduxnsf9sctzydl',
-    iconUrl: '/assets/btc.svg',
-    explorerUrl: 'https://mempool.space/address/bc1qrnwnya68s9k5j0qfgeev65tpduxnsf9sctzydl',
-  },
 ];
 
 async function fetchLivePrices(): Promise<Record<string, number>> {
@@ -49,12 +41,11 @@ async function fetchLivePrices(): Promise<Record<string, number>> {
     SOL: 175,
     ETH: 3100,
     LTC: 90,
-    BTC: 92000,
   };
 
   try {
     const res = await fetch(
-      'https://api.binance.com/api/v3/ticker/price?symbols=%5B%22SOLUSDT%22,%22ETHUSDT%22,%22LTCUSDT%22,%22BTCUSDT%22%5D',
+      'https://api.binance.com/api/v3/ticker/price?symbols=%5B%22SOLUSDT%22,%22ETHUSDT%22,%22LTCUSDT%22%5D',
       { next: { revalidate: 60 } }
     );
     if (res.ok) {
@@ -125,18 +116,6 @@ async function fetchOnChainBalance(cfg: HouseWalletConfig): Promise<{ balance: n
         const data = await res.json();
         const litoshis = data?.balance || 0;
         return { balance: Number((litoshis / 1e8).toFixed(4)), isLive: true };
-      }
-    }
-
-    if (cfg.symbol === 'BTC') {
-      const res = await fetch(`https://blockchain.info/rawaddr/${cfg.address}`, {
-        headers: { 'User-Agent': 'Mozilla/5.0' },
-        next: { revalidate: 30 },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const satoshis = data?.final_balance || 0;
-        return { balance: Number((satoshis / 1e8).toFixed(4)), isLive: true };
       }
     }
   } catch (e) {

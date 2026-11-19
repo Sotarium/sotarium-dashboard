@@ -92,9 +92,9 @@ export default function HouseBalancePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full md:w-auto">
+        <div className="grid grid-cols-3 gap-3 w-full md:w-auto">
           {wallets.map((w) => (
-            <div key={w.symbol} className="p-3.5 rounded-2xl bg-[#171717] border border-white/[0.06] text-center min-w-[105px]">
+            <div key={w.symbol} className="p-3.5 rounded-2xl bg-[#171717] border border-white/[0.06] text-center min-w-[110px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={w.iconUrl} alt={w.symbol} className="w-6 h-6 mx-auto mb-1.5 rounded-full" />
               <div className="text-xs font-bold text-white">

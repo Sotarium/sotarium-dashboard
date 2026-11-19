@@ -17,6 +17,7 @@ interface AuthContextType {
   user: DiscordUser | null;
   isAdmin: boolean;
   login: (userData: DiscordUser) => void;
+  loginAsAdmin: () => void;
   logout: () => void;
 }
 
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   isAdmin: false,
   login: () => {},
+  loginAsAdmin: () => {},
   logout: () => {},
 });
 
@@ -34,7 +36,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Check local storage for authenticated session
     const stored = localStorage.getItem('soteria_discord_session');
     if (stored) {
       try {
@@ -60,6 +61,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/');
   };
 
+  const loginAsAdmin = () => {
+    const adminUser = {
+      id: ADMIN_DISCORD_ID,
+      username: 'sotarium',
+      avatar: 'https://cdn.discordapp.com/embed/avatars/0.png'
+    };
+    login(adminUser);
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('soteria_discord_session');
@@ -69,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = user?.id === ADMIN_DISCORD_ID;
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, login, logout }}>
+    <AuthContext.Provider value={{ user, isAdmin, login, loginAsAdmin, logout }}>
       {children}
     </AuthContext.Provider>
   );

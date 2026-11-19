@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import { Loan } from '@/lib/data';
 import { Check, Lock } from 'lucide-react';
-import { useAuth, ADMIN_DISCORD_ID } from '@/lib/auth';
+import { useAuth } from '@/lib/auth';
 
 export default function RoadmapPage() {
-  const { user, isAdmin, loginAsAdmin } = useAuth();
+  const { user, isOwner } = useAuth();
   const [loans, setLoans] = useState<Loan[]>([]);
 
   useEffect(() => {
@@ -44,8 +44,8 @@ export default function RoadmapPage() {
     }
   };
 
-  // Restrict to Discord user 1079074717799030824
-  if (!isAdmin) {
+  // Restrict to owner
+  if (!isOwner) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-6 space-y-4 animate-in fade-in duration-300">
         <div className="w-16 h-16 rounded-2xl bg-[#141414] border border-white/[0.08] flex items-center justify-center text-amber-400">
@@ -54,15 +54,9 @@ export default function RoadmapPage() {
         <div>
           <h2 className="text-2xl font-bold text-white tracking-tight">Access Restricted</h2>
           <p className="text-sm text-neutral-400 max-w-md mt-1">
-            The Roadmap checklist is restricted to authorized Discord account <span className="font-mono text-white">ID: {ADMIN_DISCORD_ID}</span>.
+            The Roadmap checklist is restricted to owner.
           </p>
         </div>
-        <button
-          onClick={loginAsAdmin}
-          className="px-5 py-2.5 rounded-full bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition-colors shadow-sm"
-        >
-          Sign in with Discord ({ADMIN_DISCORD_ID})
-        </button>
       </div>
     );
   }
@@ -75,11 +69,6 @@ export default function RoadmapPage() {
       {/* Title Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              Discord OAuth: {ADMIN_DISCORD_ID}
-            </span>
-          </div>
           <h1 className="text-3xl font-bold tracking-tight text-white">Roadmap</h1>
           <p className="text-sm text-neutral-400 mt-1">
             Check off borrowers who have paid back.

@@ -33,12 +33,11 @@ export default function AuthCallback() {
                 ? `https://cdn.discordapp.com/avatars/${discordData.id}/${discordData.avatar}.png`
                 : 'https://cdn.discordapp.com/embed/avatars/0.png';
 
-              login({
+              await login({
                 id: discordData.id,
                 username: discordData.global_name || discordData.username,
                 avatar: avatarUrl,
               });
-              router.push('/');
               return;
             }
           } catch (err) {

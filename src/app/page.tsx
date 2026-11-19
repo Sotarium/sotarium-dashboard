@@ -2,16 +2,32 @@
 
 import { useState, useEffect } from 'react';
 import { Loan } from '@/lib/data';
+import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 export default function OverviewPage() {
+  const { isAdmin, isLoaded } = useAuth();
+  const router = useRouter();
   const [loans, setLoans] = useState<Loan[]>([]);
 
   useEffect(() => {
-    fetch('/api/loans')
-      .then((res) => res.json())
-      .then((data) => setLoans(data))
-      .catch((err) => console.error(err));
-  }, []);
+    if (isLoaded && !isAdmin) {
+      router.push('/ask-loan');
+    }
+  }, [isLoaded, isAdmin, router]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetch('/api/loans')
+        .then((res) => res.json())
+        .then((data) => setLoans(data))
+        .catch((err) => console.error(err));
+    }
+  }, [isAdmin]);
+
+  if (!isAdmin) {
+    return null;
+  }
 
   const totalPrincipal = loans.reduce((acc, l) => acc + l.principal, 0);
   const totalRepaid = loans.reduce((acc, l) => acc + l.repaidAmount, 0);

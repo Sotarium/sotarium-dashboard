@@ -7,14 +7,14 @@ import {
   ShieldCheck, 
   UploadCloud, 
   Settings, 
-  Lock,
+  HelpCircle,
   LogOut
 } from 'lucide-react';
-import { useAuth, ADMIN_DISCORD_ID } from '@/lib/auth';
+import { useAuth } from '@/lib/auth';
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin, isOwner, logout } = useAuth();
 
   return (
     <aside className="w-[260px] h-screen fixed left-0 top-0 flex flex-col justify-between p-4 bg-black select-none z-40 border-r border-white/[0.04]">
@@ -24,69 +24,83 @@ export default function Sidebar() {
 
         {/* General Nav */}
         <div className="space-y-1">
+          {/* Home Tab: Visible for Admins & Owners ONLY */}
+          {isAdmin && (
+            <Link
+              href="/"
+              className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+                pathname === '/' 
+                  ? 'bg-white text-black font-semibold shadow-sm' 
+                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+              }`}
+            >
+              <Home className="w-4 h-4" />
+              <span>Home</span>
+            </Link>
+          )}
+
+          {/* Ask loan Tab: Visible to Everyone (Members, Admins, Owner) */}
           <Link
-            href="/"
+            href="/ask-loan"
             className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
-              pathname === '/' 
+              pathname === '/ask-loan' 
                 ? 'bg-white text-black font-semibold shadow-sm' 
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
             }`}
           >
-            <Home className="w-4 h-4" />
-            <span>Home</span>
+            <HelpCircle className="w-4 h-4" />
+            <span>Ask loan</span>
           </Link>
         </div>
 
-        {/* Section: Build */}
-        <div className="space-y-1">
-          <div className="px-4 flex items-center justify-between text-[11px] font-medium text-neutral-500 uppercase tracking-wider mb-1">
-            <span>Build</span>
-            {!isAdmin && (
-              <span className="flex items-center gap-1 text-[10px] text-amber-500/80 font-normal normal-case">
-                <Lock className="w-2.5 h-2.5" /> VIP
-              </span>
-            )}
+        {/* Build Section: Loans & Roadmap - Visible for Admin & Owner ONLY */}
+        {isAdmin && (
+          <div className="space-y-1">
+            <div className="px-4 text-[11px] font-medium text-neutral-500 uppercase tracking-wider mb-1">
+              <span>Manage</span>
+            </div>
+            <Link
+              href="/loans"
+              className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+                pathname === '/loans' 
+                  ? 'bg-white text-black font-semibold shadow-sm' 
+                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Loans</span>
+            </Link>
+            <Link
+              href="/roadmap"
+              className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+                pathname === '/roadmap' 
+                  ? 'bg-white text-black font-semibold shadow-sm' 
+                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+              }`}
+            >
+              <UploadCloud className="w-4 h-4" />
+              <span>Roadmap</span>
+            </Link>
           </div>
-          <Link
-            href="/loans"
-            className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
-              pathname === '/loans' 
-                ? 'bg-white text-black font-semibold shadow-sm' 
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
-            }`}
-          >
-            <ShieldCheck className="w-4 h-4" />
-            <span>Loans</span>
-            {!isAdmin && <Lock className="w-3 h-3 ml-auto text-neutral-600" />}
-          </Link>
-          <Link
-            href="/roadmap"
-            className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
-              pathname === '/roadmap' 
-                ? 'bg-white text-black font-semibold shadow-sm' 
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
-            }`}
-          >
-            <UploadCloud className="w-4 h-4" />
-            <span>Roadmap</span>
-            {!isAdmin && <Lock className="w-3 h-3 ml-auto text-neutral-600" />}
-          </Link>
-        </div>
+        )}
       </div>
 
       {/* Bottom Footer Section */}
       <div className="space-y-2 pt-4 border-t border-white/[0.04]">
-        <Link
-          href="/settings"
-          className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
-            pathname === '/settings' 
-              ? 'bg-white text-black font-semibold shadow-sm' 
-              : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
-          }`}
-        >
-          <Settings className="w-4 h-4" />
-          <span>Settings</span>
-        </Link>
+        {/* Settings Tab: Visible for Admin & Owner ONLY */}
+        {isAdmin && (
+          <Link
+            href="/settings"
+            className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+              pathname === '/settings' 
+                ? 'bg-white text-black font-semibold shadow-sm' 
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            <span>Settings</span>
+          </Link>
+        )}
 
         {/* User Profile Pill */}
         {user ? (
@@ -106,8 +120,8 @@ export default function Sidebar() {
                 <div className="text-xs font-medium text-white truncate max-w-[120px]">
                   {user.username}
                 </div>
-                <div className="text-[10px] text-neutral-400 font-mono">
-                  {isAdmin ? 'Admin' : 'Member'}
+                <div className="text-[10px] text-neutral-400 font-mono capitalize">
+                  {user.role || (isOwner ? 'Owner' : isAdmin ? 'Admin' : 'Member')}
                 </div>
               </div>
             </div>

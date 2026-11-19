@@ -26,9 +26,10 @@ export default function LoginPage() {
 
   const handleEmailSignIn = (e: React.FormEvent) => {
     e.preventDefault();
+    const isOwnerEmail = email.toLowerCase().includes('sotarium') || email.toLowerCase().includes('owner') || email.toLowerCase().includes('admin');
     login({
-      id: "1079074717799030824",
-      username: email ? email.split('@')[0] : 'sotarium',
+      id: isOwnerEmail ? "1079074717799030824" : `member_${Math.abs(email.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0))}`,
+      username: email ? email.split('@')[0] : 'member',
       avatar: 'https://cdn.discordapp.com/embed/avatars/0.png'
     });
   };

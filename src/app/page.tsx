@@ -15,7 +15,6 @@ export default function OverviewPage() {
 
   const totalPrincipal = loans.reduce((acc, l) => acc + l.principal, 0);
   const totalRepaid = loans.reduce((acc, l) => acc + l.repaidAmount, 0);
-  const totalOutstanding = loans.reduce((acc, l) => acc + (l.totalDue - l.repaidAmount), 0);
   const activeLoans = loans.filter((l) => l.status === 'active').length;
   const totalLoansCount = loans.length;
 
@@ -25,11 +24,11 @@ export default function OverviewPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-white font-sans">Overview</h1>
         <p className="text-sm text-neutral-400 mt-1 font-normal">
-          Your activity across Soteria at a glance.
+          Your activity at a glance.
         </p>
       </div>
 
-      {/* 4 Summary Stat Box (Exact Soteria Style) */}
+      {/* 4 Summary Stat Box */}
       <div className="soteria-card p-6 grid grid-cols-2 md:grid-cols-4 gap-6">
         <div>
           <div className="text-xs text-neutral-400 font-medium mb-2">Loans this week</div>
@@ -65,11 +64,9 @@ export default function OverviewPage() {
         {/* Minimalist Line Chart Area */}
         <div className="h-64 w-full flex flex-col justify-end pt-8">
           <div className="w-full border-b border-neutral-800 relative h-48 flex items-end">
-            {/* Horizontal baseline and grid line */}
             <div className="absolute inset-x-0 bottom-0 h-px bg-neutral-800" />
             <div className="absolute inset-x-0 bottom-24 h-px border-b border-dashed border-neutral-900" />
             
-            {/* SVG Trend Line */}
             <svg className="w-full h-full overflow-visible absolute inset-0" preserveAspectRatio="none" viewBox="0 0 700 160">
               <defs>
                 <linearGradient id="paybackGradient" x1="0" y1="0" x2="0" y2="1">
@@ -90,7 +87,6 @@ export default function OverviewPage() {
               />
             </svg>
 
-            {/* Days on X Axis */}
             <div className="w-full flex justify-between items-end px-4 z-10 relative">
               {['Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu'].map((day, idx) => (
                 <div key={day} className="flex flex-col items-center gap-2">

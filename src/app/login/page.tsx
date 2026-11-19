@@ -28,7 +28,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full bg-black flex flex-col justify-between p-6 select-none font-sans text-white">
-      {/* Top Navbar matching Soteria.rip */}
+      {/* Top Navbar */}
       <header className="w-full flex items-center justify-between max-w-6xl mx-auto py-2">
         <Link href="/" className="flex items-center gap-2">
           <div className="w-7 h-7 relative flex items-center justify-center">
@@ -39,7 +39,7 @@ export default function LoginPage() {
               <ellipse cx="12" cy="12" rx="4" ry="9" />
             </svg>
           </div>
-          <span className="font-bold text-xl tracking-tight text-white font-sans">soteria</span>
+          <span className="font-bold text-xl tracking-tight text-white font-sans">sotarium</span>
         </Link>
 
         <div className="flex items-center gap-4">
@@ -53,12 +53,12 @@ export default function LoginPage() {
         </div>
       </header>
 
-      {/* Center Auth Card (Google removed, only Discord & credentials) */}
+      {/* Center Auth Card */}
       <main className="w-full flex items-center justify-center my-auto py-8">
         <div className="w-full max-w-[420px] bg-[#141414] rounded-3xl p-8 border border-white/[0.04] shadow-2xl space-y-6">
           <div className="space-y-1">
             <h1 className="text-2xl font-bold tracking-tight text-white">Welcome back</h1>
-            <p className="text-xs text-neutral-400">Sign in to your Soteria account to continue.</p>
+            <p className="text-xs text-neutral-400">Sign in to your account to continue.</p>
           </div>
 
           <form onSubmit={handleEmailSignIn} className="space-y-4">
@@ -115,12 +115,9 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className="text-center text-xs text-neutral-400 pt-2 space-y-1">
+          <div className="text-center text-xs text-neutral-400 pt-2">
             <div>
               Don&apos;t have an account? <span className="text-white font-semibold cursor-pointer">Sign up</span>
-            </div>
-            <div className="text-[11px] text-neutral-500">
-              By continuing, you agree to our <span className="underline cursor-pointer">legal terms</span>.
             </div>
           </div>
         </div>

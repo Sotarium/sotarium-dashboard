@@ -31,7 +31,7 @@ export default function Sidebar() {
               <ellipse cx="12" cy="12" rx="4" ry="9" />
             </svg>
           </div>
-          <span className="font-bold text-xl tracking-tight text-white font-sans">soteria</span>
+          <span className="font-bold text-xl tracking-tight text-white font-sans">sotarium</span>
         </Link>
 
         {/* General Nav */}
@@ -100,7 +100,7 @@ export default function Sidebar() {
           <span>Settings</span>
         </Link>
 
-        {/* User Profile Pill - dynamically reflects logged-in Discord user */}
+        {/* User Profile Pill */}
         {user ? (
           <div 
             onClick={logout}

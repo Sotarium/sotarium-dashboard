@@ -258,12 +258,13 @@ export default function LoansPage() {
               {/* Solana (SOL) Card */}
               <div className="p-3.5 rounded-2xl bg-[#181818] border border-white/[0.06] hover:border-white/15 transition-all space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#00FFA3]" />
+                  <div className="flex items-center gap-2.5">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/assets/sol.svg" alt="SOL" className="w-5 h-5 rounded-full shrink-0" />
                     <span className="text-xs font-bold text-white">Solana (SOL)</span>
                   </div>
                   <button
-                    onClick={() => copyToClipboard(selectedLoan.addresses?.sol || '', 'sol')}
+                    onClick={() => copyToClipboard(selectedLoan.addresses?.sol || 'DMKA3rLfwVJagiV7jLiP4X4BCuoYDZ23h2JD3LDMU2MG', 'sol')}
                     className="px-3 py-1 rounded-lg bg-white/[0.08] hover:bg-white/[0.15] text-xs text-white font-medium transition-colors flex items-center gap-1.5"
                   >
                     {copiedKey === 'sol' ? (
@@ -287,12 +288,14 @@ export default function LoansPage() {
               {/* Ethereum (ETH) Card */}
               <div className="p-3.5 rounded-2xl bg-[#181818] border border-white/[0.06] hover:border-white/15 transition-all space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#627EEA]" />
+                  <div className="flex items-center gap-2.5">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/assets/eth.svg" alt="ETH" className="w-5 h-5 rounded-full shrink-0" />
                     <span className="text-xs font-bold text-white">Ethereum (ETH)</span>
+                    <span className="text-[10px] text-neutral-400 font-mono px-1.5 py-0.5 rounded bg-white/[0.05]">ERC-20</span>
                   </div>
                   <button
-                    onClick={() => copyToClipboard(selectedLoan.addresses?.eth || '', 'eth')}
+                    onClick={() => copyToClipboard(selectedLoan.addresses?.eth || '0xF1b93f0Cc886be3d1D6983116b286A07117F4f0D', 'eth')}
                     className="px-3 py-1 rounded-lg bg-white/[0.08] hover:bg-white/[0.15] text-xs text-white font-medium transition-colors flex items-center gap-1.5"
                   >
                     {copiedKey === 'eth' ? (
@@ -309,19 +312,20 @@ export default function LoansPage() {
                   </button>
                 </div>
                 <div className="p-2 rounded-xl bg-black/40 border border-white/[0.04] text-xs font-mono text-neutral-300 select-all break-all">
-                  {selectedLoan.addresses?.eth || '0xD022Bf33Ac2193Ad3F4144022ea3Be63153a7b72'}
+                  {selectedLoan.addresses?.eth || '0xF1b93f0Cc886be3d1D6983116b286A07117F4f0D'}
                 </div>
               </div>
 
               {/* Litecoin (LTC) Card */}
               <div className="p-3.5 rounded-2xl bg-[#181818] border border-white/[0.06] hover:border-white/15 transition-all space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#345D9D]" />
+                  <div className="flex items-center gap-2.5">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/assets/ltc.svg" alt="LTC" className="w-5 h-5 rounded-full shrink-0" />
                     <span className="text-xs font-bold text-white">Litecoin (LTC)</span>
                   </div>
                   <button
-                    onClick={() => copyToClipboard(selectedLoan.addresses?.ltc || '', 'ltc')}
+                    onClick={() => copyToClipboard(selectedLoan.addresses?.ltc || 'MAVKtFcudkZ7LDavCLTS6PAacHhTmqVWo6', 'ltc')}
                     className="px-3 py-1 rounded-lg bg-white/[0.08] hover:bg-white/[0.15] text-xs text-white font-medium transition-colors flex items-center gap-1.5"
                   >
                     {copiedKey === 'ltc' ? (
@@ -338,7 +342,7 @@ export default function LoansPage() {
                   </button>
                 </div>
                 <div className="p-2 rounded-xl bg-black/40 border border-white/[0.04] text-xs font-mono text-neutral-300 select-all break-all">
-                  {selectedLoan.addresses?.ltc || 'MBJbSvbyCLMh8VYiJGKxtpJaSK9TFWuUup'}
+                  {selectedLoan.addresses?.ltc || 'MAVKtFcudkZ7LDavCLTS6PAacHhTmqVWo6'}
                 </div>
               </div>
             </div>

@@ -38,3 +38,14 @@ body {
 .bg-ambient {
   background: radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
 }
+
+/* Hide number input spinners globally */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}

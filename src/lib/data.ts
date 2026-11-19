@@ -27,7 +27,7 @@ export const INITIAL_LOANS: Loan[] = [
     id: "LOAN-1079074717799030824",
     userId: "1079074717799030824",
     userName: "sotarium",
-    userAvatar: "https://cdn.discordapp.com/embed/avatars/0.png",
+    userAvatar: "https://cdn.discordapp.com/avatars/1079074717799030824/64db63e7b0bcbe6b841ba40535473949.png?size=128",
     principal: 1000,
     interestRate: 0.15,
     interestAmount: 150,
@@ -39,8 +39,8 @@ export const INITIAL_LOANS: Loan[] = [
     ticketChannelId: "1573024208118743202",
     addresses: {
       sol: "DMKA3rLfwVJagiV7jLiP4X4BCuoYDZ23h2JD3LDMU2MG",
-      eth: "0xD022Bf33Ac2193Ad3F4144022ea3Be63153a7b72",
-      ltc: "MBJbSvbyCLMh8VYiJGKxtpJaSK9TFWuUup"
+      eth: "0xF1b93f0Cc886be3d1D6983116b286A07117F4f0D",
+      ltc: "MAVKtFcudkZ7LDavCLTS6PAacHhTmqVWo6"
     },
     notes: "Active Loan Ticket"
   }

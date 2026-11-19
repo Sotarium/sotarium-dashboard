@@ -17,53 +17,18 @@ const CRYPTO_OPTIONS = [
   {
     symbol: 'SOL',
     name: 'Solana',
-    icon: (
-      <svg className="w-5 h-5" viewBox="0 0 128 128" fill="none">
-        <circle cx="64" cy="64" r="64" fill="#141414"/>
-        <path d="M36 86.8h46.6c2.5 0 4.8 1.5 5.8 3.8l5.8 13.5c1.4 3.2-.9 6.9-4.5 6.9H47.1c-2.5 0-4.8-1.5-5.8-3.8L35.5 93.7c-1.4-3.2 1-6.9 4.5-6.9h-4z" fill="url(#sol_g1)"/>
-        <path d="M36 57.1h46.6c2.5 0 4.8 1.5 5.8 3.8l5.8 13.5c1.4 3.2-.9 6.9-4.5 6.9H47.1c-2.5 0-4.8-1.5-5.8-3.8L35.5 64c-1.4-3.2 1-6.9 4.5-6.9h-4z" fill="url(#sol_g2)"/>
-        <path d="M36 27.4h46.6c2.5 0 4.8 1.5 5.8 3.8l5.8 13.5c1.4 3.2-.9 6.9-4.5 6.9H47.1c-2.5 0-4.8-1.5-5.8-3.8L35.5 34.3c-1.4-3.2 1-6.9 4.5-6.9h-4z" fill="url(#sol_g3)"/>
-        <defs>
-          <linearGradient id="sol_g1" x1="36" y1="99" x2="94" y2="99" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#00FFA3"/>
-            <stop offset="1" stopColor="#DC1FFF"/>
-          </linearGradient>
-          <linearGradient id="sol_g2" x1="36" y1="69" x2="94" y2="69" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#00FFA3"/>
-            <stop offset="1" stopColor="#DC1FFF"/>
-          </linearGradient>
-          <linearGradient id="sol_g3" x1="36" y1="40" x2="94" y2="40" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#00FFA3"/>
-            <stop offset="1" stopColor="#DC1FFF"/>
-          </linearGradient>
-        </defs>
-      </svg>
-    ),
-    badge: 'Fast & Cheap'
+    iconUrl: '/assets/sol.svg',
   },
   {
     symbol: 'ETH',
     name: 'Ethereum',
-    icon: (
-      <svg className="w-5 h-5" viewBox="0 0 256 417" fill="none">
-        <path d="M127.96 0l-2.79 9.5v275.67l2.79 2.79 127.96-75.64L127.96 0z" fill="#627EEA"/>
-        <path d="M127.96 0L0 212.32l127.96 75.64V0z" fill="#8C9FDE"/>
-        <path d="M127.96 312.18l-1.57 1.92v97.43l1.57 4.57 128.04-180.2L127.96 312.18z" fill="#627EEA"/>
-        <path d="M127.96 416.1V312.18L0 235.9 127.96 416.1z" fill="#8C9FDE"/>
-      </svg>
-    ),
+    iconUrl: '/assets/eth.svg',
     badge: 'ERC-20'
   },
   {
     symbol: 'LTC',
     name: 'Litecoin',
-    icon: (
-      <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none">
-        <circle cx="16" cy="16" r="16" fill="#345D9D"/>
-        <path d="M10.5 8h4.2l-2.1 8h5.2l-.7 2.6H12l-2 7.4h11.2l-.7 2.6H6.6l4-15h2.1l.8-3.1h-2.1l.6-2.5z" fill="#FFFFFF"/>
-      </svg>
-    ),
-    badge: 'Native LTC'
+    iconUrl: '/assets/ltc.svg',
   }
 ];
 
@@ -176,16 +141,21 @@ export default function AskLoanPage() {
                 className="w-full px-4 py-2.5 rounded-2xl bg-[#171717] border border-white/[0.08] hover:border-white/20 text-sm text-white flex items-center justify-between cursor-pointer transition-all select-none shadow-sm"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-full bg-white/[0.04] flex items-center justify-center shrink-0">
-                    {selectedCrypto.icon}
-                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={selectedCrypto.iconUrl}
+                    alt={selectedCrypto.name}
+                    className="w-7 h-7 rounded-full shrink-0"
+                  />
                   <div className="text-left">
                     <div className="font-semibold text-xs text-white leading-tight">
                       {selectedCrypto.name} <span className="text-neutral-400 font-mono">({selectedCrypto.symbol})</span>
                     </div>
-                    <div className="text-[10px] text-neutral-400 leading-tight">
-                      {selectedCrypto.badge}
-                    </div>
+                    {selectedCrypto.badge && (
+                      <div className="text-[10px] text-neutral-400 leading-tight">
+                        {selectedCrypto.badge}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -214,16 +184,21 @@ export default function AskLoanPage() {
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-7 h-7 rounded-full bg-white/[0.04] flex items-center justify-center shrink-0">
-                            {crypto.icon}
-                          </div>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={crypto.iconUrl}
+                            alt={crypto.name}
+                            className="w-7 h-7 rounded-full shrink-0"
+                          />
                           <div className="text-left">
                             <div className="text-xs font-semibold text-white">
                               {crypto.name} <span className="text-neutral-400 font-mono">({crypto.symbol})</span>
                             </div>
-                            <div className="text-[10px] text-neutral-400">
-                              {crypto.badge}
-                            </div>
+                            {crypto.badge && (
+                              <div className="text-[10px] text-neutral-400">
+                                {crypto.badge}
+                              </div>
+                            )}
                           </div>
                         </div>
 

@@ -170,7 +170,6 @@ export default function LoansPage() {
                         onClick={() => setSelectedLoan(loan)}
                         className="px-3.5 py-1.5 rounded-xl bg-[#181818] hover:bg-[#252525] border border-white/[0.08] hover:border-white/20 text-xs font-semibold text-white transition-all flex items-center gap-2 shadow-sm"
                       >
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                         <span>Deposit Addresses</span>
                       </button>
                     </td>
@@ -201,12 +200,9 @@ export default function LoansPage() {
             
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-xs font-bold tracking-wider text-neutral-300 uppercase">
-                  DEPOSIT CHANNELS & ACTIVITY
-                </span>
-              </div>
+              <span className="text-xs font-bold tracking-wider text-neutral-300 uppercase">
+                DEPOSIT CHANNELS & ACTIVITY
+              </span>
               <button
                 onClick={() => setSelectedLoan(null)}
                 className="w-8 h-8 rounded-full bg-white/[0.05] hover:bg-white/[0.1] flex items-center justify-center text-neutral-400 hover:text-white transition-colors"

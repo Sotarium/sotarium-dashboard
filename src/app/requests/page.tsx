@@ -92,15 +92,7 @@ export default function RequestsPage() {
       {/* Title Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              Admin & Owner Management
-            </span>
-          </div>
           <h1 className="text-3xl font-bold tracking-tight text-white font-sans">Loan Requests</h1>
-          <p className="text-sm text-neutral-400 mt-1">
-            Review, approve, or refuse borrower loan requests submitted by players.
-          </p>
         </div>
 
         {pendingCount > 0 && (
@@ -167,22 +159,30 @@ export default function RequestsPage() {
                   <tr key={req.id} className="hover:bg-white/[0.02] transition-colors">
                     <td className="py-3.5 px-3">
                       <div className="font-semibold text-white text-xs">{req.user_name}</div>
-                      <div className="text-[10px] text-neutral-400 font-mono">{req.user_id}</div>
                     </td>
                     <td className="py-3.5 px-3 font-semibold text-white">
                       ${req.amount.toFixed(2)}
                     </td>
-                    <td className="py-3.5 px-3 text-xs text-neutral-300 font-mono font-semibold">
-                      {req.crypto_currency}
+                    <td className="py-3.5 px-3 text-xs font-semibold text-white">
+                      <div className="flex items-center gap-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img 
+                          src={`/assets/${req.crypto_currency.toLowerCase()}.svg`} 
+                          alt={req.crypto_currency} 
+                          className="w-4 h-4 rounded-full shrink-0" 
+                          onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                        />
+                        <span>{req.crypto_currency}</span>
+                      </div>
                     </td>
                     <td className="py-3.5 px-3 text-xs font-semibold text-white">
                       ${(req.amount * 1.15).toFixed(2)}
                     </td>
-                    <td className="py-3.5 px-3 text-xs text-neutral-400 max-w-[180px] truncate" title={req.reason}>
+                    <td className="py-3.5 px-3 text-xs text-neutral-300 max-w-[180px] truncate" title={req.reason}>
                       {req.reason || '—'}
                     </td>
-                    <td className="py-3.5 px-3 text-xs text-neutral-400 font-mono">
-                      {new Date(req.created_at).toLocaleDateString()}
+                    <td className="py-3.5 px-3 text-xs text-neutral-400">
+                      {new Date(req.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
                     <td className="py-3.5 px-3">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
@@ -204,19 +204,17 @@ export default function RequestsPage() {
                           <button
                             onClick={() => handleUpdateStatus(req.id, 'approved')}
                             disabled={isProcessing === req.id}
-                            className="px-3 py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 font-semibold text-xs border border-emerald-500/30 flex items-center gap-1.5 transition-all disabled:opacity-50"
+                            className="px-3.5 py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 font-semibold text-xs border border-emerald-500/30 transition-all disabled:opacity-50"
                           >
-                            <Check className="w-3.5 h-3.5" />
-                            <span>Approve</span>
+                            Approve
                           </button>
 
                           <button
                             onClick={() => handleUpdateStatus(req.id, 'rejected')}
                             disabled={isProcessing === req.id}
-                            className="px-3 py-1.5 rounded-full bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 font-semibold text-xs border border-rose-500/30 flex items-center gap-1.5 transition-all disabled:opacity-50"
+                            className="px-3.5 py-1.5 rounded-full bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 font-semibold text-xs border border-rose-500/30 transition-all disabled:opacity-50"
                           >
-                            <X className="w-3.5 h-3.5" />
-                            <span>Refuse</span>
+                            Refuse
                           </button>
                         </div>
                       ) : (

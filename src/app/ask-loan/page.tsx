@@ -268,14 +268,23 @@ export default function AskLoanPage() {
               <tbody className="divide-y divide-white/[0.04]">
                 {requests.map((req) => (
                   <tr key={req.id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="py-3 px-3 text-xs text-neutral-400 font-mono">
-                      {new Date(req.created_at).toLocaleDateString()}
+                    <td className="py-3.5 px-3 text-xs text-neutral-400 font-sans">
+                      {new Date(req.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
-                    <td className="py-3 px-3 font-semibold text-white">
+                    <td className="py-3.5 px-3 font-semibold text-white font-sans">
                       ${req.amount.toFixed(2)}
                     </td>
-                    <td className="py-3 px-3 text-xs text-neutral-300 font-mono font-semibold">
-                      {req.crypto_currency}
+                    <td className="py-3.5 px-3 text-xs font-semibold text-white font-sans">
+                      <div className="flex items-center gap-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img 
+                          src={`/assets/${req.crypto_currency.toLowerCase()}.svg`} 
+                          alt={req.crypto_currency} 
+                          className="w-4 h-4 rounded-full shrink-0" 
+                          onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                        />
+                        <span>{req.crypto_currency}</span>
+                      </div>
                     </td>
                     <td className="py-3 px-3 text-xs font-semibold text-white">
                       ${(req.amount * 1.15).toFixed(2)}

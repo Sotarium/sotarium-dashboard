@@ -6,7 +6,6 @@ import {
   Home, 
   ShieldCheck, 
   UploadCloud, 
-  Settings, 
   HelpCircle,
   Wallet,
   Inbox,
@@ -119,21 +118,6 @@ export default function Sidebar() {
 
       {/* Bottom Footer Section */}
       <div className="space-y-2 pt-4 border-t border-white/[0.04]">
-        {/* Settings Tab: Visible for Admin & Owner ONLY */}
-        {isAdmin && (
-          <Link
-            href="/settings"
-            className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
-              pathname === '/settings' 
-                ? 'bg-white text-black font-semibold shadow-sm' 
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
-            }`}
-          >
-            <Settings className="w-4 h-4" />
-            <span>Settings</span>
-          </Link>
-        )}
-
         {/* User Profile Pill */}
         {user ? (
           <div 

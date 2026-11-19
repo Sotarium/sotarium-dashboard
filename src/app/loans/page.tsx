@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Loan } from '@/lib/data';
-import { Search, Copy, Check, Lock, X, ExternalLink } from 'lucide-react';
+import { Search, Copy, Check, Lock, X } from 'lucide-react';
 import { useAuth, ADMIN_DISCORD_ID } from '@/lib/auth';
 
 export default function LoansPage() {
@@ -55,18 +55,10 @@ export default function LoansPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Title Header with Action Button */}
+      {/* Title Header with Action Button - Cleaned banner and subtitle */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              Discord OAuth: {ADMIN_DISCORD_ID}
-            </span>
-          </div>
           <h1 className="text-3xl font-bold tracking-tight text-white">Loans</h1>
-          <p className="text-sm text-neutral-400 mt-1">
-            Active player debt, 15% interest calculations, and payback addresses.
-          </p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -115,7 +107,7 @@ export default function LoansPage() {
                 const percent = Math.min(100, Math.round((loan.repaidAmount / loan.totalDue) * 100));
                 return (
                   <tr key={loan.id} className="hover:bg-white/[0.02] transition-colors">
-                    {/* Borrower column: only username, no discord id */}
+                    {/* Borrower row: only username */}
                     <td className="py-4 px-3">
                       <div className="flex items-center gap-3">
                         {/* eslint-disable-next-line @next/next/no-img-element */}

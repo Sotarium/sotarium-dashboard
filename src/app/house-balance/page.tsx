@@ -95,14 +95,14 @@ export default function HouseBalancePage() {
       {/* Verified House Wallets List */}
       <div className="soteria-card p-6 space-y-4">
         <div className="pb-2 border-b border-white/[0.04]">
-          <h2 className="text-sm font-semibold text-white tracking-tight uppercase">Deposit & Liquidity Addresses</h2>
+          <h2 className="text-sm font-semibold text-white tracking-tight uppercase">Wallets Addresses</h2>
         </div>
 
         <div className="space-y-3">
           {wallets.map((wallet) => (
             <div
               key={wallet.symbol}
-              className="p-4 rounded-2xl bg-[#171717] border border-white/[0.06] hover:border-white/15 transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+              className="p-4 rounded-2xl bg-[#171717] border border-white/[0.06] hover:border-white/15 transition-all flex items-center justify-between gap-4"
             >
               <div className="flex items-center gap-3.5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -143,15 +143,6 @@ export default function HouseBalancePage() {
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                   </div>
-                </div>
-              </div>
-
-              <div className="text-left md:text-right shrink-0">
-                <div className="text-sm font-bold text-white">
-                  {wallet.balance} {wallet.symbol}
-                </div>
-                <div className="text-xs text-neutral-400 font-mono">
-                  ${wallet.balanceUsd.toFixed(2)} USD
                 </div>
               </div>
             </div>

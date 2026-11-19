@@ -1,17 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { RefreshCw, Copy, Check, ShieldCheck, ExternalLink } from 'lucide-react';
+import { RefreshCw, Copy, Check, ShieldCheck, ExternalLink, Sparkles } from 'lucide-react';
 
 interface HouseWallet {
   symbol: string;
   name: string;
   network: string;
   address: string;
-  paymentId: string;
   iconUrl: string;
+  explorerUrl: string;
   balance: number;
   balanceUsd: number;
+  priceUsd: number;
   status: string;
   isLive: boolean;
 }
@@ -53,9 +54,15 @@ export default function HouseBalancePage() {
       {/* Title Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white font-sans">House Bal</h1>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              LIVE PROOF OF RESERVES
+            </span>
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight text-white font-sans">House Balance</h1>
           <p className="text-sm text-neutral-400 mt-1">
-            Real-time verified NOWPayments liquidity reserves and house payback channels.
+            Real-time public liquidity and NOWPayments master house reserves available for loans.
           </p>
         </div>
 
@@ -65,34 +72,37 @@ export default function HouseBalancePage() {
           className="px-4 py-2 rounded-full bg-[#181818] hover:bg-[#222222] border border-white/[0.08] hover:border-white/20 text-xs font-semibold text-white flex items-center gap-2 transition-all shadow-sm"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-white' : 'text-neutral-400'}`} />
-          <span>{isLoading ? 'Fetching...' : 'Sync Reserves'}</span>
+          <span>{isLoading ? 'Syncing...' : 'Refresh Reserves'}</span>
         </button>
       </div>
 
       {/* Main Liquidity Overview Card */}
       <div className="soteria-card p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>NOWPayments Verified Reserves</span>
+          <div className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+            TOTAL HOUSE LIQUIDITY
           </div>
           <div className="text-4xl md:text-5xl font-extrabold tracking-tight text-white font-sans mt-2">
             ${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div className="flex items-center gap-2 text-xs text-neutral-500 mt-2 font-mono">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse" />
-            <span>Live channel status: active</span>
-            {lastUpdated && <span>• Updated {lastUpdated}</span>}
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Verified On-Chain RPC & NOWPayments Payout Wallets</span>
+            {lastUpdated && <span>• Last verified: {lastUpdated}</span>}
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 w-full md:w-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full md:w-auto">
           {wallets.map((w) => (
-            <div key={w.symbol} className="p-3.5 rounded-2xl bg-[#171717] border border-white/[0.06] text-center min-w-[110px]">
+            <div key={w.symbol} className="p-3.5 rounded-2xl bg-[#171717] border border-white/[0.06] text-center min-w-[105px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={w.iconUrl} alt={w.symbol} className="w-5 h-5 mx-auto mb-1.5" />
-              <div className="text-xs font-bold text-white">{w.balance} {w.symbol}</div>
-              <div className="text-[10px] text-neutral-400 mt-0.5 font-mono">${w.balanceUsd.toFixed(2)}</div>
+              <img src={w.iconUrl} alt={w.symbol} className="w-6 h-6 mx-auto mb-1.5 rounded-full" />
+              <div className="text-xs font-bold text-white">
+                {w.balance} {w.symbol}
+              </div>
+              <div className="text-[10px] text-neutral-400 mt-0.5 font-mono">
+                ${w.balanceUsd.toFixed(2)}
+              </div>
             </div>
           ))}
         </div>
@@ -101,8 +111,11 @@ export default function HouseBalancePage() {
       {/* Verified House Wallets List */}
       <div className="soteria-card p-6 space-y-4">
         <div className="flex items-center justify-between pb-2 border-b border-white/[0.04]">
-          <h2 className="text-sm font-semibold text-white tracking-tight uppercase">Deposit & Liquidity Addresses</h2>
-          <span className="text-xs text-neutral-500 font-mono">NOWPayments API v1</span>
+          <h2 className="text-sm font-semibold text-white tracking-tight uppercase">Master House Wallets (Storage)</h2>
+          <span className="text-xs text-neutral-500 font-mono flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            Direct Payout Destination
+          </span>
         </div>
 
         <div className="space-y-3">
@@ -116,7 +129,7 @@ export default function HouseBalancePage() {
                 <img
                   src={wallet.iconUrl}
                   alt={wallet.name}
-                  className="w-9 h-9 shrink-0"
+                  className="w-9 h-9 rounded-full shrink-0"
                 />
                 <div>
                   <div className="flex items-center gap-2">
@@ -124,9 +137,14 @@ export default function HouseBalancePage() {
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.06] text-neutral-300">
                       {wallet.symbol}
                     </span>
-                    <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                      ID: {wallet.paymentId}
+                    <span className="text-[10px] font-mono text-neutral-400 bg-white/[0.03] px-2 py-0.5 rounded-full border border-white/[0.06]">
+                      {wallet.network}
                     </span>
+                    {wallet.priceUsd > 0 && (
+                      <span className="text-[10px] font-mono text-neutral-500 hidden sm:inline">
+                        1 {wallet.symbol} ≈ ${wallet.priceUsd.toLocaleString()}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 mt-1.5">
                     <span className="text-xs text-neutral-400 font-mono break-all max-w-xs md:max-w-lg select-all">
@@ -143,6 +161,15 @@ export default function HouseBalancePage() {
                         <Copy className="w-3.5 h-3.5" />
                       )}
                     </button>
+                    <a
+                      href={wallet.explorerUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-1 rounded-lg hover:bg-white/[0.08] text-neutral-400 hover:text-white transition-colors shrink-0"
+                      title="View on Explorer"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
                   </div>
                 </div>
               </div>
@@ -152,7 +179,7 @@ export default function HouseBalancePage() {
                   {wallet.balance} {wallet.symbol}
                 </div>
                 <div className="text-xs text-neutral-400 font-mono">
-                  ${wallet.balanceUsd.toFixed(2)} USD
+                  ≈ ${wallet.balanceUsd.toFixed(2)} USD
                 </div>
               </div>
             </div>

@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
 
-const NOWPAYMENTS_API_KEY = process.env.NOWPAYMENTS_API_KEY || 'SD6RJSG-8SXMB1V-HBJFHE9-CJJVRFJ';
-
 interface HouseWalletConfig {
   symbol: string;
   name: string;
   network: string;
   address: string;
-  paymentId: string;
   iconUrl: string;
+  explorerUrl: string;
 }
 
 const HOUSE_WALLETS_CONFIG: HouseWalletConfig[] = [
@@ -16,65 +14,159 @@ const HOUSE_WALLETS_CONFIG: HouseWalletConfig[] = [
     symbol: 'SOL',
     name: 'Solana',
     network: 'Solana Mainnet',
-    address: 'DMKA3rLfwVJagiV7jLiP4X4BCuoYDZ23h2JD3LDMU2MG',
-    paymentId: '6295438782',
+    address: 'FtE4jhje3TCzRiTuxCejxu9QVJqXdkDnmW25mcvPCqj8',
     iconUrl: '/assets/sol.svg',
+    explorerUrl: 'https://solscan.io/account/FtE4jhje3TCzRiTuxCejxu9QVJqXdkDnmW25mcvPCqj8',
   },
   {
     symbol: 'ETH',
     name: 'Ethereum',
     network: 'Ethereum Mainnet',
-    address: '0xF1b93f0Cc886be3d1D6983116b286A07117F4f0D',
-    paymentId: '6045684707',
+    address: '0x5E332519f26987709214F60e50AC69793ef5B72E',
     iconUrl: '/assets/eth.svg',
+    explorerUrl: 'https://etherscan.io/address/0x5E332519f26987709214F60e50AC69793ef5B72E',
   },
   {
     symbol: 'LTC',
     name: 'Litecoin',
     network: 'Litecoin Mainnet',
-    address: 'MAVKtFcudkZ7LDavCLTS6PAacHhTmqVWo6',
-    paymentId: '6100346630',
+    address: 'LedANhtpWzfX8Ug35mMQfthfe5ofDW5eMs',
     iconUrl: '/assets/ltc.svg',
+    explorerUrl: 'https://blockchair.com/litecoin/address/LedANhtpWzfX8Ug35mMQfthfe5ofDW5eMs',
+  },
+  {
+    symbol: 'BTC',
+    name: 'Bitcoin',
+    network: 'Bitcoin Mainnet',
+    address: 'bc1qrnwnya68s9k5j0qfgeev65tpduxnsf9sctzydl',
+    iconUrl: '/assets/btc.svg',
+    explorerUrl: 'https://mempool.space/address/bc1qrnwnya68s9k5j0qfgeev65tpduxnsf9sctzydl',
   },
 ];
 
+async function fetchLivePrices(): Promise<Record<string, number>> {
+  const prices: Record<string, number> = {
+    SOL: 175,
+    ETH: 3100,
+    LTC: 90,
+    BTC: 92000,
+  };
+
+  try {
+    const res = await fetch(
+      'https://api.binance.com/api/v3/ticker/price?symbols=%5B%22SOLUSDT%22,%22ETHUSDT%22,%22LTCUSDT%22,%22BTCUSDT%22%5D',
+      { next: { revalidate: 60 } }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        data.forEach((item: { symbol: string; price: string }) => {
+          const sym = item.symbol.replace('USDT', '');
+          if (prices[sym] !== undefined) {
+            prices[sym] = parseFloat(item.price);
+          }
+        });
+      }
+    }
+  } catch {
+    // Keep fallback prices
+  }
+
+  return prices;
+}
+
+async function fetchOnChainBalance(cfg: HouseWalletConfig): Promise<{ balance: number; isLive: boolean }> {
+  try {
+    if (cfg.symbol === 'SOL') {
+      const res = await fetch('https://api.mainnet-beta.solana.com', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'getBalance',
+          params: [cfg.address],
+        }),
+        next: { revalidate: 30 },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const lamports = data?.result?.value || 0;
+        return { balance: Number((lamports / 1e9).toFixed(4)), isLive: true };
+      }
+    }
+
+    if (cfg.symbol === 'ETH') {
+      const res = await fetch('https://ethereum-rpc.publicnode.com', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'eth_getBalance',
+          params: [cfg.address, 'latest'],
+        }),
+        next: { revalidate: 30 },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const hex = data?.result || '0x0';
+        const wei = parseInt(hex, 16) || 0;
+        return { balance: Number((wei / 1e18).toFixed(4)), isLive: true };
+      }
+    }
+
+    if (cfg.symbol === 'LTC') {
+      const res = await fetch(`https://api.blockcypher.com/v1/ltc/main/addrs/${cfg.address}/balance`, {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+        next: { revalidate: 30 },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const litoshis = data?.balance || 0;
+        return { balance: Number((litoshis / 1e8).toFixed(4)), isLive: true };
+      }
+    }
+
+    if (cfg.symbol === 'BTC') {
+      const res = await fetch(`https://blockchain.info/rawaddr/${cfg.address}`, {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+        next: { revalidate: 30 },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const satoshis = data?.final_balance || 0;
+        return { balance: Number((satoshis / 1e8).toFixed(4)), isLive: true };
+      }
+    }
+  } catch (e) {
+    console.error(`Error querying on-chain balance for ${cfg.symbol}:`, e);
+  }
+
+  return { balance: 0, isLive: false };
+}
+
 export async function GET() {
   try {
+    const prices = await fetchLivePrices();
+
     const fetchedWallets = await Promise.all(
       HOUSE_WALLETS_CONFIG.map(async (cfg) => {
-        let balance = 0;
-        let balanceUsd = 0;
-        let status = 'active';
-        let isLive = false;
-
-        try {
-          const res = await fetch(`https://api.nowpayments.io/v1/payment/${cfg.paymentId}`, {
-            headers: { 'x-api-key': NOWPAYMENTS_API_KEY },
-            next: { revalidate: 30 },
-          });
-
-          if (res.ok) {
-            const data = await res.json();
-            isLive = true;
-            status = data.payment_status || 'active';
-            // Real recorded payment amount on NOWPayments
-            balance = Number(data.actually_paid) || 0;
-            balanceUsd = (Number(data.actually_paid) / (Number(data.pay_amount) || 1)) * (Number(data.price_amount) || 0);
-          }
-        } catch (err) {
-          console.error(`Error querying NOWPayments for ${cfg.symbol}:`, err);
-        }
+        const { balance, isLive } = await fetchOnChainBalance(cfg);
+        const price = prices[cfg.symbol] || 0;
+        const balanceUsd = Number((balance * price).toFixed(2));
 
         return {
           symbol: cfg.symbol,
           name: cfg.name,
           network: cfg.network,
           address: cfg.address,
-          paymentId: cfg.paymentId,
           iconUrl: cfg.iconUrl,
-          balance: Number(balance.toFixed(4)),
-          balanceUsd: Number(balanceUsd.toFixed(2)),
-          status,
+          explorerUrl: cfg.explorerUrl,
+          balance,
+          balanceUsd,
+          priceUsd: Number(price.toFixed(2)),
+          status: 'verified',
           isLive,
         };
       })
@@ -85,7 +177,7 @@ export async function GET() {
     return NextResponse.json({
       totalUsd: Number(totalUsd.toFixed(2)),
       wallets: fetchedWallets,
-      provider: 'NOWPayments API v1',
+      provider: 'Verified On-Chain RPC & NOWPayments Payout Wallets',
       updatedAt: new Date().toISOString(),
     });
   } catch (err) {

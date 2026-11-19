@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -11,41 +10,25 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Real Discord OAuth Flow via Supabase
-  const handleRealDiscordOAuth = async () => {
+  // Real Discord OAuth Flow (Direct Discord Authorization)
+  const handleDiscordOAuth = () => {
     setIsLoading(true);
-    try {
-      const redirectTo = typeof window !== 'undefined' 
-        ? `${window.location.origin}/api/auth/callback` 
-        : 'https://sotarium-dashboard.vercel.app/api/auth/callback';
+    const clientId = '1572819583318884484';
+    const redirectUri = typeof window !== 'undefined'
+      ? `${window.location.origin}/api/auth/callback`
+      : 'https://sotarium-dashboard.vercel.app/api/auth/callback';
 
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'discord',
-        options: {
-          redirectTo,
-          scopes: 'identify email'
-        }
-      });
+    // Direct Discord OAuth2 Authorization (Implicit Grant)
+    const discordAuthUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=identify`;
 
-      if (error) {
-        console.error('Supabase Discord OAuth error:', error);
-        // Fallback directly to Discord Application OAuth2 URL
-        const clientId = '1572819583318884484';
-        const redirect = encodeURIComponent(redirectTo);
-        window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirect}&response_type=token&scope=identify%20email`;
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsLoading(false);
-    }
+    window.location.href = discordAuthUrl;
   };
 
   const handleEmailSignIn = (e: React.FormEvent) => {
     e.preventDefault();
     login({
       id: "1079074717799030824",
-      username: email ? email.split('@')[0] : 'admin',
+      username: email ? email.split('@')[0] : 'sotarium',
       avatar: 'https://cdn.discordapp.com/embed/avatars/0.png'
     });
   };
@@ -68,7 +51,7 @@ export default function LoginPage() {
         <div className="flex items-center gap-4">
           <span className="text-sm font-medium text-neutral-400">Log in</span>
           <button 
-            onClick={handleRealDiscordOAuth}
+            onClick={handleDiscordOAuth}
             className="px-4 py-2 rounded-full bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition-colors"
           >
             Get started
@@ -128,14 +111,14 @@ export default function LoginPage() {
           {/* Real Discord OAuth Button */}
           <div>
             <button
-              onClick={handleRealDiscordOAuth}
+              onClick={handleDiscordOAuth}
               disabled={isLoading}
               className="w-full py-3.5 px-4 rounded-2xl bg-white hover:bg-neutral-100 text-black font-semibold text-xs flex items-center justify-center gap-2.5 transition-colors shadow-sm disabled:opacity-50"
             >
               <svg className="w-4 h-4 fill-[#5865F2]" viewBox="0 0 127.14 96.36">
                 <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.86,53,48.81,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91,65.69,84.69,65.69Z" />
               </svg>
-              <span>{isLoading ? 'Connecting to Discord...' : 'Continue with Discord'}</span>
+              <span>{isLoading ? 'Redirecting to Discord...' : 'Continue with Discord'}</span>
             </button>
           </div>
 

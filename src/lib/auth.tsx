@@ -1,68 +1,75 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 
 export interface DiscordUser {
   id: string;
   username: string;
-  avatar: string;
+  avatar?: string;
+  discriminator?: string;
 }
 
-// User's Discord ID
+// Admin Discord ID
 export const ADMIN_DISCORD_ID = "1079074717799030824";
 
 interface AuthContextType {
   user: DiscordUser | null;
   isAdmin: boolean;
-  loginAsAdmin: () => void;
+  login: (userData: DiscordUser) => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isAdmin: false,
-  loginAsAdmin: () => {},
+  login: () => {},
   logout: () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<DiscordUser | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    // Default logged in as Discord user 1079074717799030824
-    const stored = localStorage.getItem('soteria_discord_user');
+    // Check local storage for authenticated session
+    const stored = localStorage.getItem('soteria_discord_session');
     if (stored) {
-      setUser(JSON.parse(stored));
-    } else {
-      const defaultUser = {
-        id: ADMIN_DISCORD_ID,
-        username: "Admin",
-        avatar: "https://cdn.discordapp.com/embed/avatars/0.png"
-      };
-      setUser(defaultUser);
-      localStorage.setItem('soteria_discord_user', JSON.stringify(defaultUser));
+      try {
+        const parsed = JSON.parse(stored);
+        setUser(parsed);
+      } catch (e) {
+        console.error('Failed to parse session:', e);
+      }
     }
+    setIsLoaded(true);
   }, []);
 
-  const loginAsAdmin = () => {
-    const defaultUser = {
-      id: ADMIN_DISCORD_ID,
-      username: "Admin",
-      avatar: "https://cdn.discordapp.com/embed/avatars/0.png"
-    };
-    setUser(defaultUser);
-    localStorage.setItem('soteria_discord_user', JSON.stringify(defaultUser));
+  // If user is not signed in and trying to access dashboard routes, redirect to /login
+  useEffect(() => {
+    if (isLoaded && !user && pathname !== '/login') {
+      router.push('/login');
+    }
+  }, [isLoaded, user, pathname, router]);
+
+  const login = (userData: DiscordUser) => {
+    setUser(userData);
+    localStorage.setItem('soteria_discord_session', JSON.stringify(userData));
+    router.push('/');
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('soteria_discord_user');
+    localStorage.removeItem('soteria_discord_session');
+    router.push('/login');
   };
 
   const isAdmin = user?.id === ADMIN_DISCORD_ID;
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, loginAsAdmin, logout }}>
+    <AuthContext.Provider value={{ user, isAdmin, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

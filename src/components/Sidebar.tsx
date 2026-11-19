@@ -8,13 +8,14 @@ import {
   UploadCloud, 
   Settings, 
   ChevronsUpDown,
-  Lock
+  Lock,
+  LogOut
 } from 'lucide-react';
 import { useAuth, ADMIN_DISCORD_ID } from '@/lib/auth';
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
 
   return (
     <aside className="w-[260px] h-screen fixed left-0 top-0 flex flex-col justify-between p-4 bg-black select-none z-40 border-r border-white/[0.04]">
@@ -99,23 +100,39 @@ export default function Sidebar() {
           <span>Settings</span>
         </Link>
 
-        {/* User Profile Pill showing Discord ID */}
-        <div className="mt-3 p-2 rounded-2xl bg-neutral-900/40 hover:bg-neutral-900 border border-white/[0.04] flex items-center justify-between cursor-pointer transition-colors">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-full bg-indigo-600 text-white font-semibold text-xs flex items-center justify-center">
-              D
-            </div>
-            <div className="leading-tight">
-              <div className="text-xs font-medium text-white truncate max-w-[130px]">
-                {user?.id === ADMIN_DISCORD_ID ? 'Admin (107907...)' : 'Guest'}
+        {/* User Profile Pill - dynamically reflects logged-in Discord user */}
+        {user ? (
+          <div 
+            onClick={logout}
+            title="Click to log out"
+            className="mt-3 p-2 rounded-2xl bg-neutral-900/40 hover:bg-neutral-900 border border-white/[0.04] flex items-center justify-between cursor-pointer transition-colors group"
+          >
+            <div className="flex items-center gap-2.5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={user.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                alt={user.username}
+                className="w-7 h-7 rounded-full border border-white/[0.08] object-cover"
+              />
+              <div className="leading-tight">
+                <div className="text-xs font-medium text-white truncate max-w-[120px]">
+                  {user.username}
+                </div>
+                <div className="text-[10px] text-neutral-400 font-mono">
+                  {isAdmin ? 'Owner' : 'Member'}
+                </div>
               </div>
-              <div className="text-[10px] text-neutral-400 font-mono">
-                {user?.id ? user.id.slice(0, 10) + '...' : 'Not signed in'}
-              </div>
             </div>
+            <LogOut className="w-3.5 h-3.5 text-neutral-500 group-hover:text-red-400 transition-colors" />
           </div>
-          <ChevronsUpDown className="w-3.5 h-3.5 text-neutral-500" />
-        </div>
+        ) : (
+          <Link
+            href="/login"
+            className="mt-3 w-full py-2 px-3 rounded-2xl bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+          >
+            Sign in with Discord
+          </Link>
+        )}
       </div>
     </aside>
   );

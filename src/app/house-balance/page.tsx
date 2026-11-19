@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { RefreshCw, Copy, Check, ShieldCheck, ExternalLink, Sparkles } from 'lucide-react';
+import { RefreshCw, Copy, Check, ExternalLink } from 'lucide-react';
 
 interface HouseWallet {
   symbol: string;
@@ -22,7 +22,6 @@ export default function HouseBalancePage() {
   const [totalUsd, setTotalUsd] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<string>('');
 
   const fetchBalances = () => {
     setIsLoading(true);
@@ -32,7 +31,6 @@ export default function HouseBalancePage() {
         if (data.wallets) {
           setWallets(data.wallets);
           setTotalUsd(data.totalUsd || 0);
-          setLastUpdated(new Date().toLocaleTimeString());
         }
       })
       .catch((err) => console.error(err))
@@ -52,18 +50,9 @@ export default function HouseBalancePage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-300 max-w-5xl">
       {/* Title Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              LIVE PROOF OF RESERVES
-            </span>
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white font-sans">House Balance</h1>
-          <p className="text-sm text-neutral-400 mt-1">
-            Real-time public liquidity and NOWPayments master house reserves available for loans.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-white font-sans">House Bal</h1>
         </div>
 
         <button
@@ -72,7 +61,7 @@ export default function HouseBalancePage() {
           className="px-4 py-2 rounded-full bg-[#181818] hover:bg-[#222222] border border-white/[0.08] hover:border-white/20 text-xs font-semibold text-white flex items-center gap-2 transition-all shadow-sm"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-white' : 'text-neutral-400'}`} />
-          <span>{isLoading ? 'Syncing...' : 'Refresh Reserves'}</span>
+          <span>{isLoading ? 'Syncing...' : 'Sync Reserves'}</span>
         </button>
       </div>
 
@@ -84,11 +73,6 @@ export default function HouseBalancePage() {
           </div>
           <div className="text-4xl md:text-5xl font-extrabold tracking-tight text-white font-sans mt-2">
             ${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </div>
-          <div className="flex items-center gap-2 text-xs text-neutral-500 mt-2 font-mono">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Verified On-Chain RPC & NOWPayments Payout Wallets</span>
-            {lastUpdated && <span>• Last verified: {lastUpdated}</span>}
           </div>
         </div>
 
@@ -110,12 +94,8 @@ export default function HouseBalancePage() {
 
       {/* Verified House Wallets List */}
       <div className="soteria-card p-6 space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-white/[0.04]">
-          <h2 className="text-sm font-semibold text-white tracking-tight uppercase">Master House Wallets (Storage)</h2>
-          <span className="text-xs text-neutral-500 font-mono flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-            Direct Payout Destination
-          </span>
+        <div className="pb-2 border-b border-white/[0.04]">
+          <h2 className="text-sm font-semibold text-white tracking-tight uppercase">Deposit & Liquidity Addresses</h2>
         </div>
 
         <div className="space-y-3">
@@ -137,14 +117,6 @@ export default function HouseBalancePage() {
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.06] text-neutral-300">
                       {wallet.symbol}
                     </span>
-                    <span className="text-[10px] font-mono text-neutral-400 bg-white/[0.03] px-2 py-0.5 rounded-full border border-white/[0.06]">
-                      {wallet.network}
-                    </span>
-                    {wallet.priceUsd > 0 && (
-                      <span className="text-[10px] font-mono text-neutral-500 hidden sm:inline">
-                        1 {wallet.symbol} ≈ ${wallet.priceUsd.toLocaleString()}
-                      </span>
-                    )}
                   </div>
                   <div className="flex items-center gap-2 mt-1.5">
                     <span className="text-xs text-neutral-400 font-mono break-all max-w-xs md:max-w-lg select-all">
@@ -179,7 +151,7 @@ export default function HouseBalancePage() {
                   {wallet.balance} {wallet.symbol}
                 </div>
                 <div className="text-xs text-neutral-400 font-mono">
-                  ≈ ${wallet.balanceUsd.toFixed(2)} USD
+                  ${wallet.balanceUsd.toFixed(2)} USD
                 </div>
               </div>
             </div>

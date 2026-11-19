@@ -20,44 +20,24 @@ export interface Loan {
   completedAt?: string;
 }
 
+// Only real active loans from NOWPayments & Discord bot records
 export const INITIAL_LOANS: Loan[] = [
   {
     id: "LOAN-1079074717799030824",
     userId: "1079074717799030824",
-    userName: "PlayerOne",
+    userName: "sotarium",
     userAvatar: "https://cdn.discordapp.com/embed/avatars/0.png",
     principal: 1000,
     interestRate: 0.15,
     interestAmount: 150,
     totalDue: 1150,
-    repaidAmount: 250,
+    repaidAmount: 0,
     status: 'active',
     loanDate: "2026-11-19",
-    dueDate: "2026-11-26",
+    dueDate: "Nov 20, 2026",
     addresses: {
-      sol: "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
-      eth: "0x71C...b29",
-      ltc: "ltc1q...99k"
+      sol: "DMKA3rLfwVJagiV7jLiP4X4BCuoYDZ23h2JD3LDMU2MG",
     },
-    notes: "High roller tier"
-  },
-  {
-    id: "LOAN-98430067123984",
-    userId: "98430067123984",
-    userName: "KevVibes",
-    userAvatar: "https://cdn.discordapp.com/embed/avatars/1.png",
-    principal: 500,
-    interestRate: 0.15,
-    interestAmount: 75,
-    totalDue: 575,
-    repaidAmount: 575,
-    status: 'completed',
-    loanDate: "2026-11-15",
-    dueDate: "2026-11-22",
-    completedAt: "2026-11-18",
-    addresses: {
-      sol: "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
-    },
-    notes: "Paid in full"
+    notes: "Ticket #1573024208118743202"
   }
 ];

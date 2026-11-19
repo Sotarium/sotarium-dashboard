@@ -8,9 +8,7 @@ import {
   UploadCloud, 
   Wrench, 
   Users, 
-  BookOpen, 
   Settings, 
-  ExternalLink,
   ChevronsUpDown,
   Lock
 } from 'lucide-react';
@@ -92,7 +90,7 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* Section: Account (Products and Billing removed) */}
+        {/* Section: Account */}
         <div className="space-y-1">
           <div className="px-4 text-[11px] font-medium text-neutral-500 uppercase tracking-wider mb-1">
             Account
@@ -111,21 +109,8 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Bottom Footer Section */}
+      {/* Bottom Footer Section (Documentation removed) */}
       <div className="space-y-2 pt-4 border-t border-white/[0.04]">
-        <a
-          href="https://soteria.rip/documentation"
-          target="_blank"
-          rel="noreferrer"
-          className="w-full flex items-center justify-between px-4 py-2 rounded-full text-[13px] font-medium text-neutral-400 hover:text-white hover:bg-neutral-900/60"
-        >
-          <div className="flex items-center gap-3">
-            <BookOpen className="w-4 h-4" />
-            <span>Documentation</span>
-          </div>
-          <ExternalLink className="w-3.5 h-3.5 text-neutral-500" />
-        </a>
-
         <Link
           href="/settings"
           className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${

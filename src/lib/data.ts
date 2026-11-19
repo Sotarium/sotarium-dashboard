@@ -11,6 +11,7 @@ export interface Loan {
   status: 'active' | 'completed' | 'overdue';
   loanDate: string;
   dueDate: string;
+  ticketChannelId?: string;
   addresses: {
     sol?: string;
     eth?: string;
@@ -20,7 +21,7 @@ export interface Loan {
   completedAt?: string;
 }
 
-// Only real active loans from NOWPayments & Discord bot records
+// Real active loans with live SOL, ETH & LTC NOWPayments deposit addresses
 export const INITIAL_LOANS: Loan[] = [
   {
     id: "LOAN-1079074717799030824",
@@ -35,9 +36,12 @@ export const INITIAL_LOANS: Loan[] = [
     status: 'active',
     loanDate: "2026-11-19",
     dueDate: "Nov 20, 2026",
+    ticketChannelId: "1573024208118743202",
     addresses: {
       sol: "DMKA3rLfwVJagiV7jLiP4X4BCuoYDZ23h2JD3LDMU2MG",
+      eth: "0xD022Bf33Ac2193Ad3F4144022ea3Be63153a7b72",
+      ltc: "MBJbSvbyCLMh8VYiJGKxtpJaSK9TFWuUup"
     },
-    notes: "Ticket #1573024208118743202"
+    notes: "Active Loan Ticket"
   }
 ];

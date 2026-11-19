@@ -6,8 +6,6 @@ import {
   Home, 
   ShieldCheck, 
   UploadCloud, 
-  Wrench, 
-  Users, 
   Settings, 
   ChevronsUpDown,
   Lock
@@ -50,7 +48,7 @@ export default function Sidebar() {
           </Link>
         </div>
 
-        {/* Section: Build (Protected for Admin Discord ID: 1079074717799030824) */}
+        {/* Section: Build */}
         <div className="space-y-1">
           <div className="px-4 flex items-center justify-between text-[11px] font-medium text-neutral-500 uppercase tracking-wider mb-1">
             <span>Build</span>
@@ -84,32 +82,10 @@ export default function Sidebar() {
             <span>Roadmap</span>
             {!isAdmin && <Lock className="w-3 h-3 ml-auto text-neutral-600" />}
           </Link>
-          <div className="w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium text-neutral-400 hover:text-white hover:bg-neutral-900/60 cursor-pointer">
-            <Wrench className="w-4 h-4" />
-            <span>Utilities</span>
-          </div>
-        </div>
-
-        {/* Section: Account */}
-        <div className="space-y-1">
-          <div className="px-4 text-[11px] font-medium text-neutral-500 uppercase tracking-wider mb-1">
-            Account
-          </div>
-          <Link
-            href="/referral"
-            className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
-              pathname === '/referral' 
-                ? 'bg-white text-black font-semibold shadow-sm' 
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>Referral</span>
-          </Link>
         </div>
       </div>
 
-      {/* Bottom Footer Section (Documentation removed) */}
+      {/* Bottom Footer Section */}
       <div className="space-y-2 pt-4 border-t border-white/[0.04]">
         <Link
           href="/settings"

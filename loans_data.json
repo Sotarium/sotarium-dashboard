@@ -12,9 +12,12 @@
     "status": "active",
     "loanDate": "2026-11-19",
     "dueDate": "Nov 20, 2026",
+    "ticketChannelId": "1573024208118743202",
     "addresses": {
-      "sol": "DMKA3rLfwVJagiV7jLiP4X4BCuoYDZ23h2JD3LDMU2MG"
+      "sol": "DMKA3rLfwVJagiV7jLiP4X4BCuoYDZ23h2JD3LDMU2MG",
+      "eth": "0xD022Bf33Ac2193Ad3F4144022ea3Be63153a7b72",
+      "ltc": "MBJbSvbyCLMh8VYiJGKxtpJaSK9TFWuUup"
     },
-    "notes": "Ticket #1573024208118743202"
+    "notes": "Active Loan Ticket"
   }
 ]

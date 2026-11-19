@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { Loan } from '@/lib/data';
-import { Search, Copy, Check, Lock, ShieldAlert } from 'lucide-react';
+import { Search, Copy, Check, Lock, X, ExternalLink } from 'lucide-react';
 import { useAuth, ADMIN_DISCORD_ID } from '@/lib/auth';
 
 export default function LoansPage() {
   const { user, isAdmin, loginAsAdmin } = useAuth();
   const [loans, setLoans] = useState<Loan[]>([]);
   const [search, setSearch] = useState('');
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/loans')
@@ -18,10 +19,10 @@ export default function LoansPage() {
       .catch((err) => console.error(err));
   }, []);
 
-  const copyToClipboard = (text: string, id: string) => {
+  const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2000);
   };
 
   // Restrict to Discord user 1079074717799030824
@@ -154,27 +155,15 @@ export default function LoansPage() {
                       </div>
                     </td>
 
+                    {/* Deposit Address Button opening Modal */}
                     <td className="py-4 px-3">
-                      {loan.addresses?.sol ? (
-                        <button
-                          onClick={() => copyToClipboard(loan.addresses.sol!, loan.id)}
-                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#181818] hover:bg-[#222222] border border-white/[0.06] text-xs text-neutral-300 transition-colors font-mono"
-                        >
-                          {copiedId === loan.id ? (
-                            <>
-                              <Check className="w-3.5 h-3.5 text-white" />
-                              <span>Copied</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3.5 h-3.5 text-neutral-400" />
-                              <span>{loan.addresses.sol.slice(0, 4)}...{loan.addresses.sol.slice(-4)}</span>
-                            </>
-                          )}
-                        </button>
-                      ) : (
-                        <span className="text-xs text-neutral-500">—</span>
-                      )}
+                      <button
+                        onClick={() => setSelectedLoan(loan)}
+                        className="px-3 py-1.5 rounded-lg bg-[#181818] hover:bg-[#222222] border border-white/[0.06] hover:border-white/20 text-xs font-semibold text-neutral-200 transition-all flex items-center gap-1.5"
+                      >
+                        <span>Deposit Addresses</span>
+                        <span className="text-[10px] text-neutral-400 font-normal">(SOL/ETH/LTC)</span>
+                      </button>
                     </td>
 
                     <td className="py-4 px-3">
@@ -195,6 +184,162 @@ export default function LoansPage() {
           </table>
         </div>
       </div>
+
+      {/* Activity Detail / Deposit Address Modal Overlay (Soteria Exact Look) */}
+      {selectedLoan && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-[#121212] border border-white/[0.08] rounded-3xl p-6 shadow-2xl relative space-y-6">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold tracking-wider text-neutral-400 uppercase">
+                ACTIVITY DETAIL
+              </span>
+              <button
+                onClick={() => setSelectedLoan(null)}
+                className="w-7 h-7 rounded-full bg-neutral-800/80 hover:bg-neutral-700 flex items-center justify-center text-neutral-400 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* User Profile Badge */}
+            <div className="flex flex-col items-center justify-center text-center space-y-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={selectedLoan.userAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                alt={selectedLoan.userName}
+                className="w-16 h-16 rounded-full border-2 border-white/10 shadow-lg object-cover"
+              />
+              <h3 className="text-lg font-bold text-white tracking-tight">{selectedLoan.userName}</h3>
+            </div>
+
+            {/* Metadata Card */}
+            <div className="p-4 rounded-2xl bg-[#171717] border border-white/[0.04] space-y-2.5 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-neutral-400 font-medium">Server:</span>
+                <span className="font-mono text-white">1454106247056982130</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-neutral-400 font-medium">Watcher:</span>
+                <span className="text-white font-medium">Loan Repayment Watcher</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-neutral-400 font-medium">Time:</span>
+                <span className="text-neutral-300 font-mono">{selectedLoan.dueDate}</span>
+              </div>
+            </div>
+
+            {/* Live Crypto Payback Addresses */}
+            <div className="space-y-2.5">
+              <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider block">
+                Crypto Payback Addresses
+              </span>
+
+              {/* SOL Address */}
+              <div className="p-3 rounded-xl bg-[#171717] border border-white/[0.04] flex items-center justify-between gap-3">
+                <div className="overflow-hidden">
+                  <span className="text-[10px] text-cyan-400 font-bold uppercase block">SOLANA (SOL)</span>
+                  <span className="text-xs font-mono text-neutral-300 truncate block">
+                    {selectedLoan.addresses?.sol || 'Generating...'}
+                  </span>
+                </div>
+                {selectedLoan.addresses?.sol && (
+                  <button
+                    onClick={() => copyToClipboard(selectedLoan.addresses.sol!, 'sol')}
+                    className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs text-white shrink-0 font-medium transition-colors flex items-center gap-1.5"
+                  >
+                    {copiedKey === 'sol' ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-white" />
+                        <span>Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-neutral-400" />
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {/* ETH Address */}
+              <div className="p-3 rounded-xl bg-[#171717] border border-white/[0.04] flex items-center justify-between gap-3">
+                <div className="overflow-hidden">
+                  <span className="text-[10px] text-blue-400 font-bold uppercase block">ETHEREUM (ETH)</span>
+                  <span className="text-xs font-mono text-neutral-300 truncate block">
+                    {selectedLoan.addresses?.eth || 'Generating...'}
+                  </span>
+                </div>
+                {selectedLoan.addresses?.eth && (
+                  <button
+                    onClick={() => copyToClipboard(selectedLoan.addresses.eth!, 'eth')}
+                    className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs text-white shrink-0 font-medium transition-colors flex items-center gap-1.5"
+                  >
+                    {copiedKey === 'eth' ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-white" />
+                        <span>Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-neutral-400" />
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {/* LTC Address */}
+              <div className="p-3 rounded-xl bg-[#171717] border border-white/[0.04] flex items-center justify-between gap-3">
+                <div className="overflow-hidden">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">LITECOIN (LTC)</span>
+                  <span className="text-xs font-mono text-neutral-300 truncate block">
+                    {selectedLoan.addresses?.ltc || 'Generating...'}
+                  </span>
+                </div>
+                {selectedLoan.addresses?.ltc && (
+                  <button
+                    onClick={() => copyToClipboard(selectedLoan.addresses.ltc!, 'ltc')}
+                    className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs text-white shrink-0 font-medium transition-colors flex items-center gap-1.5"
+                  >
+                    {copiedKey === 'ltc' ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-white" />
+                        <span>Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-neutral-400" />
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button
+                onClick={() => setSelectedLoan(null)}
+                className="py-3 rounded-2xl bg-[#181818] hover:bg-[#202020] text-sm font-semibold text-white border border-white/[0.06] transition-colors"
+              >
+                Close
+              </button>
+              <a
+                href={selectedLoan.ticketChannelId ? `https://discord.com/channels/1454106247056982130/${selectedLoan.ticketChannelId}` : "https://discord.com"}
+                target="_blank"
+                rel="noreferrer"
+                className="py-3 rounded-2xl bg-white hover:bg-neutral-200 text-sm font-bold text-black transition-colors flex items-center justify-center gap-1.5"
+              >
+                <span>Jump in Discord</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

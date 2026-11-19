@@ -3,8 +3,8 @@ import "./globals.css";
 import Shell from "@/components/Shell";
 
 export const metadata: Metadata = {
-  title: "Dashboard | Sotarium",
-  description: "Your loans and repayments at a glance.",
+  title: "Dashboard",
+  description: "Dashboard Overview",
 };
 
 export default function RootLayout({

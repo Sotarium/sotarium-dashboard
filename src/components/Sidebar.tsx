@@ -7,7 +7,6 @@ import {
   ShieldCheck, 
   UploadCloud, 
   Settings, 
-  ChevronsUpDown,
   Lock,
   LogOut
 } from 'lucide-react';
@@ -21,7 +20,7 @@ export default function Sidebar() {
     <aside className="w-[260px] h-screen fixed left-0 top-0 flex flex-col justify-between p-4 bg-black select-none z-40 border-r border-white/[0.04]">
       {/* Top Section */}
       <div className="space-y-6">
-        {/* Brand / Logo */}
+        {/* Brand / Logo - No Watermark or Brand text */}
         <Link href="/" className="flex items-center gap-2.5 px-3 py-2 mt-1 group">
           <div className="w-6 h-6 relative flex items-center justify-center">
             <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-white" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -31,7 +30,6 @@ export default function Sidebar() {
               <ellipse cx="12" cy="12" rx="4" ry="9" />
             </svg>
           </div>
-          <span className="font-bold text-xl tracking-tight text-white font-sans">sotarium</span>
         </Link>
 
         {/* General Nav */}
@@ -119,7 +117,7 @@ export default function Sidebar() {
                   {user.username}
                 </div>
                 <div className="text-[10px] text-neutral-400 font-mono">
-                  {isAdmin ? 'Owner' : 'Member'}
+                  {isAdmin ? 'Admin' : 'Member'}
                 </div>
               </div>
             </div>

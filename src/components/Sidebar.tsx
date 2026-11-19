@@ -2,72 +2,186 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, CheckSquare, Zap, Shield, ChevronRight } from 'lucide-react';
+import { 
+  Home, 
+  ShieldCheck, 
+  UploadCloud, 
+  Wrench, 
+  Eye, 
+  Cpu, 
+  Code, 
+  Bot, 
+  CreditCard, 
+  Users, 
+  BookOpen, 
+  Settings, 
+  ExternalLink,
+  ChevronsUpDown,
+  Lock
+} from 'lucide-react';
 
 export default function Sidebar() {
   const pathname = usePathname();
 
-  const navItems = [
-    { name: 'Overview', href: '/', icon: LayoutDashboard },
-    { name: 'Active Loans', href: '/loans', icon: Users },
-    { name: 'Milestone Roadmap', href: '/roadmap', icon: CheckSquare },
-  ];
-
   return (
-    <aside className="w-64 border-r border-white/5 bg-[#0b0d14]/90 backdrop-blur-xl flex flex-col h-screen fixed left-0 top-0 z-30">
-      {/* Brand Header */}
-      <div className="p-6 border-b border-white/5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-            <Shield className="w-5 h-5 text-white" />
+    <aside className="w-[260px] h-screen fixed left-0 top-0 flex flex-col justify-between p-4 bg-black select-none z-40 border-r border-white/[0.04]">
+      {/* Top Section */}
+      <div className="space-y-6">
+        {/* Brand / Logo */}
+        <Link href="/" className="flex items-center gap-2.5 px-3 py-2 mt-1 group">
+          {/* Soteria Emblem */}
+          <div className="w-6 h-6 relative flex items-center justify-center">
+            <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-white" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M3.6 9h16.8" />
+              <path d="M3.6 15h16.8" />
+              <ellipse cx="12" cy="12" rx="4" ry="9" />
+            </svg>
           </div>
-          <div>
-            <h1 className="font-bold tracking-tight text-white flex items-center gap-1.5 text-base">
-              SOTARIUM <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">PRO</span>
-            </h1>
-            <p className="text-[11px] text-slate-400">Loan & Repayment Matrix</p>
+          <span className="font-bold text-xl tracking-tight text-white font-sans">soteria</span>
+        </Link>
+
+        {/* General Nav */}
+        <div className="space-y-1">
+          <Link
+            href="/"
+            className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+              pathname === '/' 
+                ? 'bg-white text-black font-semibold shadow-sm' 
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+            }`}
+          >
+            <Home className="w-4 h-4" />
+            <span>Home</span>
+          </Link>
+        </div>
+
+        {/* Section: Build */}
+        <div className="space-y-1">
+          <div className="px-4 text-[11px] font-medium text-neutral-500 uppercase tracking-wider mb-1">
+            Build
           </div>
+          <Link
+            href="/loans"
+            className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+              pathname === '/loans' 
+                ? 'bg-white text-black font-semibold shadow-sm' 
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4" />
+            <span>Loans</span>
+          </Link>
+          <Link
+            href="/roadmap"
+            className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+              pathname === '/roadmap' 
+                ? 'bg-white text-black font-semibold shadow-sm' 
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+            }`}
+          >
+            <UploadCloud className="w-4 h-4" />
+            <span>Roadmap</span>
+          </Link>
+          <div className="w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium text-neutral-400 hover:text-white hover:bg-neutral-900/60 cursor-pointer">
+            <Wrench className="w-4 h-4" />
+            <span>Utilities</span>
+          </div>
+        </div>
+
+        {/* Section: Products */}
+        <div className="space-y-1">
+          <div className="px-4 flex items-center gap-1.5 text-[11px] font-medium text-neutral-500 uppercase tracking-wider mb-1">
+            <span>Products</span>
+            <Lock className="w-3 h-3 text-neutral-600" />
+          </div>
+          <div className="w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium text-neutral-400 hover:text-white hover:bg-neutral-900/60 cursor-pointer">
+            <Eye className="w-4 h-4" />
+            <span>Oracle</span>
+          </div>
+          <div className="w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium text-neutral-400 hover:text-white hover:bg-neutral-900/60 cursor-pointer">
+            <Cpu className="w-4 h-4" />
+            <span>Genesis</span>
+          </div>
+          <div className="w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium text-neutral-400 hover:text-white hover:bg-neutral-900/60 cursor-pointer">
+            <Code className="w-4 h-4" />
+            <span>Studio</span>
+          </div>
+          <div className="w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium text-neutral-400 hover:text-white hover:bg-neutral-900/60 cursor-pointer">
+            <Bot className="w-4 h-4" />
+            <span>Discord Bot</span>
+          </div>
+        </div>
+
+        {/* Section: Account */}
+        <div className="space-y-1">
+          <div className="px-4 text-[11px] font-medium text-neutral-500 uppercase tracking-wider mb-1">
+            Account
+          </div>
+          <Link
+            href="/billing"
+            className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+              pathname === '/billing' 
+                ? 'bg-white text-black font-semibold shadow-sm' 
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+            }`}
+          >
+            <CreditCard className="w-4 h-4" />
+            <span>Billing</span>
+          </Link>
+          <Link
+            href="/referral"
+            className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+              pathname === '/referral' 
+                ? 'bg-white text-black font-semibold shadow-sm' 
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Referral</span>
+          </Link>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1.5">
-        <p className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-2">Navigation</p>
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
-                isActive
-                  ? 'bg-gradient-to-r from-cyan-500/15 to-transparent text-cyan-300 border-l-2 border-cyan-400 font-semibold'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-white/[0.03]'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-cyan-400' : 'text-slate-400 group-hover:text-slate-200'}`} />
-                <span>{item.name}</span>
-              </div>
-              {isActive && <ChevronRight className="w-3.5 h-3.5 text-cyan-400" />}
-            </Link>
-          );
-        })}
-      </nav>
+      {/* Bottom Footer Section */}
+      <div className="space-y-2 pt-4 border-t border-white/[0.04]">
+        <a
+          href="https://soteria.rip/documentation"
+          target="_blank"
+          rel="noreferrer"
+          className="w-full flex items-center justify-between px-4 py-2 rounded-full text-[13px] font-medium text-neutral-400 hover:text-white hover:bg-neutral-900/60"
+        >
+          <div className="flex items-center gap-3">
+            <BookOpen className="w-4 h-4" />
+            <span>Documentation</span>
+          </div>
+          <ExternalLink className="w-3.5 h-3.5 text-neutral-500" />
+        </a>
 
-      {/* Footer Info / Live Sync Status */}
-      <div className="p-4 m-3 rounded-2xl glass-panel border border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs font-medium text-emerald-400">NOWPayments Active</span>
-        </div>
-        <p className="text-[11px] text-slate-400 leading-relaxed">
-          SOL, ETH & LTC deposits auto-synchronize to repayment bars.
-        </p>
-        <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-500">
-          <span>Interest Rate</span>
-          <span className="text-cyan-400 font-semibold">15% FIXED</span>
+        <Link
+          href="/settings"
+          className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+            pathname === '/settings' 
+              ? 'bg-white text-black font-semibold shadow-sm' 
+              : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+          }`}
+        >
+          <Settings className="w-4 h-4" />
+          <span>Settings</span>
+        </Link>
+
+        {/* User Profile Pill */}
+        <div className="mt-3 p-2 rounded-2xl bg-neutral-900/40 hover:bg-neutral-900 border border-white/[0.04] flex items-center justify-between cursor-pointer transition-colors">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-full bg-neutral-800 text-neutral-300 font-semibold text-xs flex items-center justify-center">
+              L
+            </div>
+            <div className="leading-tight">
+              <div className="text-xs font-medium text-white truncate max-w-[130px]">locokwstasloco</div>
+              <div className="text-[11px] text-neutral-400">Free plan</div>
+            </div>
+          </div>
+          <ChevronsUpDown className="w-3.5 h-3.5 text-neutral-500" />
         </div>
       </div>
     </aside>

@@ -2,17 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Loan } from '@/lib/data';
-import { 
-  CheckSquare, 
-  Square, 
-  CheckCircle2, 
-  Clock, 
-  Trophy, 
-  Calendar, 
-  ShieldCheck, 
-  Sparkles,
-  ArrowRight
-} from 'lucide-react';
+import { Check, Square, CheckSquare } from 'lucide-react';
 
 export default function RoadmapPage() {
   const [loans, setLoans] = useState<Loan[]>([]);
@@ -56,115 +46,103 @@ export default function RoadmapPage() {
   const active = loans.filter((l) => l.status === 'active');
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Top Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-white/5">
+    <div className="space-y-6 animate-in fade-in duration-300">
+      {/* Title Header */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
-              <Trophy className="w-3.5 h-3.5" /> Milestone Tracking
-            </span>
-          </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white">Roadmap & Repayment Checklist</h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Click any checkbox to mark a borrower as repaid. Progress immediately recalculates.
+          <h1 className="text-3xl font-bold tracking-tight text-white">Roadmap</h1>
+          <p className="text-sm text-neutral-400 mt-1">
+            Check off borrowers who have paid back.
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="px-4 py-2 rounded-xl glass-panel text-xs text-slate-300 border border-white/10 flex items-center gap-2">
-            <span className="font-bold text-emerald-400">{completed.length}</span> / {loans.length} Settled
-          </div>
+        <div className="px-4 py-1.5 rounded-full bg-neutral-900 border border-white/[0.08] text-xs font-medium text-neutral-300">
+          <span className="text-white font-semibold">{completed.length}</span> of {loans.length} settled
         </div>
       </div>
 
-      {/* Checklist Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Pending Repayment List */}
-        <div className="glass-panel rounded-2xl p-6 border border-white/5">
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/5">
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-cyan-400" />
-              <h2 className="font-bold text-white text-base">Pending Repayments ({active.length})</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Pending Repayments */}
+        <div className="soteria-card p-6 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/[0.06]">
+              <h3 className="text-base font-semibold text-white">Active Debtors</h3>
+              <span className="text-xs text-neutral-500">Click to mark settled</span>
             </div>
-            <span className="text-xs text-slate-500">Click box to settle</span>
-          </div>
 
-          <div className="space-y-3">
-            {active.length === 0 ? (
-              <p className="text-sm text-slate-500 py-6 text-center">No outstanding loans! All borrowers have settled.</p>
-            ) : (
-              active.map((loan) => (
-                <div
-                  key={loan.id}
-                  onClick={() => toggleCheckmark(loan)}
-                  className="p-4 rounded-xl bg-white/[0.02] border border-white/5 hover:border-cyan-500/30 hover:bg-white/[0.04] transition-all cursor-pointer flex items-center justify-between group"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <button className="text-slate-500 group-hover:text-cyan-400 transition-colors">
-                      <Square className="w-5 h-5" />
-                    </button>
-                    <div>
-                      <div className="font-semibold text-white text-sm group-hover:text-cyan-300 transition-colors">
-                        {loan.userName}
+            <div className="space-y-2.5">
+              {active.length === 0 ? (
+                <div className="py-12 text-center text-sm text-neutral-500">
+                  No active loans pending.
+                </div>
+              ) : (
+                active.map((loan) => (
+                  <div
+                    key={loan.id}
+                    onClick={() => toggleCheckmark(loan)}
+                    className="p-4 rounded-xl bg-[#171717] hover:bg-[#1f1f1f] border border-white/[0.04] transition-all cursor-pointer flex items-center justify-between group select-none"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-md border border-neutral-600 group-hover:border-white transition-colors flex items-center justify-center">
+                        {/* Empty box */}
                       </div>
-                      <div className="text-xs text-slate-400">
-                        Owes <span className="text-white font-bold">${loan.totalDue}</span> (Principal: ${loan.principal} + ${loan.interestAmount})
+                      <div>
+                        <div className="text-sm font-medium text-white">{loan.userName}</div>
+                        <div className="text-xs text-neutral-400">
+                          Total Due: <span className="text-white font-semibold">${loan.totalDue}</span> (15% int.)
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="text-right">
-                    <span className="text-xs font-mono text-cyan-400">Due {loan.dueDate}</span>
+                    <div className="text-xs text-neutral-500 font-mono">
+                      Due: {loan.dueDate}
+                    </div>
                   </div>
-                </div>
-              ))
-            )}
+                ))
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Completed Milestones List */}
-        <div className="glass-panel rounded-2xl p-6 border border-white/5">
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/5">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <h2 className="font-bold text-white text-base">Completed Milestones ({completed.length})</h2>
+        {/* Settled / Milestones */}
+        <div className="soteria-card p-6 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/[0.06]">
+              <h3 className="text-base font-semibold text-white">Completed Milestones</h3>
+              <span className="text-xs text-neutral-400 font-medium">100% Repaid</span>
             </div>
-            <span className="text-xs text-emerald-400 font-semibold">100% Repaid</span>
-          </div>
 
-          <div className="space-y-3">
-            {completed.length === 0 ? (
-              <p className="text-sm text-slate-500 py-6 text-center">No completed milestones yet.</p>
-            ) : (
-              completed.map((loan) => (
-                <div
-                  key={loan.id}
-                  onClick={() => toggleCheckmark(loan)}
-                  className="p-4 rounded-xl bg-emerald-500/[0.03] border border-emerald-500/20 hover:border-emerald-500/40 transition-all cursor-pointer flex items-center justify-between group"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <button className="text-emerald-400">
-                      <CheckSquare className="w-5 h-5" />
-                    </button>
-                    <div>
-                      <div className="font-semibold text-slate-200 line-through text-sm">
-                        {loan.userName}
+            <div className="space-y-2.5">
+              {completed.length === 0 ? (
+                <div className="py-12 text-center text-sm text-neutral-500">
+                  No settled loans yet.
+                </div>
+              ) : (
+                completed.map((loan) => (
+                  <div
+                    key={loan.id}
+                    onClick={() => toggleCheckmark(loan)}
+                    className="p-4 rounded-xl bg-[#171717]/60 hover:bg-[#1a1a1a] border border-white/[0.04] transition-all cursor-pointer flex items-center justify-between group select-none"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-md bg-white text-black flex items-center justify-center">
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
                       </div>
-                      <div className="text-xs text-emerald-400/80 font-medium">
-                        Repaid ${loan.totalDue} in full
+                      <div>
+                        <div className="text-sm font-medium text-neutral-400 line-through">{loan.userName}</div>
+                        <div className="text-xs text-neutral-500">
+                          Repaid ${loan.totalDue} in full
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="text-right">
-                    <span className="text-xs text-slate-500 font-mono">
-                      Settled: {loan.completedAt || 'Recently'}
-                    </span>
+                    <div className="text-xs text-neutral-500 font-mono">
+                      {loan.completedAt || 'Settled'}
+                    </div>
                   </div>
-                </div>
-              ))
-            )}
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -16,7 +16,7 @@ export default function LoginPage() {
     const clientId = '1572819583318884484';
     const redirectUri = typeof window !== 'undefined'
       ? `${window.location.origin}/api/auth/callback`
-      : 'https://sotarium-dashboard.vercel.app/api/auth/callback';
+      : 'https://sotarium.vercel.app/api/auth/callback';
 
     // Direct Discord OAuth2 Authorization (Implicit Grant)
     const discordAuthUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=identify`;

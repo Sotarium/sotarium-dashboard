@@ -115,6 +115,7 @@ export default function LoansPage() {
                 const percent = Math.min(100, Math.round((loan.repaidAmount / loan.totalDue) * 100));
                 return (
                   <tr key={loan.id} className="hover:bg-white/[0.02] transition-colors">
+                    {/* Borrower column: only username, no discord id */}
                     <td className="py-4 px-3">
                       <div className="flex items-center gap-3">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -123,10 +124,7 @@ export default function LoansPage() {
                           alt={loan.userName}
                           className="w-8 h-8 rounded-full border border-white/[0.08]"
                         />
-                        <div>
-                          <div className="font-medium text-white">{loan.userName}</div>
-                          <div className="text-[11px] text-neutral-500 font-mono">ID: {loan.userId}</div>
-                        </div>
+                        <span className="font-medium text-white">{loan.userName}</span>
                       </div>
                     </td>
 
@@ -155,7 +153,7 @@ export default function LoansPage() {
                       </div>
                     </td>
 
-                    {/* Deposit Address Button opening Modal */}
+                    {/* Deposit Address Button opening Activity Detail Modal */}
                     <td className="py-4 px-3">
                       <button
                         onClick={() => setSelectedLoan(loan)}
@@ -213,7 +211,7 @@ export default function LoansPage() {
               <h3 className="text-lg font-bold text-white tracking-tight">{selectedLoan.userName}</h3>
             </div>
 
-            {/* Metadata Card */}
+            {/* Metadata Card (Server, Watcher, Time) */}
             <div className="p-4 rounded-2xl bg-[#171717] border border-white/[0.04] space-y-2.5 text-xs">
               <div className="flex justify-between items-center">
                 <span className="text-neutral-400 font-medium">Server:</span>

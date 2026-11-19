@@ -8,6 +8,8 @@ import {
   UploadCloud, 
   Settings, 
   HelpCircle,
+  Wallet,
+  Inbox,
   LogOut
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
@@ -39,7 +41,20 @@ export default function Sidebar() {
             </Link>
           )}
 
-          {/* Ask loan Tab: Visible to Everyone (Members, Admins, Owner) */}
+          {/* House Bal Tab: Publicly Visible to Everyone */}
+          <Link
+            href="/house-balance"
+            className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+              pathname === '/house-balance' 
+                ? 'bg-white text-black font-semibold shadow-sm' 
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+            }`}
+          >
+            <Wallet className="w-4 h-4" />
+            <span>House Bal</span>
+          </Link>
+
+          {/* Ask loan Tab: Visible to Everyone */}
           <Link
             href="/ask-loan"
             className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
@@ -53,12 +68,27 @@ export default function Sidebar() {
           </Link>
         </div>
 
-        {/* Build Section: Loans & Roadmap - Visible for Admin & Owner ONLY */}
+        {/* Manage Section: Requests, Loans & Roadmap - Visible for Admin & Owner ONLY */}
         {isAdmin && (
           <div className="space-y-1">
             <div className="px-4 text-[11px] font-medium text-neutral-500 uppercase tracking-wider mb-1">
               <span>Manage</span>
             </div>
+
+            {/* Requests Tab */}
+            <Link
+              href="/requests"
+              className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+                pathname === '/requests' 
+                  ? 'bg-white text-black font-semibold shadow-sm' 
+                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+              }`}
+            >
+              <Inbox className="w-4 h-4" />
+              <span>Requests</span>
+            </Link>
+
+            {/* Loans Tab */}
             <Link
               href="/loans"
               className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
@@ -70,6 +100,8 @@ export default function Sidebar() {
               <ShieldCheck className="w-4 h-4" />
               <span>Loans</span>
             </Link>
+
+            {/* Roadmap Tab */}
             <Link
               href="/roadmap"
               className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
@@ -112,7 +144,7 @@ export default function Sidebar() {
             <div className="flex items-center gap-2.5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={user.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                src={user.avatar || 'https://cdn.discordapp.com/avatars/1079074717799030824/64db63e7b0bcbe6b841ba40535473949.png?size=128'}
                 alt={user.username}
                 className="w-7 h-7 rounded-full border border-white/[0.08] object-cover"
               />

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Loan } from '@/lib/data';
-import { Search, Copy, Check, Lock, X } from 'lucide-react';
+import { Search, Copy, Check, Lock, X, ExternalLink, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
 export default function LoansPage() {
@@ -11,11 +11,27 @@ export default function LoansPage() {
   const [search, setSearch] = useState('');
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [discordAvatars, setDiscordAvatars] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetch('/api/loans')
       .then((res) => res.json())
-      .then((data) => setLoans(data))
+      .then((data) => {
+        setLoans(data);
+        // Fetch real Discord avatars for each borrower
+        data.forEach((loan: Loan) => {
+          if (loan.userId) {
+            fetch(`/api/discord-user?userId=${loan.userId}`)
+              .then((r) => r.json())
+              .then((u) => {
+                if (u?.avatarUrl) {
+                  setDiscordAvatars((prev) => ({ ...prev, [loan.userId]: u.avatarUrl }));
+                }
+              })
+              .catch(() => {});
+          }
+        });
+      })
       .catch((err) => console.error(err));
   }, []);
 
@@ -49,10 +65,10 @@ export default function LoansPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Title Header with Action Button - Cleaned banner and subtitle */}
+      {/* Title Header with Action Button */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Loans</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-white font-sans">Loans</h1>
         </div>
 
         <div className="flex items-center gap-3">
@@ -98,55 +114,64 @@ export default function LoansPage() {
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
               {filteredLoans.map((loan) => {
-                const percent = Math.min(100, Math.round((loan.repaidAmount / loan.totalDue) * 100));
+                const interest = loan.principal * 0.15;
+                const totalDue = loan.principal + interest;
+                const progress = Math.min(Math.round((loan.repaidAmount / totalDue) * 100), 100);
+                const userAvatar = discordAvatars[loan.userId] || loan.userAvatar || 'https://cdn.discordapp.com/avatars/1079074717799030824/64db63e7b0bcbe6b841ba40535473949.png?size=128';
+
                 return (
-                  <tr key={loan.id} className="hover:bg-white/[0.02] transition-colors">
-                    {/* Borrower row: only username */}
+                  <tr key={loan.id} className="hover:bg-white/[0.02] transition-colors group">
+                    {/* Borrower Column with Real Discord Avatar */}
                     <td className="py-4 px-3">
                       <div className="flex items-center gap-3">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={loan.userAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                          src={userAvatar}
                           alt={loan.userName}
-                          className="w-8 h-8 rounded-full border border-white/[0.08]"
+                          className="w-8 h-8 rounded-full border border-white/10 shadow-sm object-cover bg-neutral-800"
                         />
-                        <span className="font-medium text-white">{loan.userName}</span>
+                        <div className="font-semibold text-white text-sm">
+                          {loan.userName}
+                        </div>
                       </div>
                     </td>
 
-                    <td className="py-4 px-3 text-neutral-300 font-medium">
+                    <td className="py-4 px-3 font-medium text-white">
                       ${loan.principal.toFixed(2)}
                     </td>
 
-                    <td className="py-4 px-3 text-neutral-300 font-medium">
-                      +${loan.interestAmount.toFixed(2)}
+                    <td className="py-4 px-3 text-neutral-400">
+                      ${interest.toFixed(2)}
                     </td>
 
                     <td className="py-4 px-3 font-semibold text-white">
-                      ${loan.totalDue.toFixed(2)}
+                      ${totalDue.toFixed(2)}
                     </td>
 
-                    <td className="py-4 px-3 min-w-[180px]">
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-neutral-400">${loan.repaidAmount}</span>
-                        <span className="text-neutral-300 font-medium">{percent}%</span>
-                      </div>
-                      <div className="w-full bg-[#1e1e1e] rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className="bg-white h-full rounded-full transition-all duration-300"
-                          style={{ width: `${percent}%` }}
-                        />
+                    {/* Progress Bar & Amount */}
+                    <td className="py-4 px-3">
+                      <div className="space-y-1.5 w-44">
+                        <div className="flex justify-between text-xs">
+                          <span className="font-medium text-white">${loan.repaidAmount.toFixed(2)}</span>
+                          <span className="text-neutral-400">{progress}%</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-neutral-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-white transition-all duration-500 rounded-full"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
                       </div>
                     </td>
 
-                    {/* Deposit Address Button opening Activity Detail Modal */}
+                    {/* Deposit Address Button */}
                     <td className="py-4 px-3">
                       <button
                         onClick={() => setSelectedLoan(loan)}
-                        className="px-3 py-1.5 rounded-lg bg-[#181818] hover:bg-[#222222] border border-white/[0.06] hover:border-white/20 text-xs font-semibold text-neutral-200 transition-all flex items-center gap-1.5"
+                        className="px-3.5 py-1.5 rounded-xl bg-[#181818] hover:bg-[#252525] border border-white/[0.08] hover:border-white/20 text-xs font-semibold text-white transition-all flex items-center gap-2 shadow-sm"
                       >
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                         <span>Deposit Addresses</span>
-                        <span className="text-[10px] text-neutral-400 font-normal">(SOL/ETH/LTC)</span>
                       </button>
                     </td>
 
@@ -169,73 +194,82 @@ export default function LoansPage() {
         </div>
       </div>
 
-      {/* Activity Detail / Deposit Address Modal Overlay (Soteria Exact Look) */}
+      {/* High-End Activity Detail / Deposit Addresses Modal Overlay */}
       {selectedLoan && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-[#121212] border border-white/[0.08] rounded-3xl p-6 shadow-2xl relative space-y-6">
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-[460px] bg-[#141414] border border-white/[0.08] rounded-3xl p-6 md:p-7 shadow-2xl relative space-y-6">
+            
             {/* Modal Header */}
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold tracking-wider text-neutral-400 uppercase">
-                ACTIVITY DETAIL
-              </span>
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-xs font-bold tracking-wider text-neutral-300 uppercase">
+                  DEPOSIT CHANNELS & ACTIVITY
+                </span>
+              </div>
               <button
                 onClick={() => setSelectedLoan(null)}
-                className="w-7 h-7 rounded-full bg-neutral-800/80 hover:bg-neutral-700 flex items-center justify-center text-neutral-400 hover:text-white transition-colors"
+                className="w-8 h-8 rounded-full bg-white/[0.05] hover:bg-white/[0.1] flex items-center justify-center text-neutral-400 hover:text-white transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* User Profile Badge */}
-            <div className="flex flex-col items-center justify-center text-center space-y-2">
+            {/* Borrower Profile Header */}
+            <div className="flex items-center gap-4 p-4 rounded-2xl bg-[#181818] border border-white/[0.04]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={selectedLoan.userAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                src={discordAvatars[selectedLoan.userId] || selectedLoan.userAvatar || 'https://cdn.discordapp.com/avatars/1079074717799030824/64db63e7b0bcbe6b841ba40535473949.png?size=128'}
                 alt={selectedLoan.userName}
-                className="w-16 h-16 rounded-full border-2 border-white/10 shadow-lg object-cover"
+                className="w-14 h-14 rounded-2xl border border-white/10 shadow-md object-cover bg-neutral-900"
               />
-              <h3 className="text-lg font-bold text-white tracking-tight">{selectedLoan.userName}</h3>
-            </div>
-
-            {/* Metadata Card (Server, Watcher, Time) */}
-            <div className="p-4 rounded-2xl bg-[#171717] border border-white/[0.04] space-y-2.5 text-xs">
-              <div className="flex justify-between items-center">
-                <span className="text-neutral-400 font-medium">Server:</span>
-                <span className="font-mono text-white">1454106247056982130</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-neutral-400 font-medium">Watcher:</span>
-                <span className="text-white font-medium">Loan Repayment Watcher</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-neutral-400 font-medium">Time:</span>
-                <span className="text-neutral-300 font-mono">{selectedLoan.dueDate}</span>
-              </div>
-            </div>
-
-            {/* Live Crypto Payback Addresses */}
-            <div className="space-y-2.5">
-              <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider block">
-                Crypto Payback Addresses
-              </span>
-
-              {/* SOL Address */}
-              <div className="p-3 rounded-xl bg-[#171717] border border-white/[0.04] flex items-center justify-between gap-3">
-                <div className="overflow-hidden">
-                  <span className="text-[10px] text-cyan-400 font-bold uppercase block">SOLANA (SOL)</span>
-                  <span className="text-xs font-mono text-neutral-300 truncate block">
-                    {selectedLoan.addresses?.sol || 'Generating...'}
-                  </span>
+              <div className="leading-tight">
+                <div className="text-base font-bold text-white tracking-tight">{selectedLoan.userName}</div>
+                <div className="text-xs text-neutral-400 font-mono mt-0.5">ID: {selectedLoan.userId}</div>
+                <div className="text-[11px] text-emerald-400 font-medium mt-1 flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3" /> Active Loan Repayment Channel
                 </div>
-                {selectedLoan.addresses?.sol && (
+              </div>
+            </div>
+
+            {/* Loan Info Cards */}
+            <div className="grid grid-cols-3 gap-2.5">
+              <div className="p-3 rounded-xl bg-[#171717] border border-white/[0.04] text-center">
+                <div className="text-[10px] uppercase font-semibold text-neutral-400">Total Due</div>
+                <div className="text-sm font-bold text-white mt-0.5">${(selectedLoan.principal * 1.15).toFixed(2)}</div>
+              </div>
+              <div className="p-3 rounded-xl bg-[#171717] border border-white/[0.04] text-center">
+                <div className="text-[10px] uppercase font-semibold text-neutral-400">Repaid</div>
+                <div className="text-sm font-bold text-emerald-400 mt-0.5">${selectedLoan.repaidAmount.toFixed(2)}</div>
+              </div>
+              <div className="p-3 rounded-xl bg-[#171717] border border-white/[0.04] text-center">
+                <div className="text-[10px] uppercase font-semibold text-neutral-400">Due Date</div>
+                <div className="text-xs font-semibold text-neutral-300 mt-1 font-mono">{selectedLoan.dueDate}</div>
+              </div>
+            </div>
+
+            {/* Crypto Payback Addresses */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                <span>Direct NOWPayments Wallets</span>
+                <span className="text-[10px] text-neutral-500 font-mono">Instant Confirmation</span>
+              </div>
+
+              {/* Solana (SOL) Card */}
+              <div className="p-3.5 rounded-2xl bg-[#181818] border border-white/[0.06] hover:border-white/15 transition-all space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#00FFA3]" />
+                    <span className="text-xs font-bold text-white">Solana (SOL)</span>
+                  </div>
                   <button
-                    onClick={() => copyToClipboard(selectedLoan.addresses.sol!, 'sol')}
-                    className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs text-white shrink-0 font-medium transition-colors flex items-center gap-1.5"
+                    onClick={() => copyToClipboard(selectedLoan.addresses?.sol || '', 'sol')}
+                    className="px-3 py-1 rounded-lg bg-white/[0.08] hover:bg-white/[0.15] text-xs text-white font-medium transition-colors flex items-center gap-1.5"
                   >
                     {copiedKey === 'sol' ? (
                       <>
-                        <Check className="w-3.5 h-3.5 text-white" />
-                        <span>Copied</span>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-emerald-400">Copied</span>
                       </>
                     ) : (
                       <>
@@ -244,26 +278,27 @@ export default function LoansPage() {
                       </>
                     )}
                   </button>
-                )}
+                </div>
+                <div className="p-2 rounded-xl bg-black/40 border border-white/[0.04] text-xs font-mono text-neutral-300 select-all break-all">
+                  {selectedLoan.addresses?.sol || 'DMKA3rLfwVJagiV7jLiP4X4BCuoYDZ23h2JD3LDMU2MG'}
+                </div>
               </div>
 
-              {/* ETH Address */}
-              <div className="p-3 rounded-xl bg-[#171717] border border-white/[0.04] flex items-center justify-between gap-3">
-                <div className="overflow-hidden">
-                  <span className="text-[10px] text-blue-400 font-bold uppercase block">ETHEREUM (ETH)</span>
-                  <span className="text-xs font-mono text-neutral-300 truncate block">
-                    {selectedLoan.addresses?.eth || 'Generating...'}
-                  </span>
-                </div>
-                {selectedLoan.addresses?.eth && (
+              {/* Ethereum (ETH) Card */}
+              <div className="p-3.5 rounded-2xl bg-[#181818] border border-white/[0.06] hover:border-white/15 transition-all space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#627EEA]" />
+                    <span className="text-xs font-bold text-white">Ethereum (ETH)</span>
+                  </div>
                   <button
-                    onClick={() => copyToClipboard(selectedLoan.addresses.eth!, 'eth')}
-                    className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs text-white shrink-0 font-medium transition-colors flex items-center gap-1.5"
+                    onClick={() => copyToClipboard(selectedLoan.addresses?.eth || '', 'eth')}
+                    className="px-3 py-1 rounded-lg bg-white/[0.08] hover:bg-white/[0.15] text-xs text-white font-medium transition-colors flex items-center gap-1.5"
                   >
                     {copiedKey === 'eth' ? (
                       <>
-                        <Check className="w-3.5 h-3.5 text-white" />
-                        <span>Copied</span>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-emerald-400">Copied</span>
                       </>
                     ) : (
                       <>
@@ -272,26 +307,27 @@ export default function LoansPage() {
                       </>
                     )}
                   </button>
-                )}
+                </div>
+                <div className="p-2 rounded-xl bg-black/40 border border-white/[0.04] text-xs font-mono text-neutral-300 select-all break-all">
+                  {selectedLoan.addresses?.eth || '0xD022Bf33Ac2193Ad3F4144022ea3Be63153a7b72'}
+                </div>
               </div>
 
-              {/* LTC Address */}
-              <div className="p-3 rounded-xl bg-[#171717] border border-white/[0.04] flex items-center justify-between gap-3">
-                <div className="overflow-hidden">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase block">LITECOIN (LTC)</span>
-                  <span className="text-xs font-mono text-neutral-300 truncate block">
-                    {selectedLoan.addresses?.ltc || 'Generating...'}
-                  </span>
-                </div>
-                {selectedLoan.addresses?.ltc && (
+              {/* Litecoin (LTC) Card */}
+              <div className="p-3.5 rounded-2xl bg-[#181818] border border-white/[0.06] hover:border-white/15 transition-all space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#345D9D]" />
+                    <span className="text-xs font-bold text-white">Litecoin (LTC)</span>
+                  </div>
                   <button
-                    onClick={() => copyToClipboard(selectedLoan.addresses.ltc!, 'ltc')}
-                    className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs text-white shrink-0 font-medium transition-colors flex items-center gap-1.5"
+                    onClick={() => copyToClipboard(selectedLoan.addresses?.ltc || '', 'ltc')}
+                    className="px-3 py-1 rounded-lg bg-white/[0.08] hover:bg-white/[0.15] text-xs text-white font-medium transition-colors flex items-center gap-1.5"
                   >
                     {copiedKey === 'ltc' ? (
                       <>
-                        <Check className="w-3.5 h-3.5 text-white" />
-                        <span>Copied</span>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-emerald-400">Copied</span>
                       </>
                     ) : (
                       <>
@@ -300,25 +336,30 @@ export default function LoansPage() {
                       </>
                     )}
                   </button>
-                )}
+                </div>
+                <div className="p-2 rounded-xl bg-black/40 border border-white/[0.04] text-xs font-mono text-neutral-300 select-all break-all">
+                  {selectedLoan.addresses?.ltc || 'MBJbSvbyCLMh8VYiJGKxtpJaSK9TFWuUup'}
+                </div>
               </div>
             </div>
 
-            {/* Modal Actions */}
+            {/* Action Buttons */}
             <div className="grid grid-cols-2 gap-3 pt-2">
               <button
                 onClick={() => setSelectedLoan(null)}
-                className="py-3 rounded-2xl bg-[#181818] hover:bg-[#202020] text-sm font-semibold text-white border border-white/[0.06] transition-colors"
+                className="w-full py-3 rounded-2xl bg-neutral-900 hover:bg-neutral-800 border border-white/[0.08] text-white font-semibold text-xs transition-colors"
               >
                 Close
               </button>
+
               <a
-                href={selectedLoan.ticketChannelId ? `https://discord.com/channels/1454106247056982130/${selectedLoan.ticketChannelId}` : "https://discord.com"}
+                href="https://discord.com/channels/1454106247056982130/1573024208118743202"
                 target="_blank"
                 rel="noreferrer"
-                className="py-3 rounded-2xl bg-white hover:bg-neutral-200 text-sm font-bold text-black transition-colors flex items-center justify-center gap-1.5"
+                className="w-full py-3 rounded-2xl bg-white hover:bg-neutral-200 text-black font-semibold text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
               >
                 <span>Jump in Discord</span>
+                <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>
           </div>

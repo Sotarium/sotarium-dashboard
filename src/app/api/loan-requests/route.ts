@@ -47,3 +47,28 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Failed to create loan request' }, { status: 500 });
   }
 }
+
+export async function PATCH(req: Request) {
+  try {
+    const body = await req.json();
+    const { id, status } = body;
+
+    if (!id || !status || !['approved', 'rejected', 'pending'].includes(status)) {
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    }
+
+    const { data, error } = await supabase
+      .from('loan_requests')
+      .update({ status })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true, request: data });
+  } catch (err) {
+    console.error('Failed to update loan request:', err);
+    return NextResponse.json({ error: 'Failed to update loan request' }, { status: 500 });
+  }
+}

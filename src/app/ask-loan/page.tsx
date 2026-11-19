@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
-import { Send, Clock, CheckCircle2, XCircle, ArrowUpRight } from 'lucide-react';
+import { Send, Clock, CheckCircle2, XCircle, ChevronDown, Check } from 'lucide-react';
 
 interface LoanRequest {
   id: string;
@@ -13,10 +13,65 @@ interface LoanRequest {
   created_at: string;
 }
 
+const CRYPTO_OPTIONS = [
+  {
+    symbol: 'SOL',
+    name: 'Solana',
+    icon: (
+      <svg className="w-5 h-5" viewBox="0 0 128 128" fill="none">
+        <circle cx="64" cy="64" r="64" fill="#141414"/>
+        <path d="M36 86.8h46.6c2.5 0 4.8 1.5 5.8 3.8l5.8 13.5c1.4 3.2-.9 6.9-4.5 6.9H47.1c-2.5 0-4.8-1.5-5.8-3.8L35.5 93.7c-1.4-3.2 1-6.9 4.5-6.9h-4z" fill="url(#sol_g1)"/>
+        <path d="M36 57.1h46.6c2.5 0 4.8 1.5 5.8 3.8l5.8 13.5c1.4 3.2-.9 6.9-4.5 6.9H47.1c-2.5 0-4.8-1.5-5.8-3.8L35.5 64c-1.4-3.2 1-6.9 4.5-6.9h-4z" fill="url(#sol_g2)"/>
+        <path d="M36 27.4h46.6c2.5 0 4.8 1.5 5.8 3.8l5.8 13.5c1.4 3.2-.9 6.9-4.5 6.9H47.1c-2.5 0-4.8-1.5-5.8-3.8L35.5 34.3c-1.4-3.2 1-6.9 4.5-6.9h-4z" fill="url(#sol_g3)"/>
+        <defs>
+          <linearGradient id="sol_g1" x1="36" y1="99" x2="94" y2="99" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#00FFA3"/>
+            <stop offset="1" stopColor="#DC1FFF"/>
+          </linearGradient>
+          <linearGradient id="sol_g2" x1="36" y1="69" x2="94" y2="69" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#00FFA3"/>
+            <stop offset="1" stopColor="#DC1FFF"/>
+          </linearGradient>
+          <linearGradient id="sol_g3" x1="36" y1="40" x2="94" y2="40" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#00FFA3"/>
+            <stop offset="1" stopColor="#DC1FFF"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    ),
+    badge: 'Fast & Cheap'
+  },
+  {
+    symbol: 'ETH',
+    name: 'Ethereum',
+    icon: (
+      <svg className="w-5 h-5" viewBox="0 0 256 417" fill="none">
+        <path d="M127.96 0l-2.79 9.5v275.67l2.79 2.79 127.96-75.64L127.96 0z" fill="#627EEA"/>
+        <path d="M127.96 0L0 212.32l127.96 75.64V0z" fill="#8C9FDE"/>
+        <path d="M127.96 312.18l-1.57 1.92v97.43l1.57 4.57 128.04-180.2L127.96 312.18z" fill="#627EEA"/>
+        <path d="M127.96 416.1V312.18L0 235.9 127.96 416.1z" fill="#8C9FDE"/>
+      </svg>
+    ),
+    badge: 'ERC-20'
+  },
+  {
+    symbol: 'LTC',
+    name: 'Litecoin',
+    icon: (
+      <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="16" fill="#345D9D"/>
+        <path d="M10.5 8h4.2l-2.1 8h5.2l-.7 2.6H12l-2 7.4h11.2l-.7 2.6H6.6l4-15h2.1l.8-3.1h-2.1l.6-2.5z" fill="#FFFFFF"/>
+      </svg>
+    ),
+    badge: 'Native LTC'
+  }
+];
+
 export default function AskLoanPage() {
   const { user } = useAuth();
   const [amount, setAmount] = useState('');
-  const [cryptoCurrency, setCryptoCurrency] = useState('SOL');
+  const [selectedCrypto, setSelectedCrypto] = useState(CRYPTO_OPTIONS[0]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [requests, setRequests] = useState<LoanRequest[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,7 +101,7 @@ export default function AskLoanPage() {
           userId: user.id,
           userName: user.username,
           amount: parseFloat(amount),
-          cryptoCurrency,
+          cryptoCurrency: selectedCrypto.symbol,
           reason,
         }),
       });
@@ -90,33 +145,96 @@ export default function AskLoanPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Amount Input with clean styling & no default spinners */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-neutral-300">Principal Amount ($ USD)</label>
-              <input
-                type="number"
-                min="10"
-                step="any"
-                placeholder="e.g. 100"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                required
-                className="w-full px-4 py-3 rounded-2xl bg-[#171717] border border-white/[0.06] text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-400 transition-colors"
-              />
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 font-semibold text-sm">$</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="100.00"
+                  value={amount}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9.]/g, '');
+                    setAmount(val);
+                  }}
+                  required
+                  className="w-full pl-8 pr-4 py-3 rounded-2xl bg-[#171717] border border-white/[0.08] text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white/30 transition-all shadow-inner"
+                />
+              </div>
             </div>
 
-            <div className="space-y-1.5">
+            {/* Custom High-End Crypto Payout Selector */}
+            <div className="space-y-1.5 relative">
               <label className="text-xs font-semibold text-neutral-300">Payout Cryptocurrency</label>
-              <select
-                value={cryptoCurrency}
-                onChange={(e) => setCryptoCurrency(e.target.value)}
-                className="w-full px-4 py-3 rounded-2xl bg-[#171717] border border-white/[0.06] text-sm text-white focus:outline-none focus:border-neutral-400 transition-colors"
+              
+              <div 
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="w-full px-4 py-2.5 rounded-2xl bg-[#171717] border border-white/[0.08] hover:border-white/20 text-sm text-white flex items-center justify-between cursor-pointer transition-all select-none shadow-sm"
               >
-                <option value="SOL">Solana (SOL)</option>
-                <option value="ETH">Ethereum (ETH)</option>
-                <option value="LTC">Litecoin (LTC)</option>
-              </select>
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-full bg-white/[0.04] flex items-center justify-center shrink-0">
+                    {selectedCrypto.icon}
+                  </div>
+                  <div className="text-left">
+                    <div className="font-semibold text-xs text-white leading-tight">
+                      {selectedCrypto.name} <span className="text-neutral-400 font-mono">({selectedCrypto.symbol})</span>
+                    </div>
+                    <div className="text-[10px] text-neutral-400 leading-tight">
+                      {selectedCrypto.badge}
+                    </div>
+                  </div>
+                </div>
+
+                <ChevronDown className={`w-4 h-4 text-neutral-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180 text-white' : ''}`} />
+              </div>
+
+              {/* Dropdown Menu */}
+              {isDropdownOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setIsDropdownOpen(false)}
+                  />
+                  <div className="absolute left-0 right-0 top-full mt-2 bg-[#171717] border border-white/[0.1] rounded-2xl p-1.5 shadow-2xl z-50 space-y-1 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
+                    {CRYPTO_OPTIONS.map((crypto) => (
+                      <div
+                        key={crypto.symbol}
+                        onClick={() => {
+                          setSelectedCrypto(crypto);
+                          setIsDropdownOpen(false);
+                        }}
+                        className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl cursor-pointer transition-colors ${
+                          selectedCrypto.symbol === crypto.symbol
+                            ? 'bg-white/10 text-white'
+                            : 'hover:bg-white/[0.05] text-neutral-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-7 h-7 rounded-full bg-white/[0.04] flex items-center justify-center shrink-0">
+                            {crypto.icon}
+                          </div>
+                          <div className="text-left">
+                            <div className="text-xs font-semibold text-white">
+                              {crypto.name} <span className="text-neutral-400 font-mono">({crypto.symbol})</span>
+                            </div>
+                            <div className="text-[10px] text-neutral-400">
+                              {crypto.badge}
+                            </div>
+                          </div>
+                        </div>
+
+                        {selectedCrypto.symbol === crypto.symbol && (
+                          <Check className="w-4 h-4 text-emerald-400" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -181,7 +299,7 @@ export default function AskLoanPage() {
                     <td className="py-3 px-3 font-semibold text-white">
                       ${req.amount.toFixed(2)}
                     </td>
-                    <td className="py-3 px-3 text-xs text-neutral-300 font-mono">
+                    <td className="py-3 px-3 text-xs text-neutral-300 font-mono font-semibold">
                       {req.crypto_currency}
                     </td>
                     <td className="py-3 px-3 text-xs font-semibold text-white">

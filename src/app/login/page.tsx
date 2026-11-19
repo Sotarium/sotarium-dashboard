@@ -37,25 +37,9 @@ export default function LoginPage() {
     <div className="min-h-screen w-full bg-black flex flex-col justify-between p-6 select-none font-sans text-white">
       {/* Top Navbar */}
       <header className="w-full flex items-center justify-between max-w-6xl mx-auto py-2">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-7 h-7 relative flex items-center justify-center">
-            <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-white" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M3.6 9h16.8" />
-              <path d="M3.6 15h16.8" />
-              <ellipse cx="12" cy="12" rx="4" ry="9" />
-            </svg>
-          </div>
-        </Link>
-
+        <div />
         <div className="flex items-center gap-4">
           <span className="text-sm font-medium text-neutral-400">Log in</span>
-          <button 
-            onClick={handleDiscordOAuth}
-            className="px-4 py-2 rounded-full bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition-colors"
-          >
-            Get started
-          </button>
         </div>
       </header>
 

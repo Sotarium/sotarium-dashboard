@@ -20,17 +20,7 @@ export default function Sidebar() {
     <aside className="w-[260px] h-screen fixed left-0 top-0 flex flex-col justify-between p-4 bg-black select-none z-40 border-r border-white/[0.04]">
       {/* Top Section */}
       <div className="space-y-6">
-        {/* Brand / Logo - No Watermark or Brand text */}
-        <Link href="/" className="flex items-center gap-2.5 px-3 py-2 mt-1 group">
-          <div className="w-6 h-6 relative flex items-center justify-center">
-            <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-white" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M3.6 9h16.8" />
-              <path d="M3.6 15h16.8" />
-              <ellipse cx="12" cy="12" rx="4" ry="9" />
-            </svg>
-          </div>
-        </Link>
+        <div className="pt-2" />
 
         {/* General Nav */}
         <div className="space-y-1">

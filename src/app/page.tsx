@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { Loan } from '@/lib/data';
-import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
 
 export default function OverviewPage() {
   const [loans, setLoans] = useState<Loan[]>([]);
@@ -17,6 +15,7 @@ export default function OverviewPage() {
 
   const totalPrincipal = loans.reduce((acc, l) => acc + l.principal, 0);
   const totalRepaid = loans.reduce((acc, l) => acc + l.repaidAmount, 0);
+  const totalOutstanding = loans.reduce((acc, l) => acc + (l.totalDue - l.repaidAmount), 0);
   const activeLoans = loans.filter((l) => l.status === 'active').length;
   const totalLoansCount = loans.length;
 
@@ -50,77 +49,58 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      {/* Main Grid: Chart & Get Started List */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Card: Activity Chart Area */}
-        <div className="lg:col-span-2 soteria-card p-6 flex flex-col justify-between min-h-[300px]">
+      {/* Full Width Payback Activity Graph Container */}
+      <div className="soteria-card p-6 space-y-6">
+        <div className="flex items-center justify-between">
           <div>
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-semibold text-white">Loan activity</h3>
-                <p className="text-xs text-neutral-400 mt-0.5">Last 7 days</p>
-              </div>
-              <div className="text-2xl font-medium text-white">{activeLoans}</div>
-            </div>
+            <h3 className="text-base font-semibold text-white">Payback activity</h3>
+            <p className="text-xs text-neutral-400 mt-0.5">Recorded crypto payback volume over the last 7 days</p>
           </div>
-
-          {/* Minimal Line Chart Representation */}
-          <div className="h-44 w-full flex flex-col justify-end pt-6">
-            <div className="w-full border-b border-neutral-800 relative h-32 flex items-end">
-              {/* Subtle line graph baseline */}
-              <div className="absolute inset-x-0 bottom-0 h-px bg-neutral-700/60" />
-              <div className="w-full flex justify-between items-end px-2">
-                {['Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu'].map((day, idx) => (
-                  <div key={day} className="flex flex-col items-center gap-2">
-                    {idx === 6 && (
-                      <div className="w-2 h-2 rounded-full bg-white shadow-sm ring-4 ring-neutral-800" />
-                    )}
-                    <span className="text-[11px] text-neutral-500 font-medium">{day}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-white">${totalRepaid.toFixed(2)}</div>
+            <span className="text-[11px] text-neutral-500 uppercase tracking-wider">Total Repaid</span>
           </div>
         </div>
 
-        {/* Right Card: Get Started / Quick Actions */}
-        <div className="soteria-card p-6 flex flex-col">
-          <h3 className="text-base font-semibold text-white">Get started</h3>
-          <p className="text-xs text-neutral-400 mt-0.5 mb-5">Pick up where most people begin</p>
+        {/* Minimalist Line Chart Area */}
+        <div className="h-64 w-full flex flex-col justify-end pt-8">
+          <div className="w-full border-b border-neutral-800 relative h-48 flex items-end">
+            {/* Horizontal baseline and grid line */}
+            <div className="absolute inset-x-0 bottom-0 h-px bg-neutral-800" />
+            <div className="absolute inset-x-0 bottom-24 h-px border-b border-dashed border-neutral-900" />
+            
+            {/* SVG Trend Line */}
+            <svg className="w-full h-full overflow-visible absolute inset-0" preserveAspectRatio="none" viewBox="0 0 700 160">
+              <defs>
+                <linearGradient id="paybackGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#ffffff" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+              <path
+                d="M 20 150 Q 150 148, 250 135 T 450 110 T 680 90"
+                fill="none"
+                stroke="#ffffff"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+              <path
+                d="M 20 150 Q 150 148, 250 135 T 450 110 T 680 90 L 680 160 L 20 160 Z"
+                fill="url(#paybackGradient)"
+              />
+            </svg>
 
-          <div className="space-y-3 flex-1">
-            <Link
-              href="/loans"
-              className="p-4 rounded-2xl bg-[#171717] hover:bg-[#1f1f1f] border border-white/[0.04] transition-all flex items-center justify-between group"
-            >
-              <div>
-                <h4 className="text-sm font-semibold text-white group-hover:text-neutral-100">Loans Directory</h4>
-                <p className="text-xs text-neutral-400 mt-0.5">Manage active borrowers & due amounts</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-neutral-500 group-hover:text-white transition-colors" />
-            </Link>
-
-            <Link
-              href="/roadmap"
-              className="p-4 rounded-2xl bg-[#171717] hover:bg-[#1f1f1f] border border-white/[0.04] transition-all flex items-center justify-between group"
-            >
-              <div>
-                <h4 className="text-sm font-semibold text-white group-hover:text-neutral-100">Milestone Roadmap</h4>
-                <p className="text-xs text-neutral-400 mt-0.5">Check off paid loans & track milestones</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-neutral-500 group-hover:text-white transition-colors" />
-            </Link>
-
-            <Link
-              href="/billing"
-              className="p-4 rounded-2xl bg-[#171717] hover:bg-[#1f1f1f] border border-white/[0.04] transition-all flex items-center justify-between group"
-            >
-              <div>
-                <h4 className="text-sm font-semibold text-white group-hover:text-neutral-100">Balance & Payback</h4>
-                <p className="text-xs text-neutral-400 mt-0.5">NOWPayments crypto deposit balances</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-neutral-500 group-hover:text-white transition-colors" />
-            </Link>
+            {/* Days on X Axis */}
+            <div className="w-full flex justify-between items-end px-4 z-10 relative">
+              {['Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu'].map((day, idx) => (
+                <div key={day} className="flex flex-col items-center gap-2">
+                  {idx === 6 && (
+                    <div className="w-2.5 h-2.5 rounded-full bg-white shadow-md ring-4 ring-neutral-800" />
+                  )}
+                  <span className="text-xs text-neutral-500 font-medium">{day}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Loan } from '@/lib/data';
-import { Search, Copy, Check, Lock, X, ExternalLink, ShieldCheck, Clock } from 'lucide-react';
+import { Search, Lock } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
 function TimeLeftCell({ dueDate, loanDate, status }: { dueDate: string; loanDate: string; status: string }) {
@@ -17,7 +17,7 @@ function TimeLeftCell({ dueDate, loanDate, status }: { dueDate: string; loanDate
 
   if (status === 'completed') {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#00E676]/15 text-[#00E676] border border-[#00E676]/30">
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
         Paid
       </span>
     );
@@ -50,10 +50,9 @@ function TimeLeftCell({ dueDate, loanDate, status }: { dueDate: string; loanDate
     const timeStr = d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m ${s}s`;
 
     return (
-      <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-[#FF2D55]" title={`Overdue by ${timeStr}`}>
-        <Clock className="w-3.5 h-3.5 text-[#FF2D55] shrink-0 animate-pulse" />
-        <span>Overdue ({timeStr})</span>
-      </div>
+      <span className="text-xs font-semibold font-sans text-red-400" title={`Overdue by ${timeStr}`}>
+        Overdue ({timeStr})
+      </span>
     );
   }
 
@@ -74,12 +73,11 @@ function TimeLeftCell({ dueDate, loanDate, status }: { dueDate: string; loanDate
   const isWarning = diff < 24 * 60 * 60 * 1000;
 
   return (
-    <div className="flex items-center gap-1.5 text-xs font-mono font-semibold">
-      <Clock className={`w-3.5 h-3.5 shrink-0 ${isUrgent ? 'text-[#FF2D55] animate-pulse' : isWarning ? 'text-amber-400' : 'text-neutral-400'}`} />
-      <span className={isUrgent ? 'text-[#FF2D55]' : isWarning ? 'text-amber-300' : 'text-neutral-200'}>
-        {countdownText}
-      </span>
-    </div>
+    <span className={`text-xs font-semibold font-sans tracking-tight ${
+      isUrgent ? 'text-red-400' : isWarning ? 'text-amber-400' : 'text-neutral-200'
+    }`}>
+      {countdownText}
+    </span>
   );
 }
 
@@ -87,8 +85,6 @@ export default function LoansPage() {
   const { user, isOwner, isLoaded } = useAuth();
   const [loans, setLoans] = useState<Loan[]>([]);
   const [search, setSearch] = useState('');
-  const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [discordAvatars, setDiscordAvatars] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -112,12 +108,6 @@ export default function LoansPage() {
       })
       .catch((err) => console.error(err));
   }, []);
-
-  const copyToClipboard = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 2000);
-  };
 
   // Guard while auth state is loading
   if (!isLoaded) {
@@ -203,8 +193,8 @@ export default function LoansPage() {
 
                 return (
                   <tr key={loan.id} className="hover:bg-white/[0.02] transition-colors group">
-                    {/* Borrower Column with Real Discord Avatar - Click to view deposit details */}
-                    <td className="py-4 px-3 cursor-pointer" onClick={() => setSelectedLoan(loan)} title="Click to view addresses & ticket">
+                    {/* Borrower Column with Real Discord Avatar */}
+                    <td className="py-4 px-3">
                       <div className="flex items-center gap-3">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -213,7 +203,7 @@ export default function LoansPage() {
                           className="w-8 h-8 rounded-full border border-white/10 shadow-sm object-cover bg-neutral-800"
                           onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
                         />
-                        <div className="font-semibold text-white text-sm hover:underline">
+                        <div className="font-semibold text-white text-sm">
                           {loan.userName}
                         </div>
                       </div>
@@ -270,179 +260,6 @@ export default function LoansPage() {
           </table>
         </div>
       </div>
-
-      {/* High-End Activity Detail / Deposit Addresses Modal Overlay */}
-      {selectedLoan && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-[460px] bg-[#141414] border border-white/[0.08] rounded-3xl p-6 md:p-7 shadow-2xl relative space-y-6">
-            
-            {/* Modal Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-              <span className="text-xs font-bold tracking-wider text-neutral-300 uppercase">
-                DEPOSIT CHANNELS & ACTIVITY
-              </span>
-              <button
-                onClick={() => setSelectedLoan(null)}
-                className="w-8 h-8 rounded-full bg-white/[0.05] hover:bg-white/[0.1] flex items-center justify-center text-neutral-400 hover:text-white transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Borrower Profile Header */}
-            <div className="flex items-center gap-4 p-4 rounded-2xl bg-[#181818] border border-white/[0.04]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={discordAvatars[selectedLoan.userId] || selectedLoan.userAvatar || 'https://cdn.discordapp.com/avatars/1079074717799030824/64db63e7b0bcbe6b841ba40535473949.png?size=128'}
-                alt={selectedLoan.userName}
-                className="w-14 h-14 rounded-2xl border border-white/10 shadow-md object-cover bg-neutral-900"
-              />
-              <div className="leading-tight">
-                <div className="text-base font-bold text-white tracking-tight">{selectedLoan.userName}</div>
-                <div className="text-xs text-neutral-400 font-mono mt-0.5">ID: {selectedLoan.userId}</div>
-                <div className="text-[11px] text-emerald-400 font-medium mt-1 flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" /> Active Loan Repayment Channel
-                </div>
-              </div>
-            </div>
-
-            {/* Loan Info Cards */}
-            <div className="grid grid-cols-3 gap-2.5">
-              <div className="p-3 rounded-xl bg-[#171717] border border-white/[0.04] text-center">
-                <div className="text-[10px] uppercase font-semibold text-neutral-400">Total Due</div>
-                <div className="text-sm font-bold text-white mt-0.5">${(selectedLoan.principal * 1.15).toFixed(2)}</div>
-              </div>
-              <div className="p-3 rounded-xl bg-[#171717] border border-white/[0.04] text-center">
-                <div className="text-[10px] uppercase font-semibold text-neutral-400">Repaid</div>
-                <div className="text-sm font-bold text-emerald-400 mt-0.5">${selectedLoan.repaidAmount.toFixed(2)}</div>
-              </div>
-              <div className="p-3 rounded-xl bg-[#171717] border border-white/[0.04] text-center">
-                <div className="text-[10px] uppercase font-semibold text-neutral-400">Due Date</div>
-                <div className="text-xs font-semibold text-neutral-300 mt-1 font-mono">{selectedLoan.dueDate}</div>
-              </div>
-            </div>
-
-            {/* Crypto Payback Addresses */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs font-semibold text-neutral-400 uppercase tracking-wider">
-                <span>Direct NOWPayments Wallets</span>
-                <span className="text-[10px] text-neutral-500 font-mono">Instant Confirmation</span>
-              </div>
-
-              {/* Solana (SOL) Card */}
-              <div className="p-3.5 rounded-2xl bg-[#181818] border border-white/[0.06] hover:border-white/15 transition-all space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/assets/sol.svg" alt="SOL" className="w-5 h-5 rounded-full shrink-0" />
-                    <span className="text-xs font-bold text-white">Solana (SOL)</span>
-                  </div>
-                  <button
-                    onClick={() => copyToClipboard(selectedLoan.addresses?.sol || 'DMKA3rLfwVJagiV7jLiP4X4BCuoYDZ23h2JD3LDMU2MG', 'sol')}
-                    className="px-3 py-1 rounded-lg bg-white/[0.08] hover:bg-white/[0.15] text-xs text-white font-medium transition-colors flex items-center gap-1.5"
-                  >
-                    {copiedKey === 'sol' ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="text-emerald-400">Copied</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5 text-neutral-400" />
-                        <span>Copy</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-                <div className="p-2 rounded-xl bg-black/40 border border-white/[0.04] text-xs font-mono text-neutral-300 select-all break-all">
-                  {selectedLoan.addresses?.sol || 'DMKA3rLfwVJagiV7jLiP4X4BCuoYDZ23h2JD3LDMU2MG'}
-                </div>
-              </div>
-
-              {/* Ethereum (ETH) Card */}
-              <div className="p-3.5 rounded-2xl bg-[#181818] border border-white/[0.06] hover:border-white/15 transition-all space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/assets/eth.svg" alt="ETH" className="w-5 h-5 rounded-full shrink-0" />
-                    <span className="text-xs font-bold text-white">Ethereum (ETH)</span>
-                    <span className="text-[10px] text-neutral-400 font-mono px-1.5 py-0.5 rounded bg-white/[0.05]">ERC-20</span>
-                  </div>
-                  <button
-                    onClick={() => copyToClipboard(selectedLoan.addresses?.eth || '0xF1b93f0Cc886be3d1D6983116b286A07117F4f0D', 'eth')}
-                    className="px-3 py-1 rounded-lg bg-white/[0.08] hover:bg-white/[0.15] text-xs text-white font-medium transition-colors flex items-center gap-1.5"
-                  >
-                    {copiedKey === 'eth' ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="text-emerald-400">Copied</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5 text-neutral-400" />
-                        <span>Copy</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-                <div className="p-2 rounded-xl bg-black/40 border border-white/[0.04] text-xs font-mono text-neutral-300 select-all break-all">
-                  {selectedLoan.addresses?.eth || '0xF1b93f0Cc886be3d1D6983116b286A07117F4f0D'}
-                </div>
-              </div>
-
-              {/* Litecoin (LTC) Card */}
-              <div className="p-3.5 rounded-2xl bg-[#181818] border border-white/[0.06] hover:border-white/15 transition-all space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/assets/ltc.svg" alt="LTC" className="w-5 h-5 rounded-full shrink-0" />
-                    <span className="text-xs font-bold text-white">Litecoin (LTC)</span>
-                  </div>
-                  <button
-                    onClick={() => copyToClipboard(selectedLoan.addresses?.ltc || 'MAVKtFcudkZ7LDavCLTS6PAacHhTmqVWo6', 'ltc')}
-                    className="px-3 py-1 rounded-lg bg-white/[0.08] hover:bg-white/[0.15] text-xs text-white font-medium transition-colors flex items-center gap-1.5"
-                  >
-                    {copiedKey === 'ltc' ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="text-emerald-400">Copied</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5 text-neutral-400" />
-                        <span>Copy</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-                <div className="p-2 rounded-xl bg-black/40 border border-white/[0.04] text-xs font-mono text-neutral-300 select-all break-all">
-                  {selectedLoan.addresses?.ltc || 'MAVKtFcudkZ7LDavCLTS6PAacHhTmqVWo6'}
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <button
-                onClick={() => setSelectedLoan(null)}
-                className="w-full py-3 rounded-2xl bg-neutral-900 hover:bg-neutral-800 border border-white/[0.08] text-white font-semibold text-xs transition-colors"
-              >
-                Close
-              </button>
-
-              <a
-                href="https://discord.com/channels/1454106247056982130/1573024208118743202"
-                target="_blank"
-                rel="noreferrer"
-                className="w-full py-3 rounded-2xl bg-white hover:bg-neutral-200 text-black font-semibold text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
-              >
-                <span>Jump in Discord</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -214,30 +214,30 @@ export default function RequestsPage() {
                       {new Date(req.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
 
-                    {/* Status with vivid green / vivid red */}
+                    {/* Status badge */}
                     <td className="py-3.5 px-3">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
                         req.status === 'approved'
-                          ? 'bg-[#00E676]/20 text-[#00E676] border border-[#00E676]/50 shadow-[0_0_8px_rgba(0,230,118,0.2)]'
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                           : req.status === 'rejected'
-                          ? 'bg-[#FF1744]/20 text-[#FF3D57] border border-[#FF1744]/50 shadow-[0_0_8px_rgba(255,23,68,0.2)]'
+                          ? 'bg-red-500/10 text-red-400 border border-red-500/20'
                           : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                       }`}>
-                        {req.status === 'approved' && <CheckCircle2 className="w-3 h-3 text-[#00E676]" />}
-                        {req.status === 'rejected' && <XCircle className="w-3 h-3 text-[#FF3D57]" />}
+                        {req.status === 'approved' && <CheckCircle2 className="w-3 h-3 text-emerald-400" />}
+                        {req.status === 'rejected' && <XCircle className="w-3 h-3 text-red-400" />}
                         {req.status === 'pending' && <Clock className="w-3 h-3 text-amber-400" />}
                         <span className="capitalize">{req.status === 'rejected' ? 'Refused' : req.status}</span>
                       </span>
                     </td>
 
-                    {/* Approve / Refuse with more vibrant green and red colors */}
+                    {/* Approve / Refuse Clean Actions (No Fluo / No Glow) */}
                     <td className="py-3.5 px-3 text-right">
                       {req.status === 'pending' ? (
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleUpdateStatus(req.id, 'approved')}
                             disabled={isProcessing === req.id}
-                            className="px-4 py-1.5 rounded-full bg-[#00E676]/25 hover:bg-[#00E676]/40 text-[#00E676] font-bold text-xs border border-[#00E676]/60 shadow-[0_0_12px_rgba(0,230,118,0.3)] transition-all disabled:opacity-50"
+                            className="px-4 py-1.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 font-semibold text-xs border border-emerald-500/25 hover:border-emerald-500/40 transition-colors disabled:opacity-50"
                           >
                             Approve
                           </button>
@@ -245,7 +245,7 @@ export default function RequestsPage() {
                           <button
                             onClick={() => handleUpdateStatus(req.id, 'rejected')}
                             disabled={isProcessing === req.id}
-                            className="px-4 py-1.5 rounded-full bg-[#FF1744]/25 hover:bg-[#FF1744]/40 text-[#FF2D55] font-bold text-xs border border-[#FF1744]/60 shadow-[0_0_12px_rgba(255,23,68,0.3)] transition-all disabled:opacity-50"
+                            className="px-4 py-1.5 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 font-semibold text-xs border border-red-500/25 hover:border-red-500/40 transition-colors disabled:opacity-50"
                           >
                             Refuse
                           </button>

@@ -290,11 +290,11 @@ export default function AskLoanPage() {
                       ${(req.amount * 1.15).toFixed(2)}
                     </td>
                     <td className="py-3 px-3">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
                         req.status === 'approved'
-                          ? 'bg-[#00E676]/20 text-[#00E676] border border-[#00E676]/50 shadow-[0_0_8px_rgba(0,230,118,0.2)]'
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                           : req.status === 'rejected'
-                          ? 'bg-[#FF1744]/20 text-[#FF2D55] border border-[#FF1744]/50 shadow-[0_0_8px_rgba(255,23,68,0.2)]'
+                          ? 'bg-red-500/10 text-red-400 border border-red-500/20'
                           : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                       }`}>
                         {req.status === 'approved' && <CheckCircle2 className="w-3 h-3" />}

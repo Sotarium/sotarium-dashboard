@@ -4,8 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
   Home, 
-  ShieldCheck, 
-  UploadCloud, 
   Coins,
   Wallet,
   Inbox,
@@ -110,19 +108,6 @@ export default function Sidebar() {
                 }}
               />
               <span>Loans</span>
-            </Link>
-
-            {/* Roadmap Tab */}
-            <Link
-              href="/roadmap"
-              className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
-                pathname === '/roadmap' 
-                  ? 'bg-white text-black font-semibold shadow-sm' 
-                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
-              }`}
-            >
-              <UploadCloud className="w-4 h-4" />
-              <span>Roadmap</span>
             </Link>
           </div>
         )}

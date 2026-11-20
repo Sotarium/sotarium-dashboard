@@ -34,9 +34,45 @@ interface LoanSummary {
   id: string;
   principal: number;
   totalDue: number;
+  repaidAmount: number;
   dueDate: string;
+  loanDate: string;
   status: string;
   userId: string;
+}
+
+function CautionIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 361.117 361.117" fill="currentColor" className={className} xmlns="http://www.w3.org/2000/svg">
+      <path d="M359.568,327.246L191.511,21.818c-2.197-3.993-6.395-6.474-10.952-6.474c-4.558,0-8.754,2.481-10.952,6.474L1.549,327.246c-2.131,3.872-2.058,8.582,0.191,12.388c2.249,3.805,6.34,6.139,10.76,6.139h336.117c4.421,0,8.512-2.334,10.761-6.139C361.627,335.828,361.699,331.118,359.568,327.246z M33.646,320.772L180.559,53.773l146.913,266.999H33.646z"/>
+      <path d="M164.894,143.085v90.351c0,8.65,7.014,15.665,15.665,15.665c8.65,0,15.665-7.015,15.665-15.665v-90.351c0-8.651-7.015-15.665-15.665-15.665C171.908,127.42,164.894,134.435,164.894,143.085z"/>
+      <path d="M180.559,265.364c-9.097,0-16.5,7.399-16.5,16.5c0,9.098,7.403,16.5,16.5,16.5c9.097,0,16.5-7.402,16.5-16.5C197.059,272.764,189.655,265.364,180.559,265.364z"/>
+    </svg>
+  );
+}
+
+function formatCountdown(ms: number): string {
+  if (ms <= 0) return 'Expired';
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+function formatDueCountdown(ms: number): string {
+  if (ms <= 0) return 'Overdue';
+  const totalSec = Math.floor(ms / 1000);
+  const d = Math.floor(totalSec / 86400);
+  const h = Math.floor((totalSec % 86400) / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (d > 0) return `${d}d ${h}h ${m}m ${s}s`;
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
 }
 
 export default function PaybackPage() {
@@ -51,6 +87,13 @@ export default function PaybackPage() {
   const [copiedAmt, setCopiedAmt] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [now, setNow] = useState(Date.now());
+
+  // Tick every second for countdowns
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   const fetchMyLoan = useCallback(async () => {
     if (!user?.id) return;
@@ -111,6 +154,16 @@ export default function PaybackPage() {
     }
   };
 
+  // Loan repayment progress bar calculation
+  const loanProgress = (() => {
+    if (!myLoan) return null;
+    const pct = myLoan.totalDue > 0
+      ? Math.min(100, Math.max(0, (myLoan.repaidAmount / myLoan.totalDue) * 100))
+      : 0;
+    const dueMs = myLoan.dueDate ? new Date(myLoan.dueDate).getTime() - now : null;
+    return { pct, dueMs };
+  })();
+
   if (submitted) {
     return (
       <div className="space-y-8 animate-in fade-in duration-300 max-w-2xl">
@@ -140,17 +193,44 @@ export default function PaybackPage() {
 
       {/* Loan Summary Card */}
       {myLoan && (
-        <div className="soteria-card p-5 flex items-center justify-between gap-4">
-          <div>
-            <div className="text-xs text-neutral-400 mb-0.5">Amount Due</div>
-            <div className="text-2xl font-bold text-white font-sans">
-              ${myLoan.totalDue.toFixed(2)}
-              <span className="text-sm text-neutral-400 font-normal ml-1.5">+15% interest</span>
+        <div className="soteria-card p-5 space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-xs text-neutral-400 mb-0.5">Amount Due</div>
+              <div className="text-2xl font-bold text-white font-sans">
+                ${myLoan.totalDue.toFixed(2)}
+                <span className="text-sm text-neutral-400 font-normal ml-1.5">+15% interest</span>
+              </div>
+            </div>
+            <div className="px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-400 shrink-0">
+              Active
             </div>
           </div>
-          <div className="px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-400 shrink-0">
-            Active
-          </div>
+
+          {/* Progress bar + countdown */}
+          {loanProgress && (
+            <div className="space-y-2">
+              <div className="w-full h-2 rounded-full bg-white/[0.06]">
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{
+                    width: `${loanProgress.pct}%`,
+                    backgroundColor: loanProgress.pct >= 100 ? '#00E823' : '#00AAE8',
+                  }}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono font-semibold" style={{ color: loanProgress.pct >= 100 ? '#00E823' : '#00AAE8' }}>
+                  ${myLoan.repaidAmount.toFixed(2)} / ${myLoan.totalDue.toFixed(2)} paid
+                </span>
+                <span className={`text-[10px] font-mono font-semibold ${
+                  loanProgress.dueMs !== null && loanProgress.dueMs <= 0 ? 'text-red-400' : 'text-neutral-500'
+                }`}>
+                  {loanProgress.dueMs === null ? '' : loanProgress.dueMs <= 0 ? '⚠ Overdue' : `⏱ ${formatDueCountdown(loanProgress.dueMs)} left`}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -226,17 +306,24 @@ export default function PaybackPage() {
             </>
           ) : (
             <div className={`soteria-card p-4 border ${selectedCoin.border} bg-gradient-to-b ${selectedCoin.color} space-y-3`}>
-              {/* Expiry warning */}
-              {payment.expiresAt && (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 w-fit">
-                  <svg viewBox="0 0 361.117 361.117" fill="currentColor" className="w-3.5 h-3.5 shrink-0 text-amber-400" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M359.568,327.246L191.511,21.818c-2.197-3.993-6.395-6.474-10.952-6.474c-4.558,0-8.754,2.481-10.952,6.474L1.549,327.246c-2.131,3.872-2.058,8.582,0.191,12.388c2.249,3.805,6.34,6.139,10.76,6.139h336.117c4.421,0,8.512-2.334,10.761-6.139C361.627,335.828,361.699,331.118,359.568,327.246z M33.646,320.772L180.559,53.773l146.913,266.999H33.646z"/>
-                    <path d="M164.894,143.085v90.351c0,8.65,7.014,15.665,15.665,15.665c8.65,0,15.665-7.015,15.665-15.665v-90.351c0-8.651-7.015-15.665-15.665-15.665C171.908,127.42,164.894,134.435,164.894,143.085z"/>
-                    <path d="M180.559,265.364c-9.097,0-16.5,7.399-16.5,16.5c0,9.098,7.403,16.5,16.5,16.5c9.097,0,16.5-7.402,16.5-16.5C197.059,272.764,189.655,265.364,180.559,265.364z"/>
-                  </svg>
-                  <span className="text-xs font-semibold text-amber-400">Address expires {new Date(payment.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-              )}
+              {/* Expiry countdown badge */}
+              {payment.expiresAt && (() => {
+                const msLeft = new Date(payment.expiresAt).getTime() - now;
+                const expired = msLeft <= 0;
+                return (
+                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full w-fit border ${
+                    expired
+                      ? 'bg-red-500/10 border-red-500/20'
+                      : 'bg-amber-500/10 border-amber-500/20'
+                  }`}>
+                    <CautionIcon className={`w-3.5 h-3.5 shrink-0 ${expired ? 'text-red-400' : 'text-amber-400'}`} />
+                    <span className={`text-xs font-semibold font-mono ${expired ? 'text-red-400' : 'text-amber-400'}`}>
+                      {expired ? 'Address Expired — Regenerate' : `Expires in ${formatCountdown(msLeft)}`}
+                    </span>
+                  </div>
+                );
+              })()}
+
               <div>
                 <div className="text-[11px] text-white font-semibold uppercase tracking-widest mb-1.5">
                   Your Unique {selectedCoin.name} Address

@@ -94,7 +94,7 @@ export async function GET() {
           interestRate: 0.15,
           interestAmount: interest,
           totalDue,
-          repaidAmount: isPaid ? principal : 0,
+          repaidAmount: isPaid ? totalDue : (parseFloat(item.amount_paid) || 0),
           status: isPaid ? 'completed' : 'active',
           loanDate: item.created_at,
           dueDate,

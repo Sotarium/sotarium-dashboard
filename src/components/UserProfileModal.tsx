@@ -78,7 +78,7 @@ export default function UserProfileModal({
           setUserData(data.user);
         }
         if (data.loans) {
-          setLoans(data.loans);
+          setLoans(data.loans.filter((l: any) => l.status !== 'rejected'));
         }
         if (data.stats) {
           setStats(data.stats);
@@ -146,13 +146,14 @@ export default function UserProfileModal({
     }
   };
 
-  // Filter loans based on active tab
+  // Filter loans based on active tab (refused/rejected loans are completely excluded)
   const displayedLoans = loans.filter((l) => {
+    if (l.status === 'rejected') return false;
     const isCompleted = l.status === 'completed' || l.status === 'repaid' || l.is_paid;
     const isApproved = l.status === 'approved' || l.status === 'active';
     if (activeTab === 'paid') return isCompleted;
     if (activeTab === 'due') return isApproved && !isCompleted;
-    return true; // 'loans' tab shows all loans (including rejected ones)
+    return true; // 'loans' tab shows all
   });
 
   const displayName = userData?.displayName || userData?.username || 'Discord User';
@@ -313,15 +314,7 @@ export default function UserProfileModal({
                           <span className="text-base font-bold text-white">
                             ${loan.amount.toFixed(2)}
                           </span>
-                          {isPaid ? (
-                            <span className="text-[11px] font-medium text-emerald-400">
-                              Paid in Full
-                            </span>
-                          ) : isRejected ? (
-                            <span className="text-[11px] font-medium text-rose-400/80">
-                              Declined ($0.00 Due)
-                            </span>
-                          ) : (
+                          {!isPaid && !isRejected && (
                             <span className="text-[11px] font-medium text-amber-400">
                               Due: ${dueAmt.toFixed(2)}
                             </span>

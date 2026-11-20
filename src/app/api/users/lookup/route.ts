@@ -75,7 +75,7 @@ export async function GET(req: Request) {
 
       if (loansErr) console.error('Loans query error:', loansErr);
 
-      const loansList = userLoans || [];
+      const loansList = (userLoans || []).filter((l) => l.status !== 'rejected');
 
       let totalLent = 0;
       let totalPaid = 0;
@@ -119,7 +119,7 @@ export async function GET(req: Request) {
           totalPaid,
           totalDue,
           paidCount: loansList.filter((l) => l.status === 'completed' || l.status === 'repaid').length,
-          dueCount: loansList.filter((l) => l.status === 'pending' || l.status === 'approved' || l.status === 'active').length,
+          dueCount: loansList.filter((l) => l.status === 'approved' || l.status === 'active').length,
         },
       });
     }
@@ -180,7 +180,7 @@ export async function GET(req: Request) {
         displayName: u.username,
         avatarUrl: u.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png',
         role: u.role || 'member',
-        totalLoans: uLoans.length,
+        totalLoans: uLoans.filter((l) => l.status !== 'rejected').length,
         totalLent,
         totalPaid,
         totalDue,
@@ -219,7 +219,7 @@ export async function GET(req: Request) {
           displayName: l.user_name || 'Borrower',
           avatarUrl: 'https://cdn.discordapp.com/embed/avatars/0.png',
           role: 'member',
-          totalLoans: uLoans.length,
+          totalLoans: uLoans.filter((l) => l.status !== 'rejected').length,
           totalLent,
           totalPaid,
           totalDue,

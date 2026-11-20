@@ -5,15 +5,9 @@ import { useRouter } from 'next/navigation';
 import { 
   Search, 
   User, 
-  Coins, 
-  Clock, 
-  CheckCircle2, 
-  AlertCircle, 
   Loader2, 
-  ArrowRight,
-  Shield,
-  RefreshCw,
-  X
+  RefreshCw, 
+  X 
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import UserProfileModal, { UserProfileData } from '@/components/UserProfileModal';
@@ -125,18 +119,9 @@ export default function UserSearchPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.06] pb-6">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-white">
-              Borrower Search
-            </h1>
-            <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-              <Shield className="w-3 h-3" />
-              OWNER ONLY
-            </span>
-          </div>
-          <p className="text-neutral-400 text-sm mt-1">
-            Search any borrower or Discord ID to inspect profile cards, total borrowed, paid back, and pending dues.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-white">
+            Borrower Search
+          </h1>
         </div>
 
         <button
@@ -157,7 +142,7 @@ export default function UserSearchPage() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by Discord Snowflake ID (e.g. 897149488928555049) or username..."
+            placeholder="Search by discord user"
             className="w-full bg-[#121214] border border-white/[0.08] rounded-2xl pl-12 pr-28 py-3.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white/30 transition-all shadow-inner"
           />
           {query && (
@@ -270,37 +255,25 @@ export default function UserSearchPage() {
                   </div>
                 </div>
 
-                {/* Middle: Discord ID Pill */}
-                <div className="hidden md:flex items-center bg-black/40 border border-white/[0.04] px-3 py-1.5 rounded-xl text-xs font-mono text-neutral-400">
-                  <span className="text-neutral-500 mr-2 text-[11px] font-sans font-medium">ID:</span>
-                  <span>{u.id}</span>
-                </div>
-
-                {/* Right: Metrics & Arrow */}
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-white/[0.03] border border-white/[0.05] px-2.5 py-1 rounded-xl text-center">
-                      <span className="text-[9px] text-neutral-500 block uppercase font-medium">Loans</span>
-                      <span className="text-xs font-bold text-white">{u.totalLoans}</span>
-                    </div>
-
-                    <div className="bg-emerald-500/[0.04] border border-emerald-500/10 px-2.5 py-1 rounded-xl text-center">
-                      <span className="text-[9px] text-emerald-400/80 block uppercase font-medium">Paid</span>
-                      <span className="text-xs font-bold text-emerald-400">${u.totalPaid.toFixed(0)}</span>
-                    </div>
-
-                    <div className={`px-2.5 py-1 rounded-xl text-center ${
-                      u.totalDue > 0 
-                        ? 'bg-amber-500/[0.06] border border-amber-500/15 text-amber-400' 
-                        : 'bg-white/[0.02] border border-white/[0.04] text-neutral-400'
-                    }`}>
-                      <span className="text-[9px] block uppercase font-medium opacity-70">Due</span>
-                      <span className="text-xs font-bold">${u.totalDue.toFixed(0)}</span>
-                    </div>
+                {/* Right: Metrics */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="bg-white/[0.03] border border-white/[0.05] px-2.5 py-1 rounded-xl text-center">
+                    <span className="text-[9px] text-neutral-500 block uppercase font-medium">Loans</span>
+                    <span className="text-xs font-bold text-white">{u.totalLoans}</span>
                   </div>
 
-                  <div className="w-8 h-8 rounded-full bg-white/[0.04] group-hover:bg-white/10 flex items-center justify-center text-neutral-500 group-hover:text-white transition-all ml-1">
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  <div className="bg-emerald-500/[0.04] border border-emerald-500/10 px-2.5 py-1 rounded-xl text-center">
+                    <span className="text-[9px] text-emerald-400/80 block uppercase font-medium">Paid</span>
+                    <span className="text-xs font-bold text-emerald-400">${u.totalPaid.toFixed(0)}</span>
+                  </div>
+
+                  <div className={`px-2.5 py-1 rounded-xl text-center ${
+                    u.totalDue > 0 
+                      ? 'bg-amber-500/[0.06] border border-amber-500/15 text-amber-400' 
+                      : 'bg-white/[0.02] border border-white/[0.04] text-neutral-400'
+                  }`}>
+                    <span className="text-[9px] block uppercase font-medium opacity-70">Due</span>
+                    <span className="text-xs font-bold">${u.totalDue.toFixed(0)}</span>
                   </div>
                 </div>
               </div>

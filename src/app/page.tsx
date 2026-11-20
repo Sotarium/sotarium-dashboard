@@ -264,32 +264,8 @@ export default function OverviewPage() {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <h3 className="text-base font-semibold text-white">
-              {metricMode === 'payback' ? 'Payback activity' : 'Loan Volume'}
+              Payback activity
             </h3>
-            
-            {/* Metric Mode Toggle */}
-            <div className="flex items-center gap-1 bg-[#171717] p-1 rounded-lg border border-white/[0.04]">
-              <button
-                onClick={() => setMetricMode('payback')}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
-                  metricMode === 'payback'
-                    ? 'bg-white text-black shadow-sm'
-                    : 'text-neutral-400 hover:text-white'
-                }`}
-              >
-                Paybacks
-              </button>
-              <button
-                onClick={() => setMetricMode('volume')}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
-                  metricMode === 'volume'
-                    ? 'bg-white text-black shadow-sm'
-                    : 'text-neutral-400 hover:text-white'
-                }`}
-              >
-                Originations
-              </button>
-            </div>
           </div>
 
           {/* Right: Total Value + Month Calendar Selector */}

@@ -226,6 +226,17 @@ export default function PaybackPage() {
             </>
           ) : (
             <div className={`soteria-card p-4 border ${selectedCoin.border} bg-gradient-to-b ${selectedCoin.color} space-y-3`}>
+              {/* Expiry warning */}
+              {payment.expiresAt && (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 w-fit">
+                  <svg viewBox="0 0 361.117 361.117" fill="currentColor" className="w-3.5 h-3.5 shrink-0 text-amber-400" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M359.568,327.246L191.511,21.818c-2.197-3.993-6.395-6.474-10.952-6.474c-4.558,0-8.754,2.481-10.952,6.474L1.549,327.246c-2.131,3.872-2.058,8.582,0.191,12.388c2.249,3.805,6.34,6.139,10.76,6.139h336.117c4.421,0,8.512-2.334,10.761-6.139C361.627,335.828,361.699,331.118,359.568,327.246z M33.646,320.772L180.559,53.773l146.913,266.999H33.646z"/>
+                    <path d="M164.894,143.085v90.351c0,8.65,7.014,15.665,15.665,15.665c8.65,0,15.665-7.015,15.665-15.665v-90.351c0-8.651-7.015-15.665-15.665-15.665C171.908,127.42,164.894,134.435,164.894,143.085z"/>
+                    <path d="M180.559,265.364c-9.097,0-16.5,7.399-16.5,16.5c0,9.098,7.403,16.5,16.5,16.5c9.097,0,16.5-7.402,16.5-16.5C197.059,272.764,189.655,265.364,180.559,265.364z"/>
+                  </svg>
+                  <span className="text-xs font-semibold text-amber-400">Address expires {new Date(payment.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              )}
               <div>
                 <div className="text-[11px] text-white font-semibold uppercase tracking-widest mb-1.5">
                   Your Unique {selectedCoin.name} Address

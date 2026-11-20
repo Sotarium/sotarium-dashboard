@@ -75,7 +75,10 @@ export async function GET(req: Request) {
 
       if (loansErr) console.error('Loans query error:', loansErr);
 
-      const loansList = (userLoans || []).filter((l) => l.status !== 'rejected');
+      // Strictly only accepted/active/completed/repaid loans - refused/rejected loans are completely ignored
+      const loansList = (userLoans || []).filter((l) => 
+        ['approved', 'active', 'completed', 'repaid'].includes(l.status)
+      );
 
       let totalLent = 0;
       let totalPaid = 0;
@@ -153,7 +156,9 @@ export async function GET(req: Request) {
     }> = {};
 
     (allDbUsers || []).forEach((u) => {
-      const uLoans = loansByUser[u.id] || [];
+      const uLoans = (loansByUser[u.id] || []).filter((l) =>
+        ['approved', 'active', 'completed', 'repaid'].includes(l.status)
+      );
       let totalLent = 0;
       let totalPaid = 0;
       let totalDue = 0;
@@ -171,7 +176,6 @@ export async function GET(req: Request) {
           totalLent += amt;
           pendingCount++;
         }
-        // Rejected loans do NOT add to totalDue or totalLent ($0 due)
       });
 
       userMap[u.id] = {
@@ -180,7 +184,7 @@ export async function GET(req: Request) {
         displayName: u.username,
         avatarUrl: u.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png',
         role: u.role || 'member',
-        totalLoans: uLoans.filter((l) => l.status !== 'rejected').length,
+        totalLoans: uLoans.length,
         totalLent,
         totalPaid,
         totalDue,
@@ -189,10 +193,13 @@ export async function GET(req: Request) {
       };
     });
 
-    // Also include any borrowers from loan_requests not yet in users table
+    // Also include any borrowers from loan_requests not yet in users table (if they have approved loans)
     (allLoans || []).forEach((l) => {
       if (l.user_id && !userMap[l.user_id]) {
-        const uLoans = loansByUser[l.user_id] || [];
+        const uLoans = (loansByUser[l.user_id] || []).filter((item) =>
+          ['approved', 'active', 'completed', 'repaid'].includes(item.status)
+        );
+        if (uLoans.length === 0) return; // Do not show borrowers whose loans were only refused/pending
         let totalLent = 0;
         let totalPaid = 0;
         let totalDue = 0;
@@ -210,7 +217,6 @@ export async function GET(req: Request) {
             totalLent += amt;
             pendingCount++;
           }
-          // Rejected loans do NOT add to totalDue or totalLent ($0 due)
         });
 
         userMap[l.user_id] = {
@@ -219,7 +225,7 @@ export async function GET(req: Request) {
           displayName: l.user_name || 'Borrower',
           avatarUrl: 'https://cdn.discordapp.com/embed/avatars/0.png',
           role: 'member',
-          totalLoans: uLoans.filter((l) => l.status !== 'rejected').length,
+          totalLoans: uLoans.length,
           totalLent,
           totalPaid,
           totalDue,
@@ -242,7 +248,8 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.json({ users: results });
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.digest?.includes('NEXT_PRERENDER')) throw err;
     console.error('Error in users lookup:', err);
     return NextResponse.json({ error: 'Failed to lookup users' }, { status: 500 });
   }

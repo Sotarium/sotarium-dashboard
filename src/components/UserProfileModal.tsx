@@ -78,7 +78,11 @@ export default function UserProfileModal({
           setUserData(data.user);
         }
         if (data.loans) {
-          setLoans(data.loans.filter((l: any) => l.status !== 'rejected'));
+          setLoans(
+            (data.loans || []).filter((l: any) =>
+              ['approved', 'active', 'completed', 'repaid'].includes(l.status)
+            )
+          );
         }
         if (data.stats) {
           setStats(data.stats);
@@ -148,7 +152,7 @@ export default function UserProfileModal({
 
   // Filter loans based on active tab (refused/rejected loans are completely excluded)
   const displayedLoans = loans.filter((l) => {
-    if (l.status === 'rejected') return false;
+    if (!['approved', 'active', 'completed', 'repaid'].includes(l.status)) return false;
     const isCompleted = l.status === 'completed' || l.status === 'repaid' || l.is_paid;
     const isApproved = l.status === 'approved' || l.status === 'active';
     if (activeTab === 'paid') return isCompleted;
@@ -299,7 +303,6 @@ export default function UserProfileModal({
             ) : (
               displayedLoans.map((loan) => {
                 const isPaid = loan.status === 'completed' || loan.status === 'repaid' || loan.is_paid;
-                const isRejected = loan.status === 'rejected';
                 const isApproved = loan.status === 'approved' || loan.status === 'active';
                 const dueAmt = isApproved ? (loan.total_due || Math.round(loan.amount * 1.15 * 100) / 100) : 0;
 
@@ -314,7 +317,7 @@ export default function UserProfileModal({
                           <span className="text-base font-bold text-white">
                             ${loan.amount.toFixed(2)}
                           </span>
-                          {!isPaid && !isRejected && (
+                          {!isPaid && (
                             <span className="text-[11px] font-medium text-amber-400">
                               Due: ${dueAmt.toFixed(2)}
                             </span>
@@ -343,11 +346,6 @@ export default function UserProfileModal({
                             <CheckCircle2 className="w-3 h-3" />
                             Settled
                           </span>
-                        ) : isRejected ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                            <AlertCircle className="w-3 h-3" />
-                            Declined
-                          </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
                             <Clock className="w-3 h-3" />
@@ -359,7 +357,7 @@ export default function UserProfileModal({
 
                     {/* Actions row */}
                     <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/[0.04]">
-                      {!isPaid && !isRejected && (
+                      {!isPaid && (
                         <button
                           onClick={() => handleMarkAsPaid(loan.id)}
                           disabled={actionLoading === `paid-${loan.id}`}

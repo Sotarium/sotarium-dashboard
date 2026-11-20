@@ -39,6 +39,8 @@ export async function GET(req: Request) {
       query = query.in('status', ['completed', 'repaid']);
     } else if (filterMode === 'pending') {
       query = query.in('status', ['pending', 'approved', 'active']);
+    } else {
+      query = query.neq('status', 'rejected');
     }
 
     const { data, error } = await query;

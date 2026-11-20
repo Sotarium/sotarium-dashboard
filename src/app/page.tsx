@@ -110,12 +110,12 @@ export default function OverviewPage() {
       let daySum = 0;
       let dayCount = 0;
 
-      loans.forEach((loan) => {
+      issuedLoans.forEach((loan) => {
         if (!loan.created_at) return;
         const loanDate = new Date(loan.created_at);
         if (loanDate >= d && loanDate < nextD) {
           if (metricMode === 'payback') {
-            if (loan.is_paid) {
+            if (loan.is_paid || loan.status === 'completed' || loan.status === 'repaid') {
               daySum += loan.total_due || loan.amount;
               dayCount++;
             }
@@ -140,7 +140,7 @@ export default function OverviewPage() {
     }
 
     setChartData(days);
-  }, [selectedMonth, loans, metricMode]);
+  }, [selectedMonth, issuedLoans, metricMode]);
 
   // Total volume in the selected month
   const monthTotal = useMemo(() => {

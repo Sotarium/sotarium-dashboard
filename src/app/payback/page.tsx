@@ -77,12 +77,10 @@ function formatDueCountdown(ms: number): string {
 
 function SuccessAnim() {
   return (
-    <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 z-50">
-      <video
-        src="https://cdnl.iconscout.com/lottie/free/preview/free-success-animation-gif-download-4503215.mp4"
-        autoPlay muted playsInline
-        className="w-16 h-16 object-contain"
-      />
+    <span className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/40 animate-in zoom-in-50 fade-in duration-200">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-emerald-400">
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
     </span>
   );
 }
@@ -356,7 +354,7 @@ export default function PaybackPage() {
                     className="relative p-2.5 rounded-xl bg-white/[0.06] hover:bg-white/10 border border-white/[0.08] text-neutral-400 hover:text-white transition-all shrink-0 cursor-pointer"
                   >
                     {animAddr && <SuccessAnim />}
-                    {copiedAddr ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                    <Copy className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -374,7 +372,7 @@ export default function PaybackPage() {
                     className="relative p-2.5 rounded-xl bg-white/[0.06] hover:bg-white/10 border border-white/[0.08] text-neutral-400 hover:text-white transition-all shrink-0 cursor-pointer"
                   >
                     {animAmt && <SuccessAnim />}
-                    {copiedAmt ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                    <Copy className="w-4 h-4" />
                   </button>
                 </div>
               </div>

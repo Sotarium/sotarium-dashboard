@@ -9,6 +9,16 @@ interface CopyButtonProps {
   children?: React.ReactNode;
 }
 
+function SuccessAnim() {
+  return (
+    <span className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/40 animate-in zoom-in-50 fade-in duration-200">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-emerald-400">
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    </span>
+  );
+}
+
 export function CopyButton({ text, className, iconClassName = 'w-4 h-4', children }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -22,16 +32,7 @@ export function CopyButton({ text, className, iconClassName = 'w-4 h-4', childre
 
   return (
     <button onClick={handleCopy} className={`relative ${className ?? ''}`}>
-      {copied && (
-        <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 z-50">
-          <video
-            src="https://cdnl.iconscout.com/lottie/free/preview/free-success-animation-gif-download-4503215.mp4"
-            autoPlay muted playsInline
-            className="w-16 h-16 object-contain"
-            style={{ mixBlendMode: 'screen' }}
-          />
-        </span>
-      )}
+      {copied && <SuccessAnim />}
       {children ? children : <Copy className={iconClassName} />}
     </button>
   );
@@ -47,16 +48,7 @@ export function useCopy() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const AnimOverlay = copied ? (
-    <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 z-50">
-      <video
-        src="https://cdnl.iconscout.com/lottie/free/preview/free-success-animation-gif-download-4503215.mp4"
-        autoPlay muted playsInline
-        className="w-16 h-16 object-contain"
-        style={{ mixBlendMode: 'screen' }}
-      />
-    </span>
-  ) : null;
+  const AnimOverlay = copied ? <SuccessAnim /> : null;
 
   return { copied, copy, AnimOverlay, showAnim: copied };
 }

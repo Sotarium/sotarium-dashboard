@@ -210,17 +210,17 @@ export default function PaybackPage() {
 
           {/* Progress bar + countdown */}
           {loanProgress && (
-            <div className="space-y-2">
-              {/* Timer above bar */}
-              <div className="flex justify-end">
-                <span className={`text-[11px] font-mono font-semibold ${
-                  loanProgress.dueMs !== null && loanProgress.dueMs <= 0 ? 'text-red-400' : 'text-neutral-400'
+            <div className="space-y-3">
+              {/* Centered countdown */}
+              <div className="flex justify-center">
+                <span className={`text-sm font-mono font-bold tracking-widest ${
+                  loanProgress.dueMs !== null && loanProgress.dueMs <= 0 ? 'text-red-400' : 'text-white'
                 }`}>
-                  {loanProgress.dueMs === null ? '' : loanProgress.dueMs <= 0 ? '⚠ Overdue' : `⏱ ${formatDueCountdown(loanProgress.dueMs)}`}
+                  {loanProgress.dueMs === null ? '' : loanProgress.dueMs <= 0 ? '⚠ Overdue' : formatDueCountdown(loanProgress.dueMs)}
                 </span>
               </div>
-              {/* Bar with % label */}
-              <div className="relative w-full h-2 rounded-full bg-white/[0.06]">
+              {/* Bar with % overlaid on it */}
+              <div className="relative w-full h-4 rounded-full bg-white/[0.06] overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-700"
                   style={{
@@ -228,7 +228,7 @@ export default function PaybackPage() {
                     backgroundColor: loanProgress.pct >= 100 ? '#00E823' : '#00AAE8',
                   }}
                 />
-                <span className="absolute right-0 -top-4 text-[10px] font-mono font-semibold text-neutral-500">
+                <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black tracking-wide text-white drop-shadow-sm" style={{ fontFamily: 'monospace' }}>
                   {loanProgress.pct.toFixed(0)}%
                 </span>
               </div>

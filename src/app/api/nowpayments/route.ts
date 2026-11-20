@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 const NP_API = 'https://api.nowpayments.io/v1';
 const NP_KEY = process.env.NOWPAYMENTS_API_KEY || '';

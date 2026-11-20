@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { OWNER_DISCORD_ID } from '@/lib/auth';
 
 export async function GET(req: Request) {

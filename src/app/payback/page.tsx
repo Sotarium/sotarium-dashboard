@@ -195,6 +195,18 @@ export default function PaybackPage() {
       {/* Loan Summary Card */}
       {myLoan && (
         <div className="soteria-card p-5 space-y-4">
+          {/* Countdown — top center */}
+          {loanProgress && (
+            <div className="flex justify-center">
+              <span className={`text-sm font-mono font-bold tabular-nums tracking-widest ${
+                loanProgress.dueMs !== null && loanProgress.dueMs <= 0 ? 'text-red-400' : 'text-white'
+              }`}>
+                {loanProgress.dueMs === null ? '' : loanProgress.dueMs <= 0 ? '⚠ Overdue' : formatDueCountdown(loanProgress.dueMs)}
+              </span>
+            </div>
+          )}
+
+          {/* Amount + Active badge */}
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="text-xs text-neutral-400 mb-0.5">Amount Due</div>
@@ -203,18 +215,8 @@ export default function PaybackPage() {
                 <span className="text-sm text-neutral-400 font-normal ml-1.5">+15% interest</span>
               </div>
             </div>
-            {/* Right side: Active badge + countdown stacked */}
-            <div className="flex flex-col items-end gap-1.5 shrink-0">
-              <div className="px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-400">
-                Active
-              </div>
-              {loanProgress && (
-                <span className={`text-xs font-mono font-bold tabular-nums ${
-                  loanProgress.dueMs !== null && loanProgress.dueMs <= 0 ? 'text-red-400' : 'text-white'
-                }`}>
-                  {loanProgress.dueMs === null ? '' : loanProgress.dueMs <= 0 ? '⚠ Overdue' : formatDueCountdown(loanProgress.dueMs)}
-                </span>
-              )}
+            <div className="px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-400 shrink-0">
+              Active
             </div>
           </div>
 

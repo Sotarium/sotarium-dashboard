@@ -1,7 +1,5 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import fs from 'fs';
-import path from 'path';
 
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
 const avatarCache: Record<string, string> = {};
@@ -49,11 +47,11 @@ export async function GET() {
     const now = Date.now();
     const scammers: ScammerEntry[] = [];
 
-    // 1. Fetch from Supabase loan_requests
+    // Fetch active/approved/overdue/scammer loans
     const { data: dbLoans, error } = await supabase
       .from('loan_requests')
       .select('*')
-      .in('status', ['overdue', 'active', 'approved']);
+      .in('status', ['overdue', 'active', 'approved', 'scammer']);
 
     if (error) console.error('Error fetching loan requests for hall of shame:', error);
 
@@ -65,20 +63,30 @@ export async function GET() {
     });
 
     for (const item of (dbLoans || [])) {
-      // Check if past due
       let dueTimestamp = 0;
       if (item.due_date) {
         const parsed = new Date(item.due_date).getTime();
         if (!isNaN(parsed)) dueTimestamp = parsed;
       }
       if (!dueTimestamp && item.created_at) {
-        // Standard grace term is 48 hours
+        // Default grace period: 48 hours from creation
         dueTimestamp = new Date(item.created_at).getTime() + 48 * 3600 * 1000;
       }
 
-      const isOverdue = item.status === 'overdue' || (dueTimestamp > 0 && dueTimestamp < now);
+      const isOverdue =
+        item.status === 'overdue' ||
+        item.status === 'scammer' ||
+        (dueTimestamp > 0 && dueTimestamp < now);
 
       if (isOverdue) {
+        // Auto-promote to 'scammer' status in Supabase if not already
+        if (item.status !== 'scammer' && item.status !== 'completed' && item.status !== 'repaid') {
+          await supabase
+            .from('loan_requests')
+            .update({ status: 'scammer' })
+            .eq('id', item.id);
+        }
+
         const avatar = await resolveAvatar(item.user_id, dbAvatarMap[item.user_id]);
         const overdueDays = Math.max(1, Math.floor((now - dueTimestamp) / (1000 * 60 * 60 * 24)));
         const amt = parseFloat(item.amount) || 0;
@@ -101,38 +109,6 @@ export async function GET() {
           status: 'scammer',
         });
       }
-    }
-
-    // 2. Fetch from local loans_data.json if present
-    const loansFilePath = path.join(process.cwd(), 'loans_data.json');
-    if (fs.existsSync(loansFilePath)) {
-      try {
-        const raw = fs.readFileSync(loansFilePath, 'utf-8');
-        const jsonLoans = JSON.parse(raw);
-        if (Array.isArray(jsonLoans)) {
-          for (const l of jsonLoans) {
-            if (l.status === 'overdue') {
-              const dueTs = l.dueDate ? new Date(l.dueDate).getTime() : now;
-              const overdueDays = Math.max(1, Math.floor((now - dueTs) / (1000 * 60 * 60 * 24)));
-              if (!scammers.some((s) => s.id === l.id || (s.userId === l.userId && s.principal === l.principal))) {
-                scammers.push({
-                  id: l.id,
-                  userId: l.userId,
-                  userName: l.userName || 'Defaulter',
-                  userAvatar: l.userAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png',
-                  principal: l.principal || 0,
-                  totalDue: l.totalDue || Math.round((l.principal || 0) * 1.15 * 100) / 100,
-                  cryptoCurrency: 'SOL',
-                  dueDate: l.dueDate || 'Past Due',
-                  overdueDays,
-                  reason: l.notes || 'Defaulted on repayment deadline',
-                  status: 'scammer',
-                });
-              }
-            }
-          }
-        }
-      } catch {}
     }
 
     const totalDefaulted = scammers.reduce((acc, s) => acc + s.totalDue, 0);

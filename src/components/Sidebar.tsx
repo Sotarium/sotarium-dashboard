@@ -95,6 +95,19 @@ export default function Sidebar() {
             <span>Ask loan</span>
           </Link>
 
+          {/* Payback Tab: Publicly Visible to Everyone */}
+          <Link
+            href="/payback"
+            className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+              pathname === '/payback' 
+                ? 'bg-white text-black font-semibold shadow-sm' 
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+            }`}
+          >
+            <TrendingUp className="w-4 h-4" />
+            <span>Payback</span>
+          </Link>
+
           {/* Hall of Shame Tab: Publicly Visible to Everyone */}
           <Link
             href="/hall-of-shame"
@@ -152,18 +165,7 @@ export default function Sidebar() {
                 }}
               />
               <span>Loans</span>
-            </Link>            {/* Payback Tab */}
-            <Link
-              href="/payback"
-              className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
-                pathname === '/payback' 
-                  ? 'bg-emerald-500 text-white font-semibold shadow-sm' 
-                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
-              }`}
-            >
-              <TrendingUp className="w-4 h-4" />
-              <span>Payback</span>
-            </Link>
+            </Link>  
 
             {/* Search Tab - Owner ONLY */}
             {isOwner && (
@@ -224,4 +226,6 @@ export default function Sidebar() {
     </aside>
   );
 }
+
+
 

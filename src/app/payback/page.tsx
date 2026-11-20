@@ -1,39 +1,24 @@
 ﻿'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Copy, Check, Loader2, ChevronRight, RefreshCw, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
 const COINS = [
   {
-    symbol: 'SOL',
-    name: 'Solana',
-    icon: '/assets/sol.svg',
-    color: 'from-purple-500/20 to-purple-600/5',
-    border: 'border-purple-500/30',
-    ring: 'ring-purple-500/30',
-    text: 'text-purple-300',
-    dot: 'bg-purple-400',
+    symbol: 'SOL', name: 'Solana', icon: '/assets/sol.svg',
+    color: 'from-purple-500/20 to-purple-600/5', border: 'border-purple-500/30',
+    ring: 'ring-purple-500/30', text: 'text-purple-300', dot: 'bg-purple-400',
   },
   {
-    symbol: 'ETH',
-    name: 'Ethereum',
-    icon: '/assets/eth.svg',
-    color: 'from-blue-500/20 to-blue-600/5',
-    border: 'border-blue-500/30',
-    ring: 'ring-blue-500/30',
-    text: 'text-blue-300',
-    dot: 'bg-blue-400',
+    symbol: 'ETH', name: 'Ethereum', icon: '/assets/eth.svg',
+    color: 'from-blue-500/20 to-blue-600/5', border: 'border-blue-500/30',
+    ring: 'ring-blue-500/30', text: 'text-blue-300', dot: 'bg-blue-400',
   },
   {
-    symbol: 'LTC',
-    name: 'Litecoin',
-    icon: '/assets/ltc.svg',
-    color: 'from-neutral-500/20 to-neutral-600/5',
-    border: 'border-neutral-500/30',
-    ring: 'ring-neutral-500/30',
-    text: 'text-neutral-300',
-    dot: 'bg-neutral-400',
+    symbol: 'LTC', name: 'Litecoin', icon: '/assets/ltc.svg',
+    color: 'from-neutral-500/20 to-neutral-600/5', border: 'border-neutral-500/30',
+    ring: 'ring-neutral-500/30', text: 'text-neutral-300', dot: 'bg-neutral-400',
   },
 ];
 
@@ -45,8 +30,18 @@ interface PaymentData {
   expiresAt?: string;
 }
 
+interface LoanSummary {
+  id: string;
+  principal: number;
+  totalDue: number;
+  dueDate: string;
+  status: string;
+  userId: string;
+}
+
 export default function PaybackPage() {
   const { user } = useAuth();
+  const [myLoan, setMyLoan] = useState<LoanSummary | null>(null);
   const [selectedCoin, setSelectedCoin] = useState<typeof COINS[0] | null>(null);
   const [amount, setAmount] = useState('');
   const [payment, setPayment] = useState<PaymentData | null>(null);
@@ -56,6 +51,20 @@ export default function PaybackPage() {
   const [copiedAmt, setCopiedAmt] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  const fetchMyLoan = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const res = await fetch('/api/loans');
+      if (res.ok) {
+        const data: LoanSummary[] = await res.json();
+        const mine = data.find((l) => l.userId === user.id && l.status !== 'completed');
+        setMyLoan(mine || null);
+      }
+    } catch { /* silent */ }
+  }, [user?.id]);
+
+  useEffect(() => { fetchMyLoan(); }, [fetchMyLoan]);
 
   const handleCopy = (text: string, type: 'addr' | 'amt') => {
     navigator.clipboard.writeText(text);
@@ -72,12 +81,7 @@ export default function PaybackPage() {
       const res = await fetch('/api/nowpayments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          coin: selectedCoin.symbol,
-          amount,
-          userId: user?.id || 'anonymous',
-          userName: user?.username || 'User',
-        }),
+        body: JSON.stringify({ coin: selectedCoin.symbol, amount, userId: user?.id || 'anonymous', userName: user?.username || 'User' }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to generate address');
@@ -134,6 +138,22 @@ export default function PaybackPage() {
     <div className="space-y-8 animate-in fade-in duration-300 max-w-2xl">
       <h1 className="text-3xl font-bold tracking-tight text-white font-sans">Payback</h1>
 
+      {/* Loan Summary Card */}
+      {myLoan && (
+        <div className="soteria-card p-5 flex items-center justify-between gap-4">
+          <div>
+            <div className="text-xs text-neutral-400 mb-0.5">Amount Due</div>
+            <div className="text-2xl font-bold text-white font-sans">
+              ${myLoan.totalDue.toFixed(2)}
+              <span className="text-sm text-neutral-400 font-normal ml-1.5">+15% interest</span>
+            </div>
+          </div>
+          <div className="px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-400 shrink-0">
+            Active
+          </div>
+        </div>
+      )}
+
       {/* Step 1 — Choose coin */}
       <div className="space-y-3">
         <div className="text-xs font-semibold text-neutral-400 uppercase tracking-widest px-1">
@@ -172,16 +192,11 @@ export default function PaybackPage() {
         <div className="relative">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 font-semibold text-sm">$</span>
           <input
-            type="number"
-            min={0.01}
-            step={0.01}
-            placeholder="0.00"
-            value={amount}
+            type="number" min={0.01} step={0.01} placeholder="0.00" value={amount}
             onChange={(e) => { setAmount(e.target.value); setPayment(null); setGenError(''); }}
             className="w-full pl-8 pr-4 py-3.5 rounded-2xl bg-[#171717] border border-white/[0.06] text-white text-lg font-bold focus:outline-none focus:border-white/30 transition-all placeholder-neutral-600"
           />
         </div>
-        <p className="text-[11px] text-neutral-500 px-1">Partial payments accepted — pay any amount, as many times as you need.</p>
       </div>
 
       {/* Step 3 — Generate unique address */}
@@ -198,11 +213,9 @@ export default function PaybackPage() {
                 disabled={generating}
                 className={`w-full py-3 rounded-2xl border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-60 ${selectedCoin.border}`}
               >
-                {generating ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Generating address...</>
-                ) : (
-                  <><RefreshCw className="w-4 h-4" /> Generate My {selectedCoin.symbol} Address</>
-                )}
+                {generating
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating address...</>
+                  : <><RefreshCw className="w-4 h-4" /> Generate My {selectedCoin.symbol} Address</>}
               </button>
               {genError && (
                 <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
@@ -213,7 +226,6 @@ export default function PaybackPage() {
             </>
           ) : (
             <div className={`soteria-card p-4 border ${selectedCoin.border} bg-gradient-to-b ${selectedCoin.color} space-y-3`}>
-              {/* Address */}
               <div>
                 <div className="text-[11px] text-neutral-300 font-semibold uppercase tracking-widest mb-1.5">
                   Your Unique {selectedCoin.name} Address
@@ -228,8 +240,6 @@ export default function PaybackPage() {
                   </button>
                 </div>
               </div>
-
-              {/* Exact crypto amount */}
               <div className="border-t border-white/[0.06] pt-3">
                 <div className="text-[11px] text-neutral-300 font-semibold uppercase tracking-widest mb-1.5">
                   Exact Amount to Send
@@ -245,13 +255,11 @@ export default function PaybackPage() {
                   </button>
                 </div>
               </div>
-
               {payment.expiresAt && (
                 <div className="text-[10px] text-neutral-500">
                   Address valid until {new Date(payment.expiresAt).toLocaleString()}
                 </div>
               )}
-
               <button onClick={() => { setPayment(null); setGenError(''); }}
                 className="text-[11px] text-neutral-500 hover:text-neutral-300 transition-colors cursor-pointer underline underline-offset-2">
                 Regenerate address

@@ -7,7 +7,8 @@ import {
   Coins,
   Wallet,
   Inbox,
-  LogOut
+  LogOut,
+  Milestone
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
@@ -118,6 +119,19 @@ export default function Sidebar() {
                 }}
               />
               <span>Loans</span>
+            </Link>
+
+            {/* Roadmile Tab */}
+            <Link
+              href="/roadmap"
+              className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+                pathname === '/roadmap' || pathname === '/roadmile'
+                  ? 'bg-white text-black font-semibold shadow-sm' 
+                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+              }`}
+            >
+              <Milestone className="w-4 h-4" />
+              <span>Roadmile</span>
             </Link>
           </div>
         )}

@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Lock, Trash2, Pencil, Loader2, X, Check, Clock } from 'lucide-react';
+import { Search, Trash2, Pencil, Loader2, X, Check, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
 interface ActiveLoan {
@@ -93,25 +93,37 @@ function EditLoanModal({
   onClose: () => void;
   onSaved: (updated: Partial<ActiveLoan> & { id: string }) => void;
 }) {
-  const [dueDate, setDueDate] = useState(() => {
-    if (!loan.dueDate) return '';
-    // Convert to local datetime-local format
-    const d = new Date(loan.dueDate);
-    const offset = d.getTimezoneOffset();
-    const local = new Date(d.getTime() - offset * 60000);
-    return local.toISOString().slice(0, 16);
-  });
+  // Parse remaining time from existing due date into spinners
+  const getInitial = () => {
+    const base = loan.dueDate ? new Date(loan.dueDate).getTime() : Date.now() + 48 * 3600000;
+    const diff = Math.max(0, base - Date.now());
+    const totalMins = Math.round(diff / 60000);
+    return {
+      d: Math.floor(totalMins / 1440),
+      h: Math.floor((totalMins % 1440) / 60),
+      m: totalMins % 60,
+    };
+  };
+  const init = getInitial();
+  const [days, setDays] = useState(init.d);
+  const [hours, setHours] = useState(init.h);
+  const [mins, setMins] = useState(init.m);
   const [notes, setNotes] = useState(loan.notes || '');
   const [reason, setReason] = useState(loan.reason || '');
   const [amount, setAmount] = useState(loan.principal.toString());
   const [saving, setSaving] = useState(false);
   const [markPaid, setMarkPaid] = useState(false);
 
+  const computedDueISO = () => {
+    const ms = (days * 1440 + hours * 60 + mins) * 60000;
+    return new Date(Date.now() + ms).toISOString();
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
       const payload: Record<string, unknown> = { id: loan.id };
-      if (dueDate) payload.due_date = new Date(dueDate).toISOString();
+      payload.due_date = computedDueISO();
       if (notes !== loan.notes) payload.notes = notes;
       if (reason !== loan.reason) payload.reason = reason;
       if (amount !== loan.principal.toString()) payload.amount = parseFloat(amount);
@@ -125,7 +137,7 @@ function EditLoanModal({
 
       onSaved({
         id: loan.id,
-        dueDate: dueDate ? new Date(dueDate).toISOString() : loan.dueDate,
+        dueDate: computedDueISO(),
         notes,
         reason,
         principal: parseFloat(amount) || loan.principal,
@@ -138,6 +150,8 @@ function EditLoanModal({
       setSaving(false);
     }
   };
+
+  const numCls = "w-full bg-[#1a1a1e] border border-white/[0.08] rounded-xl px-2 py-2.5 text-sm text-white text-center font-bold focus:outline-none focus:border-white/30 transition-all";
 
   return (
     <div
@@ -160,15 +174,29 @@ function EditLoanModal({
         </div>
 
         <div className="space-y-3">
-          {/* Due Date */}
+          {/* Due In spinners */}
           <div>
-            <label className="text-[11px] text-neutral-400 font-medium block mb-1">Due Date & Time</label>
-            <input
-              type="datetime-local"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="w-full bg-[#1a1a1e] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-white/30 transition-all [color-scheme:dark]"
-            />
+            <label className="text-[11px] text-neutral-400 font-medium block mb-2">Due in (from now)</label>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="flex flex-col items-center gap-1.5">
+                <input type="number" min={0} max={365} value={days}
+                  onChange={(e) => setDays(Math.max(0, parseInt(e.target.value) || 0))}
+                  className={numCls} />
+                <span className="text-[10px] text-neutral-500 font-semibold uppercase tracking-widest">Days</span>
+              </div>
+              <div className="flex flex-col items-center gap-1.5">
+                <input type="number" min={0} max={23} value={hours}
+                  onChange={(e) => setHours(Math.min(23, Math.max(0, parseInt(e.target.value) || 0)))}
+                  className={numCls} />
+                <span className="text-[10px] text-neutral-500 font-semibold uppercase tracking-widest">Hours</span>
+              </div>
+              <div className="flex flex-col items-center gap-1.5">
+                <input type="number" min={0} max={59} value={mins}
+                  onChange={(e) => setMins(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
+                  className={numCls} />
+                <span className="text-[10px] text-neutral-500 font-semibold uppercase tracking-widest">Mins</span>
+              </div>
+            </div>
           </div>
 
           {/* Amount */}
@@ -213,7 +241,7 @@ function EditLoanModal({
             <label className="flex items-center gap-2.5 cursor-pointer select-none py-1">
               <div
                 onClick={() => setMarkPaid((p) => !p)}
-                className={`w-8 h-4.5 rounded-full relative transition-colors cursor-pointer ${markPaid ? 'bg-emerald-500' : 'bg-white/[0.08]'}`}
+                className={`w-8 rounded-full relative transition-colors cursor-pointer ${markPaid ? 'bg-emerald-500' : 'bg-white/[0.08]'}`}
                 style={{ height: '18px' }}
               >
                 <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-transform ${markPaid ? 'translate-x-4' : 'translate-x-0.5'}`} />
@@ -246,7 +274,7 @@ function EditLoanModal({
 
 // --- Main Page ---
 export default function LoansPage() {
-  const { isOwner, isLoaded } = useAuth();
+  const { isAdmin, isLoaded } = useAuth();
   const [loans, setLoans] = useState<ActiveLoan[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -268,8 +296,8 @@ export default function LoansPage() {
   }, []);
 
   useEffect(() => {
-    if (isOwner) fetchLoans();
-  }, [isOwner, fetchLoans]);
+    fetchLoans();
+  }, [fetchLoans]);
 
   const handleDelete = async (id: string) => {
     setLoans((prev) => prev.filter((l) => l.id !== id));
@@ -296,25 +324,10 @@ export default function LoansPage() {
     );
   }
 
-  if (!isOwner) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-6 space-y-4 animate-in fade-in duration-300">
-        <div className="w-16 h-16 rounded-2xl bg-[#141414] border border-white/[0.08] flex items-center justify-center text-amber-400">
-          <Lock className="w-8 h-8" />
-        </div>
-        <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">Access Restricted</h2>
-          <p className="text-sm text-neutral-400 max-w-md mt-1">
-            The Loans directory is restricted to owner.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const filteredLoans = loans.filter((loan) =>
-    loan.userName.toLowerCase().includes(search.toLowerCase()) ||
-    loan.userId.includes(search)
+  const filteredLoans = loans.filter((l) =>
+    l.userName.toLowerCase().includes(search.toLowerCase()) ||
+    l.userId.includes(search) ||
+    (l.reason && l.reason.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -323,49 +336,45 @@ export default function LoansPage() {
         <EditLoanModal
           loan={editingLoan}
           onClose={() => setEditingLoan(null)}
-          onSaved={handleSaved}
+          onSaved={(updated) => {
+            handleSaved(updated);
+            setEditingLoan(null);
+          }}
         />
       )}
 
-      <div className="space-y-6 animate-in fade-in duration-300">
-        {/* Title Header */}
-        <div className="flex items-center justify-between">
+      <div className="space-y-8 animate-in fade-in duration-300 max-w-6xl">
+        {/* Title */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white font-sans">Loans</h1>
-            <p className="text-sm text-neutral-500 mt-1">Approved loans with live countdowns</p>
+            <h1 className="text-3xl font-bold tracking-tight text-white font-sans">Active Loans</h1>
+            <p className="text-sm text-neutral-500 mt-1">Live countdown · approved loans</p>
+          </div>
+          <div className="px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs font-semibold text-neutral-300">
+            {loans.length} loan{loans.length !== 1 ? 's' : ''}
           </div>
         </div>
 
-        {/* Main Container Card */}
+        {/* Search + Table Card */}
         <div className="soteria-card p-6 space-y-4">
-          {/* Search & Filter Toolbar */}
-          <div className="flex items-center justify-between gap-4">
-            <div className="relative w-72">
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 max-w-xs">
               <Search className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search loans..."
+                placeholder="Search borrower..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-xl bg-[#171717] border border-white/[0.06] text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-400 transition-colors"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#171717] border border-white/[0.06] text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white/30 transition-all"
               />
-            </div>
-
-            <div className="text-xs text-neutral-400">
-              Showing <span className="font-semibold text-white">{filteredLoans.length}</span> loans
             </div>
           </div>
 
-          {/* Table */}
           {loading ? (
-            <div className="py-16 flex flex-col items-center gap-3 text-neutral-500">
-              <Loader2 className="w-6 h-6 animate-spin" />
-              <span className="text-xs">Loading loans...</span>
-            </div>
+            <div className="py-20 text-center text-neutral-500 text-xs">Loading loans...</div>
           ) : filteredLoans.length === 0 ? (
-            <div className="py-16 flex flex-col items-center gap-2 text-neutral-500 text-center">
-              <span className="text-sm">No approved loans yet.</span>
-              <span className="text-xs text-neutral-600">Approve a loan request to see it here with its countdown.</span>
+            <div className="py-20 text-center text-neutral-500 text-xs">
+              {loans.length === 0 ? 'No approved loans yet.' : 'No loans match your search.'}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -420,7 +429,7 @@ export default function LoansPage() {
                           )}
                         </td>
 
-                        {/* Actions */}
+                        {/* Actions — edit & delete only shown to admins */}
                         <td className="py-4 px-3">
                           <div className="flex items-center justify-end gap-2">
                             {isPaid ? (
@@ -433,23 +442,25 @@ export default function LoansPage() {
                               </span>
                             )}
 
-                            {/* Edit button */}
-                            <button
-                              onClick={() => setEditingLoan(loan)}
-                              className="p-1.5 rounded-lg hover:bg-white/[0.08] text-neutral-500 hover:text-white transition-colors cursor-pointer"
-                              title="Edit loan"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
+                            {isAdmin && (
+                              <>
+                                <button
+                                  onClick={() => setEditingLoan(loan)}
+                                  className="p-1.5 rounded-lg hover:bg-white/[0.08] text-neutral-500 hover:text-white transition-colors cursor-pointer"
+                                  title="Edit loan"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
 
-                            {/* Delete button */}
-                            <button
-                              onClick={() => handleDelete(loan.id)}
-                              className="p-1.5 rounded-lg hover:bg-white/[0.08] text-neutral-500 hover:text-red-400 transition-colors cursor-pointer"
-                              title="Delete loan record"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                                <button
+                                  onClick={() => handleDelete(loan.id)}
+                                  className="p-1.5 rounded-lg hover:bg-white/[0.08] text-neutral-500 hover:text-red-400 transition-colors cursor-pointer"
+                                  title="Delete loan record"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>

@@ -217,7 +217,7 @@ export default function UserSearchPage() {
         </button>
       </div>
 
-      {/* User Grid */}
+      {/* User Rounded Column List */}
       {loading ? (
         <div className="py-20 flex flex-col items-center justify-center gap-3 text-neutral-500">
           <Loader2 className="w-7 h-7 animate-spin text-neutral-400" />
@@ -232,68 +232,75 @@ export default function UserSearchPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="flex flex-col gap-2.5">
           {filteredUsers.map((u) => {
             return (
               <div
                 key={u.id}
                 onClick={() => handleOpenUser(u)}
-                className="p-5 rounded-2xl bg-[#121214] border border-white/[0.06] hover:border-white/20 hover:bg-[#161619] transition-all cursor-pointer group flex flex-col justify-between"
+                className="p-3.5 sm:px-5 rounded-2xl bg-[#121214] border border-white/[0.06] hover:border-white/20 hover:bg-[#161619] transition-all cursor-pointer group flex items-center justify-between gap-4 select-none"
               >
-                <div>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full border border-white/10 overflow-hidden bg-neutral-800 shrink-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={u.avatarUrl || 'https://cdn.discordapp.com/embed/avatars/0.png'}
-                          alt={u.username}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png';
-                          }}
-                        />
-                      </div>
-                      <div className="overflow-hidden">
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="text-sm font-bold text-white group-hover:text-white truncate">
-                            {u.displayName || u.username}
-                          </h4>
-                          {u.role === 'owner' && (
-                            <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-bold">
-                              OWNER
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-neutral-400 truncate">
-                          @{u.username.toLowerCase()}
-                        </p>
-                      </div>
-                    </div>
-
-                    <ArrowRight className="w-4 h-4 text-neutral-500 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                {/* Left: Avatar + Names */}
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="w-11 h-11 rounded-full border border-white/10 overflow-hidden bg-neutral-800 shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={u.avatarUrl || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                      alt={u.username}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png';
+                      }}
+                    />
                   </div>
-
-                  {/* ID Tag */}
-                  <div className="mt-3.5 bg-black/40 border border-white/[0.04] px-2.5 py-1 rounded-lg flex items-center justify-between text-[11px]">
-                    <span className="text-neutral-500 font-medium">Discord ID</span>
-                    <span className="font-mono text-neutral-300">{u.id}</span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-white group-hover:text-white truncate">
+                        {u.displayName || u.username}
+                      </h4>
+                      {u.role === 'owner' && (
+                        <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-bold shrink-0">
+                          OWNER
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-neutral-400 truncate">
+                      @{u.username.toLowerCase()}
+                    </p>
                   </div>
                 </div>
 
-                {/* Metrics preview */}
-                <div className="mt-4 pt-3 border-t border-white/[0.04] grid grid-cols-3 gap-2 text-center">
-                  <div>
-                    <span className="text-[10px] text-neutral-500 block uppercase font-medium">Loans</span>
-                    <span className="text-xs font-bold text-white">{u.totalLoans}</span>
+                {/* Middle: Discord ID Pill */}
+                <div className="hidden md:flex items-center bg-black/40 border border-white/[0.04] px-3 py-1.5 rounded-xl text-xs font-mono text-neutral-400">
+                  <span className="text-neutral-500 mr-2 text-[11px] font-sans font-medium">ID:</span>
+                  <span>{u.id}</span>
+                </div>
+
+                {/* Right: Metrics & Arrow */}
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-white/[0.03] border border-white/[0.05] px-2.5 py-1 rounded-xl text-center">
+                      <span className="text-[9px] text-neutral-500 block uppercase font-medium">Loans</span>
+                      <span className="text-xs font-bold text-white">{u.totalLoans}</span>
+                    </div>
+
+                    <div className="bg-emerald-500/[0.04] border border-emerald-500/10 px-2.5 py-1 rounded-xl text-center">
+                      <span className="text-[9px] text-emerald-400/80 block uppercase font-medium">Paid</span>
+                      <span className="text-xs font-bold text-emerald-400">${u.totalPaid.toFixed(0)}</span>
+                    </div>
+
+                    <div className={`px-2.5 py-1 rounded-xl text-center ${
+                      u.totalDue > 0 
+                        ? 'bg-amber-500/[0.06] border border-amber-500/15 text-amber-400' 
+                        : 'bg-white/[0.02] border border-white/[0.04] text-neutral-400'
+                    }`}>
+                      <span className="text-[9px] block uppercase font-medium opacity-70">Due</span>
+                      <span className="text-xs font-bold">${u.totalDue.toFixed(0)}</span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-[10px] text-emerald-400/70 block uppercase font-medium">Paid</span>
-                    <span className="text-xs font-bold text-emerald-400">${u.totalPaid.toFixed(0)}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-amber-400/70 block uppercase font-medium">Due</span>
-                    <span className="text-xs font-bold text-amber-400">${u.totalDue.toFixed(0)}</span>
+
+                  <div className="w-8 h-8 rounded-full bg-white/[0.04] group-hover:bg-white/10 flex items-center justify-center text-neutral-500 group-hover:text-white transition-all ml-1">
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                   </div>
                 </div>
               </div>

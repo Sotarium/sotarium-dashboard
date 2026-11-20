@@ -23,7 +23,7 @@ export interface UserLoan {
   total_due: number;
   crypto_currency?: string;
   reason?: string;
-  status: 'pending' | 'approved' | 'rejected' | 'completed' | 'repaid';
+  status: 'pending' | 'approved' | 'rejected' | 'completed' | 'repaid' | 'active';
   is_paid?: boolean;
   created_at: string;
 }
@@ -149,9 +149,10 @@ export default function UserProfileModal({
   // Filter loans based on active tab
   const displayedLoans = loans.filter((l) => {
     const isCompleted = l.status === 'completed' || l.status === 'repaid' || l.is_paid;
+    const isApproved = l.status === 'approved' || l.status === 'active';
     if (activeTab === 'paid') return isCompleted;
-    if (activeTab === 'due') return !isCompleted && l.status !== 'rejected';
-    return true; // 'loans' tab shows all
+    if (activeTab === 'due') return isApproved && !isCompleted;
+    return true; // 'loans' tab shows all loans (including rejected ones)
   });
 
   const displayName = userData?.displayName || userData?.username || 'Discord User';
@@ -166,11 +167,8 @@ export default function UserProfileModal({
         className="w-full max-w-[460px] bg-[#141416] border border-white/[0.08] rounded-3xl p-6 shadow-2xl relative select-none max-h-[90vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-white/[0.06]">
-          <h2 className="text-[19px] font-bold text-white tracking-tight">
-            Profile & Accounts
-          </h2>
+        {/* Header - Close Button ONLY */}
+        <div className="flex items-center justify-end pb-2">
           <button 
             onClick={onClose}
             className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
@@ -181,7 +179,7 @@ export default function UserProfileModal({
         </div>
 
         {/* Scrollable Body */}
-        <div className="overflow-y-auto space-y-5 pt-4 pb-2 pr-1 custom-scrollbar">
+        <div className="overflow-y-auto space-y-5 pt-1 pb-2 pr-1 custom-scrollbar">
           {/* Centered Avatar and User Header */}
           <div className="flex flex-col items-center justify-center text-center">
             <div className="relative group">
@@ -212,25 +210,6 @@ export default function UserProfileModal({
                 {handleName}
               </p>
             )}
-          </div>
-
-          {/* User ID Box */}
-          <div className="bg-[#1a1a1e] border border-white/[0.06] rounded-2xl px-4 py-3.5 flex items-center justify-between">
-            <span className="text-[13px] font-semibold text-white">
-              User ID
-            </span>
-            <div className="flex items-center gap-2">
-              <span className="text-[13px] font-mono text-neutral-300">
-                {userData?.id || userId || '...'}
-              </span>
-              <button
-                onClick={handleCopyId}
-                className="p-1 hover:bg-white/10 rounded-lg text-neutral-400 hover:text-white transition-colors cursor-pointer"
-                title="Copy User ID"
-              >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              </button>
-            </div>
           </div>
 
           {/* Category Tabs: Loans | Paid | Due */}
@@ -320,7 +299,8 @@ export default function UserProfileModal({
               displayedLoans.map((loan) => {
                 const isPaid = loan.status === 'completed' || loan.status === 'repaid' || loan.is_paid;
                 const isRejected = loan.status === 'rejected';
-                const dueAmt = loan.total_due || Math.round(loan.amount * 1.15 * 100) / 100;
+                const isApproved = loan.status === 'approved' || loan.status === 'active';
+                const dueAmt = isApproved ? (loan.total_due || Math.round(loan.amount * 1.15 * 100) / 100) : 0;
 
                 return (
                   <div
@@ -333,9 +313,19 @@ export default function UserProfileModal({
                           <span className="text-base font-bold text-white">
                             ${loan.amount.toFixed(2)}
                           </span>
-                          <span className="text-[11px] font-medium text-neutral-400">
-                            Due: ${dueAmt.toFixed(2)}
-                          </span>
+                          {isPaid ? (
+                            <span className="text-[11px] font-medium text-emerald-400">
+                              Paid in Full
+                            </span>
+                          ) : isRejected ? (
+                            <span className="text-[11px] font-medium text-rose-400/80">
+                              Declined ($0.00 Due)
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-medium text-amber-400">
+                              Due: ${dueAmt.toFixed(2)}
+                            </span>
+                          )}
                         </div>
                         {loan.reason && (
                           <p className="text-xs text-neutral-300 mt-1 line-clamp-2">
@@ -363,7 +353,7 @@ export default function UserProfileModal({
                         ) : isRejected ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
                             <AlertCircle className="w-3 h-3" />
-                            Rejected
+                            Declined
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">

@@ -83,13 +83,17 @@ export async function GET(req: Request) {
 
       loansList.forEach((l) => {
         const amt = parseFloat(l.amount) || 0;
-        totalLent += amt;
         const isCompleted = l.status === 'completed' || l.status === 'repaid';
+        const isApproved = l.status === 'approved' || l.status === 'active';
+
         if (isCompleted) {
           totalPaid += amt;
-        } else if (l.status === 'pending' || l.status === 'approved' || l.status === 'active') {
+          totalLent += amt;
+        } else if (isApproved) {
           totalDue += Math.round(amt * 1.15 * 100) / 100;
+          totalLent += amt;
         }
+        // Rejected loans do NOT add to totalDue or totalLent ($0 due)
       });
 
       const userProfile = {
@@ -158,14 +162,16 @@ export async function GET(req: Request) {
 
       uLoans.forEach((l) => {
         const amt = parseFloat(l.amount) || 0;
-        totalLent += amt;
         if (l.status === 'completed' || l.status === 'repaid') {
           totalPaid += amt;
+          totalLent += amt;
           completedCount++;
-        } else {
+        } else if (l.status === 'approved' || l.status === 'active') {
           totalDue += Math.round(amt * 1.15 * 100) / 100;
+          totalLent += amt;
           pendingCount++;
         }
+        // Rejected loans do NOT add to totalDue or totalLent ($0 due)
       });
 
       userMap[u.id] = {
@@ -195,14 +201,16 @@ export async function GET(req: Request) {
 
         uLoans.forEach((item) => {
           const amt = parseFloat(item.amount) || 0;
-          totalLent += amt;
           if (item.status === 'completed' || item.status === 'repaid') {
             totalPaid += amt;
+            totalLent += amt;
             completedCount++;
-          } else {
+          } else if (item.status === 'approved' || item.status === 'active') {
             totalDue += Math.round(amt * 1.15 * 100) / 100;
+            totalLent += amt;
             pendingCount++;
           }
+          // Rejected loans do NOT add to totalDue or totalLent ($0 due)
         });
 
         userMap[l.user_id] = {

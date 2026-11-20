@@ -30,7 +30,7 @@ export default function LoginPage() {
     login({
       id: isOwnerEmail ? "1079074717799030824" : `member_${Math.abs(email.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0))}`,
       username: email ? email.split('@')[0] : 'member',
-      avatar: email.toLowerCase().includes('azrael') ? '/avatars/azrael.jpg' : '/avatars/default.jpg'
+      avatar: 'https://cdn.discordapp.com/embed/avatars/0.png'
     });
   };
 

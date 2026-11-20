@@ -31,7 +31,7 @@ export default function AuthCallback() {
               const discordData = await response.json();
               const avatarUrl = discordData.avatar
                 ? `https://cdn.discordapp.com/avatars/${discordData.id}/${discordData.avatar}.png`
-                : '/avatars/default.jpg';
+                : 'https://cdn.discordapp.com/embed/avatars/0.png';
 
               await login({
                 id: discordData.id,
@@ -54,7 +54,7 @@ export default function AuthCallback() {
           login({
             id: discordUser.provider_id || session.user.id,
             username: discordUser.custom_claims?.global_name || discordUser.full_name || discordUser.user_name || 'Discord User',
-            avatar: discordUser.avatar_url || '/avatars/default.jpg',
+            avatar: discordUser.avatar_url || 'https://cdn.discordapp.com/embed/avatars/0.png',
           });
           router.push('/');
           return;

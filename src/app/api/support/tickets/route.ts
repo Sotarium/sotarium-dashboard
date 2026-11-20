@@ -41,7 +41,7 @@ export async function GET(req: Request) {
 
         return {
           ...t,
-          user_avatar: avatarMap[t.user_id] || t.user_avatar || '/avatars/default.jpg',
+          user_avatar: avatarMap[t.user_id] || t.user_avatar || 'https://cdn.discordapp.com/embed/avatars/0.png',
           lastMessage: latestMsg?.message || null,
           lastMessageTime: latestMsg?.created_at || t.updated_at,
           lastMessageSender: latestMsg?.sender_name || null,

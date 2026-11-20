@@ -577,10 +577,10 @@ export default function SupportWidget() {
                             <div className="flex items-center gap-2">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
-                                src={t.user_avatar || '/avatars/default.jpg'}
+                                src={t.user_avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                                 alt={t.user_name}
                                 className="w-5 h-5 rounded-full object-cover bg-neutral-800"
-                                onError={(e) => { (e.target as HTMLImageElement).src = '/avatars/default.jpg'; }}
+                                onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
                               />
                               <div className="truncate max-w-[170px]">
                                 <div className="flex items-center gap-1.5">
@@ -671,10 +671,10 @@ export default function SupportWidget() {
                         <div className="flex items-center gap-2 min-w-0">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={targetUserAvatar || '/avatars/default.jpg'}
+                            src={targetUserAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                             alt={targetUserName}
                             className="w-5 h-5 rounded-full object-cover border border-white/10 shrink-0 bg-neutral-800"
-                            onError={(e) => { (e.target as HTMLImageElement).src = '/avatars/default.jpg'; }}
+                            onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
                           />
                           <span className="font-semibold text-xs text-white truncate">
                             {targetUserName}
@@ -722,10 +722,10 @@ export default function SupportWidget() {
                                 <div className="flex items-center gap-2.5 min-w-0">
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
                                   <img
-                                    src={applicant.user_avatar || '/avatars/default.jpg'}
+                                    src={applicant.user_avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                                     alt={applicant.user_name}
                                     className="w-6 h-6 rounded-full object-cover border border-white/10 bg-neutral-800 shrink-0"
-                                    onError={(e) => { (e.target as HTMLImageElement).src = '/avatars/default.jpg'; }}
+                                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
                                   />
                                   <div className="text-left min-w-0">
                                     <div className="text-xs font-semibold text-white truncate">

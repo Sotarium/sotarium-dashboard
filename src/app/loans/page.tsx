@@ -2,11 +2,89 @@
 
 import { useState, useEffect } from 'react';
 import { Loan } from '@/lib/data';
-import { Search, Copy, Check, Lock, X, ExternalLink, ShieldCheck } from 'lucide-react';
+import { Search, Copy, Check, Lock, X, ExternalLink, ShieldCheck, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
+function TimeLeftCell({ dueDate, loanDate, status }: { dueDate: string; loanDate: string; status: string }) {
+  const [now, setNow] = useState<number>(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  if (status === 'completed') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#00E676]/15 text-[#00E676] border border-[#00E676]/30">
+        Paid
+      </span>
+    );
+  }
+
+  let dueTimestamp = 0;
+  if (dueDate) {
+    const parsed = new Date(dueDate);
+    if (!isNaN(parsed.getTime())) {
+      if (!dueDate.includes(':')) {
+        parsed.setHours(23, 59, 59, 999);
+      }
+      dueTimestamp = parsed.getTime();
+    }
+  }
+
+  if (!dueTimestamp) {
+    const loanTs = loanDate ? new Date(loanDate).getTime() : 0;
+    dueTimestamp = loanTs && !isNaN(loanTs) ? loanTs + 48 * 60 * 60 * 1000 : now + 24 * 60 * 60 * 1000;
+  }
+
+  const diff = dueTimestamp - now;
+
+  if (diff <= 0) {
+    const overdueMs = Math.abs(diff);
+    const d = Math.floor(overdueMs / (1000 * 60 * 60 * 24));
+    const h = Math.floor((overdueMs / (1000 * 60 * 60)) % 24);
+    const m = Math.floor((overdueMs / (1000 * 60)) % 60);
+    const s = Math.floor((overdueMs / 1000) % 60);
+    const timeStr = d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m ${s}s`;
+
+    return (
+      <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-[#FF2D55]" title={`Overdue by ${timeStr}`}>
+        <Clock className="w-3.5 h-3.5 text-[#FF2D55] shrink-0 animate-pulse" />
+        <span>Overdue ({timeStr})</span>
+      </div>
+    );
+  }
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((diff / (1000 * 60)) % 60);
+  const seconds = Math.floor((diff / 1000) % 60);
+
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  let countdownText = '';
+  if (days > 0) {
+    countdownText = `${days}d ${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`;
+  } else {
+    countdownText = `${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`;
+  }
+
+  const isUrgent = diff < 6 * 60 * 60 * 1000;
+  const isWarning = diff < 24 * 60 * 60 * 1000;
+
+  return (
+    <div className="flex items-center gap-1.5 text-xs font-mono font-semibold">
+      <Clock className={`w-3.5 h-3.5 shrink-0 ${isUrgent ? 'text-[#FF2D55] animate-pulse' : isWarning ? 'text-amber-400' : 'text-neutral-400'}`} />
+      <span className={isUrgent ? 'text-[#FF2D55]' : isWarning ? 'text-amber-300' : 'text-neutral-200'}>
+        {countdownText}
+      </span>
+    </div>
+  );
+}
+
 export default function LoansPage() {
-  const { user, isOwner } = useAuth();
+  const { user, isOwner, isLoaded } = useAuth();
   const [loans, setLoans] = useState<Loan[]>([]);
   const [search, setSearch] = useState('');
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
@@ -41,6 +119,16 @@ export default function LoansPage() {
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
+  // Guard while auth state is loading
+  if (!isLoaded) {
+    return (
+      <div className="space-y-6 animate-pulse max-w-6xl">
+        <div className="h-10 w-48 bg-white/[0.04] rounded-xl" />
+        <div className="soteria-card p-6 h-96 bg-white/[0.02]" />
+      </div>
+    );
+  }
+
   // Restrict to owner
   if (!isOwner) {
     return (
@@ -65,16 +153,10 @@ export default function LoansPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Title Header with Action Button */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      {/* Title Header */}
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white font-sans">Loans</h1>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button className="px-5 py-2 rounded-full bg-white text-black font-semibold text-sm hover:bg-neutral-200 transition-colors shadow-sm">
-            Issue new loan
-          </button>
         </div>
       </div>
 
@@ -108,7 +190,7 @@ export default function LoansPage() {
                 <th className="pb-3 px-3">Interest (15%)</th>
                 <th className="pb-3 px-3">Total Due</th>
                 <th className="pb-3 px-3">Repaid / Progress</th>
-                <th className="pb-3 px-3">Deposit Address</th>
+                <th className="pb-3 px-3">Time Left</th>
                 <th className="pb-3 px-3">Status</th>
               </tr>
             </thead>
@@ -121,16 +203,17 @@ export default function LoansPage() {
 
                 return (
                   <tr key={loan.id} className="hover:bg-white/[0.02] transition-colors group">
-                    {/* Borrower Column with Real Discord Avatar */}
-                    <td className="py-4 px-3">
+                    {/* Borrower Column with Real Discord Avatar - Click to view deposit details */}
+                    <td className="py-4 px-3 cursor-pointer" onClick={() => setSelectedLoan(loan)} title="Click to view addresses & ticket">
                       <div className="flex items-center gap-3">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={userAvatar}
                           alt={loan.userName}
                           className="w-8 h-8 rounded-full border border-white/10 shadow-sm object-cover bg-neutral-800"
+                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
                         />
-                        <div className="font-semibold text-white text-sm">
+                        <div className="font-semibold text-white text-sm hover:underline">
                           {loan.userName}
                         </div>
                       </div>
@@ -164,14 +247,9 @@ export default function LoansPage() {
                       </div>
                     </td>
 
-                    {/* Deposit Address Button */}
+                    {/* Time Left Live Countdown */}
                     <td className="py-4 px-3">
-                      <button
-                        onClick={() => setSelectedLoan(loan)}
-                        className="px-3.5 py-1.5 rounded-xl bg-[#181818] hover:bg-[#252525] border border-white/[0.08] hover:border-white/20 text-xs font-semibold text-white transition-all flex items-center gap-2 shadow-sm"
-                      >
-                        <span>Deposit Addresses</span>
-                      </button>
+                      <TimeLeftCell dueDate={loan.dueDate} loanDate={loan.loanDate} status={loan.status} />
                     </td>
 
                     <td className="py-4 px-3">

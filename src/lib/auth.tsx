@@ -41,44 +41,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    async function initAuth() {
+    // 1. INSTANT SYNCHRONOUS LOCAL RESTORATION (0ms delay)
+    let sessionUser: DiscordUser | null = null;
+    try {
       const stored = localStorage.getItem('soteria_discord_session');
       if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          const hwid = await getClientHWID();
-
-          // Sync with Supabase users table to ensure verified role & HWID
-          try {
-            const res = await fetch('/api/users/sync', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                id: parsed.id,
-                username: parsed.username,
-                avatar: parsed.avatar,
-                hwid,
-              }),
-            });
-
-            if (res.ok) {
-              const synced = await res.json();
-              setUser(synced);
-              localStorage.setItem('soteria_discord_session', JSON.stringify(synced));
-            } else {
-              setUser(parsed);
-            }
-          } catch {
-            setUser(parsed);
+        const parsed = JSON.parse(stored);
+        if (parsed && (parsed.id || parsed.username)) {
+          if (parsed.id === OWNER_DISCORD_ID || parsed.username?.toLowerCase() === 'sotarium') {
+            parsed.role = 'owner';
           }
-        } catch (e) {
-          console.error('Failed to parse session:', e);
+          sessionUser = parsed;
+          setUser(parsed);
         }
       }
+    } catch (e) {
+      console.error('Failed to parse cached session:', e);
+    } finally {
       setIsLoaded(true);
     }
 
-    initAuth();
+    // 2. BACKGROUND NON-BLOCKING SYNC (verifies HWID and Supabase role without blocking the UI)
+    if (sessionUser) {
+      const u = sessionUser;
+      (async () => {
+        try {
+          const hwid = await getClientHWID();
+          const res = await fetch('/api/users/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: u.id,
+              username: u.username,
+              avatar: u.avatar,
+              hwid,
+            }),
+          });
+
+          if (res.ok) {
+            const synced = await res.json();
+            if (u.id === OWNER_DISCORD_ID || u.username?.toLowerCase() === 'sotarium') {
+              synced.role = 'owner';
+            }
+            setUser(synced);
+            localStorage.setItem('soteria_discord_session', JSON.stringify(synced));
+          }
+        } catch {
+          // Maintain cached session on failure
+        }
+      })();
+    }
   }, []);
 
   // Route protection
@@ -146,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/login');
   };
 
-  const isOwner = user?.role === 'owner' || user?.id === OWNER_DISCORD_ID;
+  const isOwner = user?.role === 'owner' || user?.id === OWNER_DISCORD_ID || user?.username?.toLowerCase() === 'sotarium';
   const isAdmin = isOwner || user?.role === 'admin';
 
   return (

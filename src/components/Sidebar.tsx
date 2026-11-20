@@ -15,7 +15,7 @@ import { useAuth } from '@/lib/auth';
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { user, isAdmin, isOwner, logout } = useAuth();
+  const { user, isAdmin, isOwner, isLoaded, logout } = useAuth();
 
   return (
     <aside className="w-[260px] h-screen fixed left-0 top-0 flex flex-col justify-between p-4 bg-black select-none z-40 border-r border-white/[0.04]">
@@ -96,7 +96,19 @@ export default function Sidebar() {
                   : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
               }`}
             >
-              <ShieldCheck className="w-4 h-4" />
+              <span
+                className="w-4 h-4 inline-block bg-current shrink-0 transition-colors"
+                style={{
+                  maskImage: 'url(/icons/loan.png)',
+                  WebkitMaskImage: 'url(/icons/loan.png)',
+                  maskSize: 'contain',
+                  WebkitMaskSize: 'contain',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskRepeat: 'no-repeat',
+                  maskPosition: 'center',
+                  WebkitMaskPosition: 'center',
+                }}
+              />
               <span>Loans</span>
             </Link>
 
@@ -143,6 +155,8 @@ export default function Sidebar() {
             </div>
             <LogOut className="w-3.5 h-3.5 text-neutral-500 group-hover:text-red-400 transition-colors" />
           </div>
+        ) : !isLoaded ? (
+          <div className="mt-3 h-11 rounded-2xl bg-white/[0.02] border border-white/[0.04] animate-pulse" />
         ) : (
           <Link
             href="/login"

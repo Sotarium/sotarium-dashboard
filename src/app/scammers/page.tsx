@@ -41,10 +41,10 @@ function ScammerInfoOverlay({ scammer, onClose }: { scammer: ScammerEntry; onClo
 
         {/* Info text */}
         <div className="bg-yellow-500/[0.06] border border-yellow-500/20 rounded-xl px-4 py-3 text-center">
-          <p className="text-sm text-neutral-200 leading-relaxed">
-            <span className="font-bold text-white">{scammer.userName}</span> scammed{' '}
-            <span className="font-bold text-yellow-400">${scammer.totalDue.toFixed(2)}</span> with{' '}
-            <span className="font-bold text-white">{scammer.overdueDays} day{scammer.overdueDays !== 1 ? 's' : ''}</span> past payout deadline.
+          <p className="text-sm text-neutral-200 whitespace-nowrap">
+            <span className="font-bold text-white">{scammer.userName}</span>{' '}
+            scammed <span className="font-bold text-yellow-400">${scammer.totalDue.toFixed(2)}</span>
+            {' '}— <span className="font-bold text-white">{scammer.overdueDays}d</span> overdue.
           </p>
         </div>
 

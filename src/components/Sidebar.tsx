@@ -6,7 +6,7 @@ import {
   Home, 
   ShieldCheck, 
   UploadCloud, 
-  HelpCircle,
+  Coins,
   Wallet,
   Inbox,
   LogOut
@@ -62,7 +62,7 @@ export default function Sidebar() {
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
             }`}
           >
-            <HelpCircle className="w-4 h-4" />
+            <Coins className="w-4 h-4" />
             <span>Ask loan</span>
           </Link>
         </div>

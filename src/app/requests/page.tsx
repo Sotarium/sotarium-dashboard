@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
-import { Clock, Search, ShieldAlert, MessageSquare } from 'lucide-react';
+import { Clock, Search, ShieldAlert, MessageSquare, Trash2 } from 'lucide-react';
 
 interface LoanRequest {
   id: string;
@@ -72,6 +72,17 @@ export default function RequestsPage() {
       console.error('Failed to update request:', err);
     } finally {
       setIsProcessing(null);
+    }
+  };
+
+  const handleDeleteRequest = async (id: string) => {
+    if (!confirm('Are you sure you want to permanently delete this loan request?')) return;
+    setRequests((prev) => prev.filter((r) => r.id !== id));
+    try {
+      await fetch(`/api/loan-requests?id=${id}`, { method: 'DELETE' });
+    } catch (err) {
+      console.error('Failed to delete request:', err);
+      fetchRequests();
     }
   };
 
@@ -247,33 +258,43 @@ export default function RequestsPage() {
 
                     {/* Approve / Refuse Clean Actions (No Fluo / No Glow) */}
                     <td className="py-3.5 px-3 text-right">
-                      {req.status === 'pending' ? (
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleUpdateStatus(req.id, 'approved')}
-                            disabled={isProcessing === req.id}
-                            className="px-4 py-1.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 font-semibold text-xs border border-emerald-500/25 hover:border-emerald-500/40 transition-colors disabled:opacity-50"
-                          >
-                            Approve
-                          </button>
+                      <div className="flex items-center justify-end gap-2">
+                        {req.status === 'pending' ? (
+                          <>
+                            <button
+                              onClick={() => handleUpdateStatus(req.id, 'approved')}
+                              disabled={isProcessing === req.id}
+                              className="px-4 py-1.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 font-semibold text-xs border border-emerald-500/25 hover:border-emerald-500/40 transition-colors disabled:opacity-50"
+                            >
+                              Approve
+                            </button>
 
+                            <button
+                              onClick={() => handleUpdateStatus(req.id, 'rejected')}
+                              disabled={isProcessing === req.id}
+                              className="px-4 py-1.5 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 font-semibold text-xs border border-red-500/25 hover:border-red-500/40 transition-colors disabled:opacity-50"
+                            >
+                              Refuse
+                            </button>
+                          </>
+                        ) : (
                           <button
-                            onClick={() => handleUpdateStatus(req.id, 'rejected')}
+                            onClick={() => handleUpdateStatus(req.id, 'pending')}
                             disabled={isProcessing === req.id}
-                            className="px-4 py-1.5 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 font-semibold text-xs border border-red-500/25 hover:border-red-500/40 transition-colors disabled:opacity-50"
+                            className="text-[11px] text-neutral-500 hover:text-neutral-300 transition-colors px-2 py-1"
                           >
-                            Refuse
+                            Reset
                           </button>
-                        </div>
-                      ) : (
+                        )}
+
                         <button
-                          onClick={() => handleUpdateStatus(req.id, 'pending')}
-                          disabled={isProcessing === req.id}
-                          className="text-[11px] text-neutral-500 hover:text-neutral-300 transition-colors"
+                          onClick={() => handleDeleteRequest(req.id)}
+                          className="p-1.5 rounded-lg hover:bg-white/[0.08] text-neutral-500 hover:text-red-400 transition-colors"
+                          title="Delete loan request"
                         >
-                          Reset
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
-                      )}
+                      </div>
                     </td>
                   </tr>
                 ))}

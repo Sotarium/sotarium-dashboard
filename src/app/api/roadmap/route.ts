@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
-// Discord bot token for resolving fresh avatars
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
 const avatarCache: Record<string, string> = {};
 
@@ -29,16 +28,22 @@ async function resolveAvatar(userId: string, dbAvatar?: string): Promise<string>
   return 'https://cdn.discordapp.com/embed/avatars/0.png';
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const { data, error } = await supabase
-      .from('loan_requests')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const { searchParams } = new URL(req.url);
+    const filterMode = searchParams.get('mode'); // 'completed' | 'all' | 'pending'
 
+    let query = supabase.from('loan_requests').select('*').order('created_at', { ascending: false });
+
+    if (filterMode === 'completed') {
+      query = query.in('status', ['completed', 'repaid']);
+    } else if (filterMode === 'pending') {
+      query = query.in('status', ['pending', 'approved', 'active']);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
 
-    // Fetch user avatars from Supabase users table
     const userIds = [...new Set((data || []).map((r) => r.user_id).filter(Boolean))];
     const { data: dbUsers } = await supabase.from('users').select('id, avatar').in('id', userIds);
     const dbAvatarMap: Record<string, string> = {};
@@ -76,11 +81,13 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { userId, userName, amount, cryptoCurrency, reason, isPaid } = body;
+    const { userId, userName, amount, cryptoCurrency, reason, status } = body;
 
     if (!amount) {
       return NextResponse.json({ error: 'Amount is required' }, { status: 400 });
     }
+
+    const finalStatus = status || 'completed';
 
     const { data, error } = await supabase
       .from('loan_requests')
@@ -89,8 +96,8 @@ export async function POST(req: Request) {
         user_name: userName || 'Borrower',
         amount: parseFloat(amount),
         crypto_currency: cryptoCurrency || 'SOL',
-        reason: reason || 'Roadmile tracking',
-        status: isPaid ? 'completed' : 'approved',
+        reason: reason || 'Completed loan payback milestone',
+        status: finalStatus,
       })
       .select()
       .single();

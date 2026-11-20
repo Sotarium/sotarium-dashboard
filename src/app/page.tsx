@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
-import { Calendar, Activity } from 'lucide-react';
+import { Calendar, Activity, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface LoanRecord {
   id: string;
@@ -18,6 +18,7 @@ interface LoanRecord {
 }
 
 interface ChartDay {
+  dayNum: number;
   label: string;
   fullDate: string;
   timestamp: number;
@@ -29,11 +30,21 @@ export default function OverviewPage() {
   const { isAdmin, isLoaded } = useAuth();
   const router = useRouter();
   const [loans, setLoans] = useState<LoanRecord[]>([]);
-  const [timeRange, setTimeRange] = useState<'7D' | '14D' | '30D'>('7D');
   const [metricMode, setMetricMode] = useState<'payback' | 'volume'>('payback');
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
-  const [chartData, setChartData] = useState<ChartDay[]>([]);
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // Selected Month State for Calendar Navigation (initialized safely to prevent Next.js prerender error)
+  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date('2026-11-01T00:00:00Z'));
+
+  useEffect(() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    setSelectedMonth(d);
+  }, []);
+
+  const [chartData, setChartData] = useState<ChartDay[]>([]);
 
   useEffect(() => {
     if (isLoaded && !isAdmin) {
@@ -74,29 +85,30 @@ export default function OverviewPage() {
   }, [loans]);
 
   const totalLoansCount = loans.length;
-  const daysCount = timeRange === '7D' ? 7 : timeRange === '14D' ? 14 : 30;
 
-  // Compute chart data inside useEffect to avoid Next.js 16 new Date() prerender blocking
+  // Build daily graph points for the currently selected month
   useEffect(() => {
-    const now = new Date();
+    const year = selectedMonth.getFullYear();
+    const month = selectedMonth.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
     const days: ChartDay[] = [];
 
-    for (let i = daysCount - 1; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
+    for (let day = 1; day <= daysInMonth; day++) {
+      const d = new Date(year, month, day);
       d.setHours(0, 0, 0, 0);
+      const nextD = new Date(year, month, day + 1);
+      nextD.setHours(0, 0, 0, 0);
 
-      const dayStr = d.toLocaleDateString('en-US', { weekday: 'short' });
       const fullDateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      const nextDay = new Date(d);
-      nextDay.setDate(d.getDate() + 1);
 
+      // Match loans occurring on this exact day
       let daySum = 0;
       let dayCount = 0;
 
       loans.forEach((loan) => {
-        const loanDate = loan.created_at ? new Date(loan.created_at) : now;
-        if (loanDate >= d && loanDate < nextDay) {
+        if (!loan.created_at) return;
+        const loanDate = new Date(loan.created_at);
+        if (loanDate >= d && loanDate < nextD) {
           if (metricMode === 'payback') {
             if (loan.is_paid) {
               daySum += loan.total_due || loan.amount;
@@ -109,13 +121,12 @@ export default function OverviewPage() {
         }
       });
 
-      if (daySum === 0) {
-        const factor = Math.sin((i / daysCount) * Math.PI) * 15;
-        daySum = Math.max(0, Math.round(factor));
-      }
+      // Show day label only on spaced intervals (Day 1, 5, 10, 15, 20, 25, and last day) to prevent crowding
+      const shouldShowLabel = day === 1 || day % 5 === 0 || day === daysInMonth;
 
       days.push({
-        label: daysCount <= 7 ? dayStr : `${d.getMonth() + 1}/${d.getDate()}`,
+        dayNum: day,
+        label: shouldShowLabel ? `${day}` : '',
         fullDate: fullDateStr,
         timestamp: d.getTime(),
         volume: daySum,
@@ -124,7 +135,12 @@ export default function OverviewPage() {
     }
 
     setChartData(days);
-  }, [daysCount, loans, metricMode]);
+  }, [selectedMonth, loans, metricMode]);
+
+  // Total volume in the selected month
+  const monthTotal = useMemo(() => {
+    return chartData.reduce((acc, d) => acc + d.volume, 0);
+  }, [chartData]);
 
   // SVG Chart Dimensions & Spline calculation
   const svgWidth = 800;
@@ -180,6 +196,23 @@ export default function OverviewPage() {
 
   const activePoint = hoveredIdx !== null && points[hoveredIdx] ? points[hoveredIdx] : null;
 
+  // Month navigation helpers
+  const handlePrevMonth = () => {
+    setSelectedMonth((prev) => {
+      const d = new Date(prev);
+      d.setMonth(d.getMonth() - 1);
+      return d;
+    });
+  };
+
+  const handleNextMonth = () => {
+    setSelectedMonth((prev) => {
+      const d = new Date(prev);
+      d.setMonth(d.getMonth() + 1);
+      return d;
+    });
+  };
+
   // Access check AFTER all hooks have executed
   if (!isAdmin) {
     return null;
@@ -188,19 +221,8 @@ export default function OverviewPage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-300 max-w-6xl">
       {/* Title Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white font-sans">Overview</h1>
-          <p className="text-sm text-neutral-400 mt-1 font-normal">
-            Your lending protocol activity at a glance.
-          </p>
-        </div>
-
-        {/* Live Status indicator */}
-        <div className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-400 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>Real-time Sync Active</span>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-white font-sans">Overview</h1>
       </div>
 
       {/* 4 Summary Stat Box */}
@@ -238,78 +260,78 @@ export default function OverviewPage() {
       {/* Interactive Payback & Lending Activity Graph Container */}
       <div ref={containerRef} className="soteria-card p-6 space-y-6">
         
-        {/* Graph Header: Title, Modes, and Timeframe Selectors */}
+        {/* Graph Header: Title, Metric Toggle, and Calendar Month Selector */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <h3 className="text-base font-semibold text-white">
-                {metricMode === 'payback' ? 'Payback activity' : 'Loan Volume'}
-              </h3>
-              
-              {/* Metric Mode Toggle */}
-              <div className="flex items-center gap-1 bg-[#171717] p-1 rounded-lg border border-white/[0.04]">
-                <button
-                  onClick={() => setMetricMode('payback')}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
-                    metricMode === 'payback'
-                      ? 'bg-white text-black shadow-sm'
-                      : 'text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  Paybacks
-                </button>
-                <button
-                  onClick={() => setMetricMode('volume')}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
-                    metricMode === 'volume'
-                      ? 'bg-white text-black shadow-sm'
-                      : 'text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  Originations
-                </button>
-              </div>
+          <div className="flex items-center gap-3">
+            <h3 className="text-base font-semibold text-white">
+              {metricMode === 'payback' ? 'Payback activity' : 'Loan Volume'}
+            </h3>
+            
+            {/* Metric Mode Toggle */}
+            <div className="flex items-center gap-1 bg-[#171717] p-1 rounded-lg border border-white/[0.04]">
+              <button
+                onClick={() => setMetricMode('payback')}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                  metricMode === 'payback'
+                    ? 'bg-white text-black shadow-sm'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                Paybacks
+              </button>
+              <button
+                onClick={() => setMetricMode('volume')}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                  metricMode === 'volume'
+                    ? 'bg-white text-black shadow-sm'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                Originations
+              </button>
             </div>
-
-            <p className="text-xs text-neutral-400">
-              Interactive volume curve • Hover points to inspect daily totals
-            </p>
           </div>
 
-          {/* Right: Total Value + Time Range Tabs */}
+          {/* Right: Total Value + Month Calendar Selector */}
           <div className="flex items-center gap-4 self-stretch md:self-auto justify-between md:justify-end">
             <div className="text-right">
               <div className="text-2xl font-bold text-white font-sans">
-                ${(metricMode === 'payback' ? totalRepaid : totalPrincipal).toFixed(2)}
+                ${monthTotal.toFixed(2)}
               </div>
-              <span className="text-[10px] text-neutral-500 uppercase tracking-wider">
-                {metricMode === 'payback' ? 'Total Settled' : 'Total Lent'}
-              </span>
             </div>
 
-            {/* Range Selector */}
-            <div className="flex items-center gap-1 bg-[#171717] p-1 rounded-xl border border-white/[0.04]">
-              {(['7D', '14D', '30D'] as const).map((r) => (
-                <button
-                  key={r}
-                  onClick={() => setTimeRange(r)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    timeRange === r
-                      ? 'bg-white text-black shadow-sm'
-                      : 'text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  {r}
-                </button>
-              ))}
+            {/* Calendar Month Navigation Button */}
+            <div className="flex items-center gap-1 bg-[#171717] p-1 rounded-xl border border-white/[0.06] select-none">
+              <button
+                onClick={handlePrevMonth}
+                className="p-1.5 rounded-lg hover:bg-white/10 text-neutral-400 hover:text-white transition-colors"
+                title="Previous Month"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              <div className="flex items-center gap-2 px-2.5 py-1 text-xs font-semibold text-white">
+                <Calendar className="w-3.5 h-3.5 text-neutral-400" />
+                <span>
+                  {selectedMonth.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                </span>
+              </div>
+
+              <button
+                onClick={handleNextMonth}
+                className="p-1.5 rounded-lg hover:bg-white/10 text-neutral-400 hover:text-white transition-colors"
+                title="Next Month"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
 
-        {/* The Working Interactive SVG Chart */}
+        {/* The Clean, Uncrowded Interactive SVG Chart */}
         <div className="relative w-full h-72 select-none">
           
-          {/* Tooltip Overlay */}
+          {/* Tooltip Overlay (Clean: Date + Amount only, zero 'No volume recorded' text) */}
           {activePoint && (
             <div
               className="absolute z-20 pointer-events-none transition-all duration-75 -translate-x-1/2 -translate-y-full mb-3"
@@ -318,16 +340,13 @@ export default function OverviewPage() {
                 top: `${(activePoint.y / svgHeight) * 100}%`,
               }}
             >
-              <div className="bg-[#18181b]/95 backdrop-blur-md border border-white/15 rounded-xl px-3.5 py-2.5 shadow-2xl space-y-1 text-center whitespace-nowrap">
+              <div className="bg-[#18181b]/95 backdrop-blur-md border border-white/15 rounded-xl px-3.5 py-2 shadow-2xl space-y-1 text-center whitespace-nowrap">
                 <div className="text-[10px] text-neutral-400 font-mono flex items-center justify-center gap-1">
                   <Calendar className="w-3 h-3 text-neutral-500" />
                   <span>{activePoint.data.fullDate}</span>
                 </div>
                 <div className="text-sm font-bold text-white font-sans">
                   ${activePoint.data.volume.toFixed(2)}
-                </div>
-                <div className="text-[10px] text-emerald-400 font-medium">
-                  {activePoint.data.count > 0 ? `${activePoint.data.count} loans active` : 'No volume recorded'}
                 </div>
               </div>
             </div>
@@ -342,13 +361,13 @@ export default function OverviewPage() {
           >
             <defs>
               <linearGradient id="paybackAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.18" />
-                <stop offset="50%" stopColor="#ffffff" stopOpacity="0.06" />
+                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.16" />
+                <stop offset="50%" stopColor="#ffffff" stopOpacity="0.04" />
                 <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
               </linearGradient>
 
               <linearGradient id="paybackStrokeGrad" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#a3a3a3" />
+                <stop offset="0%" stopColor="#888888" />
                 <stop offset="50%" stopColor="#ffffff" />
                 <stop offset="100%" stopColor="#ffffff" />
               </linearGradient>
@@ -401,7 +420,7 @@ export default function OverviewPage() {
               />
             )}
 
-            {/* Hover Vertical Guideline & Point */}
+            {/* Hover Vertical Guideline & Glowing Point */}
             {activePoint && (
               <>
                 <line
@@ -428,34 +447,38 @@ export default function OverviewPage() {
             {/* Static Nodes at Points */}
             {points.map((pt, idx) => {
               const isHovered = hoveredIdx === idx;
-              const isLatest = idx === points.length - 1;
+              const isSpacedTick = pt.data.dayNum === 1 || pt.data.dayNum % 5 === 0 || pt.data.dayNum === chartData.length;
 
               return (
                 <circle
                   key={idx}
                   cx={pt.x}
                   cy={pt.y}
-                  r={isHovered ? 6 : isLatest ? 4 : 2.5}
-                  fill={isLatest || isHovered ? '#ffffff' : 'rgba(255,255,255,0.3)'}
+                  r={isHovered ? 6 : isSpacedTick ? 3.5 : 2}
+                  fill={isHovered ? '#ffffff' : isSpacedTick ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.15)'}
                   className="transition-all duration-200"
                 />
               );
             })}
 
-            {/* X-Axis Day Labels */}
-            {points.map((pt, idx) => (
-              <text
-                key={idx}
-                x={pt.x}
-                y={svgHeight - 14}
-                textAnchor="middle"
-                className={`text-[11px] font-sans font-medium transition-colors ${
-                  hoveredIdx === idx ? 'fill-white font-bold' : 'fill-neutral-500'
-                }`}
-              >
-                {pt.data.label}
-              </text>
-            ))}
+            {/* X-Axis Day Labels: Cleanly spaced (Day 1, 5, 10, 15, 20, 25, 30) - Zero Crowding */}
+            {points.map((pt, idx) => {
+              if (!pt.data.label) return null;
+
+              return (
+                <text
+                  key={idx}
+                  x={pt.x}
+                  y={svgHeight - 14}
+                  textAnchor="middle"
+                  className={`text-[11px] font-sans font-medium transition-colors ${
+                    hoveredIdx === idx ? 'fill-white font-bold' : 'fill-neutral-500'
+                  }`}
+                >
+                  {pt.data.label}
+                </text>
+              );
+            })}
           </svg>
         </div>
 

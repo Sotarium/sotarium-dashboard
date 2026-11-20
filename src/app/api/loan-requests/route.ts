@@ -65,7 +65,7 @@ export async function PATCH(req: Request) {
     const body = await req.json();
     const { id, status } = body;
 
-    if (!id || !status || !['approved', 'rejected', 'pending'].includes(status)) {
+    if (!id || !status || !['approved', 'rejected', 'pending', 'completed'].includes(status)) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
@@ -82,5 +82,24 @@ export async function PATCH(req: Request) {
   } catch (err) {
     console.error('Failed to update loan request:', err);
     return NextResponse.json({ error: 'Failed to update loan request' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
+
+    const { error } = await supabase.from('loan_requests').delete().eq('id', id);
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('Failed to delete loan request:', err);
+    return NextResponse.json({ error: 'Failed to delete loan request' }, { status: 500 });
   }
 }

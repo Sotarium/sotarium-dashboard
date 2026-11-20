@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Loan } from '@/lib/data';
-import { Search, Lock } from 'lucide-react';
+import { Search, Lock, Trash2 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
 function TimeLeftCell({ dueDate, loanDate, status }: { dueDate: string; loanDate: string; status: string }) {
@@ -108,6 +108,16 @@ export default function LoansPage() {
       })
       .catch((err) => console.error(err));
   }, []);
+
+  const handleDeleteLoan = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this loan?')) return;
+    setLoans((prev) => prev.filter((l) => l.id !== id));
+    try {
+      await fetch(`/api/loans?id=${id}`, { method: 'DELETE' });
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // Guard while auth state is loading
   if (!isLoaded) {
@@ -242,16 +252,26 @@ export default function LoansPage() {
                       <TimeLeftCell dueDate={loan.dueDate} loanDate={loan.loanDate} status={loan.status} />
                     </td>
 
-                    <td className="py-4 px-3">
-                      {loan.status === 'completed' ? (
-                        <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-neutral-900 text-neutral-300 border border-white/[0.08]">
-                          Paid
-                        </span>
-                      ) : (
-                        <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-white text-black">
-                          Active
-                        </span>
-                      )}
+                    <td className="py-4 px-3 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {loan.status === 'completed' ? (
+                          <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-neutral-900 text-neutral-300 border border-white/[0.08]">
+                            Paid
+                          </span>
+                        ) : (
+                          <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-white text-black">
+                            Active
+                          </span>
+                        )}
+
+                        <button
+                          onClick={() => handleDeleteLoan(loan.id)}
+                          className="p-1.5 rounded-lg hover:bg-white/[0.08] text-neutral-500 hover:text-red-400 transition-colors"
+                          title="Delete loan record"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

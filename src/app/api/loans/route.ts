@@ -54,3 +54,18 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: 'Failed to update loan' }, { status: 500 });
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+
+    let loans = readLoans();
+    loans = loans.filter((l) => l.id !== id);
+    writeLoans(loans);
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: 'Failed to delete loan' }, { status: 500 });
+  }
+}

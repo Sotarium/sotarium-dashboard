@@ -8,10 +8,9 @@ import {
   MessageSquare, 
   Trash2, 
   CheckCircle2, 
-  Clock, 
   ShieldAlert,
   X,
-  Coins
+  RotateCcw
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
@@ -47,16 +46,16 @@ const TIERS: ColumnTier[] = [
 ];
 
 export default function RoadmilePage() {
-  const { user, isAdmin, isOwner, isLoaded } = useAuth();
-  const [items, setItems] = useState<RoadmileItem[]>([]);
+  const { user, isAdmin, isLoaded } = useAuth();
+  const [completedItems, setCompletedItems] = useState<RoadmileItem[]>([]);
+  const [pendingLoans, setPendingLoans] = useState<RoadmileItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<'all' | 'unpaid' | 'paid'>('all');
-  const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  // Add Item Modal
+  // Add Completed Loan Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTier, setModalTier] = useState<number>(50);
+  const [selectedPendingId, setSelectedPendingId] = useState<string>('');
   const [newUserName, setNewUserName] = useState('');
   const [newUserId, setNewUserId] = useState('');
   const [newAmount, setNewAmount] = useState('50');
@@ -64,21 +63,22 @@ export default function RoadmilePage() {
   const [newReason, setNewReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Known quick-select Discord users
-  const KNOWN_USERS = [
-    { name: 'Slax', id: '1417666933201047574' },
-    { name: 'Korak', id: '1399577280057184348' },
-    { name: 'azrael', id: '775733039513731082' },
-    { name: 'sotarium', id: '1079074717799030824' },
-  ];
-
-  const fetchItems = async () => {
+  const fetchRoadmapData = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/roadmap');
-      if (res.ok) {
-        const data = await res.json();
-        setItems(data);
+      // Fetch both completed and pending items
+      const [resCompleted, resPending] = await Promise.all([
+        fetch('/api/roadmap?mode=completed'),
+        fetch('/api/roadmap?mode=pending'),
+      ]);
+
+      if (resCompleted.ok) {
+        const data = await resCompleted.json();
+        setCompletedItems(data);
+      }
+      if (resPending.ok) {
+        const data = await resPending.json();
+        setPendingLoans(data);
       }
     } catch (e) {
       console.error('Failed to load roadmap items:', e);
@@ -89,57 +89,57 @@ export default function RoadmilePage() {
 
   useEffect(() => {
     if (isAdmin) {
-      fetchItems();
+      fetchRoadmapData();
     }
   }, [isAdmin]);
 
-  // Toggle paid back checkmark
-  const handleTogglePaid = async (item: RoadmileItem) => {
-    const nextPaid = !item.is_paid;
-    setTogglingId(item.id);
-
-    // Optimistic UI update
-    setItems((prev) =>
-      prev.map((i) =>
-        i.id === item.id
-          ? {
-              ...i,
-              is_paid: nextPaid,
-              status: nextPaid ? 'completed' : 'approved',
-            }
-          : i
-      )
-    );
-
+  // Mark an active/pending loan as Completed
+  const handleMarkAsCompleted = async (loanId: string) => {
     try {
       const res = await fetch('/api/roadmap', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: item.id, isPaid: nextPaid }),
+        body: JSON.stringify({ id: loanId, isPaid: true, status: 'completed' }),
       });
-      if (!res.ok) {
-        // Revert on failure
-        fetchItems();
+      if (res.ok) {
+        fetchRoadmapData();
+        setIsModalOpen(false);
       }
     } catch (err) {
-      console.error('Failed to update status:', err);
-      fetchItems();
-    } finally {
-      setTogglingId(null);
+      console.error('Failed to mark loan as completed:', err);
     }
   };
 
-  // Delete item from board
+  // Reset a completed loan back to pending (removes from completed board)
+  const handleResetToPending = async (item: RoadmileItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm(`Reset ${item.user_name}'s loan back to pending?`)) return;
+
+    setCompletedItems((prev) => prev.filter((i) => i.id !== item.id));
+    try {
+      await fetch('/api/roadmap', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: item.id, isPaid: false, status: 'pending' }),
+      });
+      fetchRoadmapData();
+    } catch (err) {
+      console.error('Failed to reset loan:', err);
+      fetchRoadmapData();
+    }
+  };
+
+  // Delete completed record from board
   const handleDeleteItem = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('Are you sure you want to delete this borrower from the board?')) return;
+    if (!confirm('Are you sure you want to delete this record?')) return;
 
-    setItems((prev) => prev.filter((i) => i.id !== id));
+    setCompletedItems((prev) => prev.filter((i) => i.id !== id));
     try {
       await fetch(`/api/roadmap?id=${id}`, { method: 'DELETE' });
     } catch (err) {
       console.error('Failed to delete item:', err);
-      fetchItems();
+      fetchRoadmapData();
     }
   };
 
@@ -148,15 +148,25 @@ export default function RoadmilePage() {
     const amt = tierAmount || 50;
     setModalTier(amt);
     setNewAmount(amt.toString());
+    setSelectedPendingId('');
     setNewUserName('');
     setNewUserId('');
     setNewReason('');
     setIsModalOpen(true);
   };
 
-  // Submit new borrower
-  const handleCreateBorrower = async (e: React.FormEvent) => {
+  // Create new completed loan directly
+  const handleCreateCompleted = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // If an existing pending loan was selected, mark it completed
+    if (selectedPendingId) {
+      setIsSubmitting(true);
+      await handleMarkAsCompleted(selectedPendingId);
+      setIsSubmitting(false);
+      return;
+    }
+
     if (!newAmount || parseFloat(newAmount) <= 0) return;
 
     setIsSubmitting(true);
@@ -169,44 +179,36 @@ export default function RoadmilePage() {
           userName: newUserName || 'Borrower',
           amount: parseFloat(newAmount),
           cryptoCurrency: newCurrency,
-          reason: newReason || 'Roadmile loan entry',
-          isPaid: false,
+          reason: newReason || 'Completed payback',
+          status: 'completed',
         }),
       });
 
       if (res.ok) {
         setIsModalOpen(false);
-        fetchItems();
+        fetchRoadmapData();
       }
     } catch (err) {
-      console.error('Failed to create borrower:', err);
+      console.error('Failed to create completed loan:', err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Filtered items
-  const filteredItems = useMemo(() => {
-    return items.filter((item) => {
+  // Filtered completed items
+  const filteredCompleted = useMemo(() => {
+    return completedItems.filter((item) => {
       const matchesSearch =
         item.user_name.toLowerCase().includes(search.toLowerCase()) ||
         item.user_id.includes(search) ||
         (item.reason && item.reason.toLowerCase().includes(search.toLowerCase()));
-
-      if (filter === 'unpaid') return matchesSearch && !item.is_paid;
-      if (filter === 'paid') return matchesSearch && item.is_paid;
       return matchesSearch;
     });
-  }, [items, search, filter]);
+  }, [completedItems, search]);
 
-  // Overall metrics
-  const totalBorrowed = useMemo(() => items.reduce((acc, i) => acc + i.amount, 0), [items]);
-  const totalPaid = useMemo(() => items.filter((i) => i.is_paid).reduce((acc, i) => acc + i.amount, 0), [items]);
-  const totalDuePending = useMemo(
-    () => items.filter((i) => !i.is_paid).reduce((acc, i) => acc + i.total_due, 0),
-    [items]
-  );
-  const paidCount = useMemo(() => items.filter((i) => i.is_paid).length, [items]);
+  const totalPaid = useMemo(() => completedItems.reduce((acc, i) => acc + i.amount, 0), [completedItems]);
+  const totalPaidWithInterest = useMemo(() => completedItems.reduce((acc, i) => acc + i.total_due, 0), [completedItems]);
+  const completedCount = completedItems.length;
 
   // Access check
   if (isLoaded && !isAdmin) {
@@ -233,12 +235,12 @@ export default function RoadmilePage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white font-sans flex items-center gap-3">
             <span>Roadmile</span>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-white/10 text-neutral-300 font-normal">
-              Repayment Board
+            <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-semibold">
+              Completed Paybacks
             </span>
           </h1>
           <p className="text-xs text-neutral-400 mt-1">
-            Track loan tiers and checkmark borrowers who have paid back.
+            Borrowers whose loans are marked Completed, organized into milestone tier columns.
           </p>
         </div>
 
@@ -247,61 +249,46 @@ export default function RoadmilePage() {
           className="px-4 py-2 rounded-xl bg-white hover:bg-neutral-100 text-black font-semibold text-xs flex items-center gap-2 transition-all shadow-sm hover:scale-[1.01] active:scale-[0.99]"
         >
           <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-          <span>Add Borrower</span>
+          <span>Mark Loan Completed</span>
         </button>
       </div>
 
       {/* KPI Stats Bar */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="soteria-card p-4 sm:p-5 space-y-1">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="soteria-card p-5 space-y-1">
           <div className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">
-            Total Lent Out
+            Total Settled (Principal)
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-white font-sans">
-            ${totalBorrowed.toFixed(2)}
+          <div className="text-2xl font-bold text-white font-sans">
+            ${totalPaid.toFixed(2)}
           </div>
           <div className="text-[11px] text-neutral-500">
-            Across {items.length} total loans
+            Across {completedCount} settled loans
           </div>
         </div>
 
-        <div className="soteria-card p-4 sm:p-5 space-y-1">
+        <div className="soteria-card p-5 space-y-1">
           <div className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">
-            Total Paid Back
+            Total Repaid (+15% Interest)
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-emerald-400 font-sans">
-            ${totalPaid.toFixed(2)}
+          <div className="text-2xl font-bold text-emerald-400 font-sans">
+            ${totalPaidWithInterest.toFixed(2)}
           </div>
           <div className="text-[11px] text-emerald-500/80 flex items-center gap-1">
             <CheckCircle2 className="w-3 h-3" />
-            <span>{paidCount} borrowers settled</span>
+            <span>100% Settled into House Liquidity</span>
           </div>
         </div>
 
-        <div className="soteria-card p-4 sm:p-5 space-y-1">
+        <div className="soteria-card p-5 space-y-1">
           <div className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">
-            Pending Repayment
+            Active Pending Debtors
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-amber-400 font-sans">
-            ${totalDuePending.toFixed(2)}
+          <div className="text-2xl font-bold text-amber-400 font-sans">
+            {pendingLoans.length}
           </div>
           <div className="text-[11px] text-neutral-500">
-            Total with 15% interest
-          </div>
-        </div>
-
-        <div className="soteria-card p-4 sm:p-5 space-y-1">
-          <div className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">
-            Settlement Progress
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-white font-sans">
-            {items.length > 0 ? Math.round((paidCount / items.length) * 100) : 0}%
-          </div>
-          <div className="w-full bg-neutral-800 h-1.5 rounded-full overflow-hidden mt-1">
-            <div 
-              className="bg-emerald-400 h-full rounded-full transition-all duration-500"
-              style={{ width: `${items.length > 0 ? (paidCount / items.length) * 100 : 0}%` }}
-            />
+            Click &quot;Mark Loan Completed&quot; to settle any of them
           </div>
         </div>
       </div>
@@ -312,38 +299,25 @@ export default function RoadmilePage() {
           <Search className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search borrower or ID..."
+            placeholder="Search settled borrower or ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 rounded-xl bg-[#171717] border border-white/[0.06] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-400 transition-colors"
           />
         </div>
 
-        <div className="flex items-center gap-1.5 self-start md:self-auto bg-[#171717] p-1 rounded-xl border border-white/[0.04]">
-          {(['all', 'unpaid', 'paid'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setFilter(tab)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all ${
-                filter === tab
-                  ? 'bg-white text-black shadow-sm'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              {tab === 'unpaid' ? 'Unpaid' : tab === 'paid' ? 'Paid Back' : 'All'}
-            </button>
-          ))}
+        <div className="text-xs text-neutral-400">
+          Showing <span className="text-white font-semibold">{filteredCompleted.length}</span> completed borrowers
         </div>
       </div>
 
       {/* Board Columns: $10, $25, $50, $100, $250, $500+ */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 items-start">
         {TIERS.map((tier) => {
-          // Find items falling into this column tier
-          const tierItems = filteredItems.filter(
+          // Display ONLY loans that are marked Completed in this tier!
+          const tierItems = filteredCompleted.filter(
             (item) => item.amount >= tier.min && item.amount <= tier.max
           );
-          const tierPaidCount = tierItems.filter((i) => i.is_paid).length;
           const tierTotalSum = tierItems.reduce((acc, i) => acc + i.amount, 0);
 
           return (
@@ -365,7 +339,7 @@ export default function RoadmilePage() {
                 <button
                   onClick={() => handleOpenAdd(tier.amount)}
                   className="p-1 rounded-lg hover:bg-white/[0.08] text-neutral-400 hover:text-white transition-colors"
-                  title={`Add borrower to ${tier.title}`}
+                  title={`Add completed borrower to ${tier.title}`}
                 >
                   <Plus className="w-3.5 h-3.5" />
                 </button>
@@ -373,55 +347,38 @@ export default function RoadmilePage() {
 
               {/* Column Meta Sub-header */}
               <div className="flex items-center justify-between text-[10px] text-neutral-500 mb-2.5 px-0.5">
-                <span>${tierTotalSum.toFixed(0)} Total</span>
-                <span>{tierPaidCount}/{tierItems.length} Settled</span>
+                <span>${tierTotalSum.toFixed(0)} Settled</span>
+                <span className="text-emerald-400 font-semibold">{tierItems.length} Paid</span>
               </div>
 
-              {/* Borrower Cards in Column */}
+              {/* Completed Borrower Cards in Column */}
               <div className="space-y-2.5 flex-1 overflow-y-auto max-h-[600px] pr-0.5">
                 {tierItems.length === 0 ? (
                   <div className="h-44 border border-dashed border-white/[0.06] rounded-xl flex flex-col items-center justify-center p-4 text-center">
-                    <span className="text-[11px] text-neutral-500">No loans</span>
+                    <span className="text-[11px] text-neutral-500">No completed loans</span>
                     <button
                       onClick={() => handleOpenAdd(tier.amount)}
                       className="mt-2 text-[10px] text-neutral-400 hover:text-white underline underline-offset-2"
                     >
-                      + Add {tier.title} loan
+                      + Add completed loan
                     </button>
                   </div>
                 ) : (
                   tierItems.map((item) => {
-                    const isChecked = item.is_paid;
-
                     return (
                       <div
                         key={item.id}
-                        onClick={() => handleTogglePaid(item)}
-                        className={`p-3 rounded-xl border transition-all cursor-pointer group select-none relative overflow-hidden ${
-                          isChecked
-                            ? 'bg-[#18221c]/60 border-emerald-500/30 hover:border-emerald-500/50'
-                            : 'bg-[#181818] border-white/[0.05] hover:border-white/15'
-                        }`}
+                        className="p-3 rounded-xl border border-emerald-500/30 bg-[#141d17] hover:border-emerald-500/50 transition-all select-none relative overflow-hidden"
                       >
-                        {/* Top row: Checkbox + User info */}
+                        {/* Top row: Check icon + User info */}
                         <div className="flex items-start gap-2.5">
-                          {/* Tactile Checkmark Button */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleTogglePaid(item);
-                            }}
-                            disabled={togglingId === item.id}
-                            className={`w-5 h-5 rounded-md mt-0.5 flex items-center justify-center shrink-0 transition-all cursor-pointer ${
-                              isChecked
-                                ? 'bg-emerald-500 text-black shadow-[0_0_10px_rgba(16,185,129,0.3)]'
-                                : 'border border-neutral-600 group-hover:border-white bg-neutral-900/60'
-                            }`}
-                            title={isChecked ? 'Mark as Unpaid' : 'Mark as Paid Back'}
+                          {/* Completed Green Checkmark Pill */}
+                          <div
+                            className="w-5 h-5 rounded-md mt-0.5 flex items-center justify-center shrink-0 bg-emerald-500 text-black shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+                            title="Completed & Paid Back"
                           >
-                            {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                          </button>
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          </div>
 
                           {/* Avatar & Username */}
                           <div className="min-w-0 flex-1">
@@ -433,20 +390,18 @@ export default function RoadmilePage() {
                                 className="w-5 h-5 rounded-full object-cover border border-white/10 shrink-0 bg-neutral-800"
                                 onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
                               />
-                              <span className={`text-xs font-semibold truncate ${
-                                isChecked ? 'text-neutral-300 line-through' : 'text-white'
-                              }`}>
+                              <span className="text-xs font-semibold text-white truncate">
                                 {item.user_name}
                               </span>
                             </div>
 
-                            {/* Loan Amount & Currency */}
+                            {/* Loan Amount & Repaid Total */}
                             <div className="mt-1.5 flex items-baseline justify-between">
                               <span className="text-xs font-bold text-white">
                                 ${item.amount.toFixed(2)}
                               </span>
-                              <span className="text-[10px] text-neutral-400 font-mono">
-                                Due: ${item.total_due.toFixed(2)}
+                              <span className="text-[10px] text-emerald-400 font-mono font-semibold">
+                                Repaid: ${item.total_due.toFixed(2)}
                               </span>
                             </div>
 
@@ -460,34 +415,26 @@ export default function RoadmilePage() {
                             {/* Bottom Status & Actions */}
                             <div className="mt-2.5 pt-2 border-t border-white/[0.04] flex items-center justify-between">
                               {/* Status Badge */}
-                              {isChecked ? (
-                                <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                                  <Check className="w-2.5 h-2.5" />
-                                  <span>Paid Back</span>
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-amber-400 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
-                                  <Clock className="w-2.5 h-2.5" />
-                                  <span>Pending</span>
-                                </span>
-                              )}
+                              <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                                <Check className="w-2.5 h-2.5" />
+                                <span>Completed</span>
+                              </span>
 
                               {/* Action Buttons */}
                               <div className="flex items-center gap-1">
                                 <button
                                   type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
+                                  onClick={() => {
                                     window.dispatchEvent(new CustomEvent('open-support-chat', {
                                       detail: {
                                         userId: item.user_id,
                                         userName: item.user_name,
                                         userAvatar: item.user_avatar,
-                                        subject: `Roadmile Loan (${item.user_name} - $${item.amount.toFixed(2)} ${item.crypto_currency})`
+                                        subject: `Settled Loan (${item.user_name} - $${item.amount.toFixed(2)} ${item.crypto_currency})`
                                       }
                                     }));
                                   }}
-                                  className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors"
+                                  className="p-1 rounded hover:bg-white/10 text-neutral-400 hover:text-white transition-colors"
                                   title="Message in Support"
                                 >
                                   <MessageSquare className="w-3 h-3" />
@@ -495,8 +442,17 @@ export default function RoadmilePage() {
 
                                 <button
                                   type="button"
+                                  onClick={(e) => handleResetToPending(item, e)}
+                                  className="p-1 rounded hover:bg-white/10 text-neutral-400 hover:text-amber-400 transition-colors"
+                                  title="Reset back to pending (unpaid)"
+                                >
+                                  <RotateCcw className="w-3 h-3" />
+                                </button>
+
+                                <button
+                                  type="button"
                                   onClick={(e) => handleDeleteItem(item.id, e)}
-                                  className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-red-400 transition-colors"
+                                  className="p-1 rounded hover:bg-white/10 text-neutral-400 hover:text-red-400 transition-colors"
                                   title="Delete from board"
                                 >
                                   <Trash2 className="w-3 h-3" />
@@ -515,15 +471,15 @@ export default function RoadmilePage() {
         })}
       </div>
 
-      {/* Add Borrower Modal */}
+      {/* Mark Loan Completed Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="relative w-full max-w-md bg-[#161616] border border-white/[0.08] rounded-3xl p-6 shadow-2xl space-y-5">
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
               <div>
-                <h3 className="text-lg font-bold text-white font-sans">Add to Roadmile Board</h3>
-                <p className="text-xs text-neutral-400 mt-0.5">Assign a borrower to a tier column</p>
+                <h3 className="text-lg font-bold text-white font-sans">Mark Loan as Completed</h3>
+                <p className="text-xs text-neutral-400 mt-0.5">Select a borrower who paid back to add to the board</p>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -533,117 +489,162 @@ export default function RoadmilePage() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateBorrower} className="space-y-4">
-              {/* Quick Select Known User */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-neutral-300">Quick Select User</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {KNOWN_USERS.map((u) => (
-                    <button
-                      type="button"
-                      key={u.id}
-                      onClick={() => {
-                        setNewUserName(u.name);
-                        setNewUserId(u.id);
+            <form onSubmit={handleCreateCompleted} className="space-y-4">
+              
+              {/* Option 1: Pick from currently active/pending loans */}
+              {pendingLoans.length > 0 && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-neutral-300">
+                    Select Active Borrower to Settle
+                  </label>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                    {pendingLoans.map((l) => (
+                      <div
+                        key={l.id}
+                        onClick={() => {
+                          if (selectedPendingId === l.id) {
+                            setSelectedPendingId('');
+                          } else {
+                            setSelectedPendingId(l.id);
+                            setNewUserName(l.user_name);
+                            setNewUserId(l.user_id);
+                            setNewAmount(l.amount.toString());
+                            setNewCurrency(l.crypto_currency);
+                          }
+                        }}
+                        className={`p-2.5 rounded-xl border text-xs flex items-center justify-between cursor-pointer transition-all ${
+                          selectedPendingId === l.id
+                            ? 'bg-emerald-500/15 border-emerald-500 text-white'
+                            : 'bg-[#1e1e1e] border-white/[0.06] text-neutral-300 hover:border-white/20'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={l.user_avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                            alt={l.user_name}
+                            className="w-5 h-5 rounded-full object-cover"
+                          />
+                          <span className="font-semibold">{l.user_name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-white font-mono">
+                            ${l.amount.toFixed(2)} {l.crypto_currency}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (!confirm(`Delete ${l.user_name}'s loan request permanently?`)) return;
+                              setPendingLoans((prev) => prev.filter((p) => p.id !== l.id));
+                              try {
+                                await fetch(`/api/loan-requests?id=${l.id}`, { method: 'DELETE' });
+                              } catch (err) {
+                                console.error(err);
+                              }
+                            }}
+                            className="p-1 rounded hover:bg-red-500/20 text-neutral-500 hover:text-red-400 transition-colors"
+                            title="Delete loan"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Or manual entry */}
+              <div className="pt-1 border-t border-white/[0.06] space-y-3">
+                <div className="text-[11px] font-medium text-neutral-400">
+                  {selectedPendingId ? 'Selected Loan Details' : 'Or Record a Custom Settled Loan'}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-medium text-neutral-400">Borrower Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Slax"
+                      value={newUserName}
+                      onChange={(e) => {
+                        setNewUserName(e.target.value);
+                        setSelectedPendingId('');
                       }}
-                      className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-left flex items-center gap-2 ${
-                        newUserId === u.id
-                          ? 'bg-white text-black border-white'
-                          : 'bg-[#1e1e1e] text-neutral-300 border-white/[0.06] hover:border-white/20'
-                      }`}
+                      required
+                      className="w-full px-3 py-2 rounded-xl bg-[#1e1e1e] border border-white/[0.06] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-400"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-medium text-neutral-400">Discord User ID</label>
+                    <input
+                      type="text"
+                      placeholder="Snowflake ID..."
+                      value={newUserId}
+                      onChange={(e) => {
+                        setNewUserId(e.target.value);
+                        setSelectedPendingId('');
+                      }}
+                      className="w-full px-3 py-2 rounded-xl bg-[#1e1e1e] border border-white/[0.06] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-400"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-medium text-neutral-400">Amount Paid ($)</label>
+                    <input
+                      type="number"
+                      step="any"
+                      placeholder="50"
+                      value={newAmount}
+                      onChange={(e) => {
+                        setNewAmount(e.target.value);
+                        setSelectedPendingId('');
+                      }}
+                      required
+                      className="w-full px-3 py-2 rounded-xl bg-[#1e1e1e] border border-white/[0.06] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-400 font-semibold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-medium text-neutral-400">Currency</label>
+                    <select
+                      value={newCurrency}
+                      onChange={(e) => setNewCurrency(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-[#1e1e1e] border border-white/[0.06] text-xs text-white focus:outline-none focus:border-neutral-400"
                     >
-                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                      <span className="truncate">{u.name}</span>
-                    </button>
-                  ))}
+                      <option value="SOL">SOL (Solana)</option>
+                      <option value="ETH">ETH (Ethereum)</option>
+                      <option value="BTC">BTC (Bitcoin)</option>
+                      <option value="LTC">LTC (Litecoin)</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
 
-              {/* Custom Username & Discord ID */}
-              <div className="grid grid-cols-2 gap-3">
+                {/* Quick Tier Selection */}
                 <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-neutral-400">Borrower Name</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Korak"
-                    value={newUserName}
-                    onChange={(e) => setNewUserName(e.target.value)}
-                    required
-                    className="w-full px-3 py-2 rounded-xl bg-[#1e1e1e] border border-white/[0.06] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-400"
-                  />
+                  <label className="text-[11px] font-medium text-neutral-400">Quick Tier</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[10, 25, 50, 100, 250, 500].map((amt) => (
+                      <button
+                        type="button"
+                        key={amt}
+                        onClick={() => {
+                          setNewAmount(amt.toString());
+                          setSelectedPendingId('');
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                          newAmount === amt.toString() && !selectedPendingId
+                            ? 'bg-white text-black border-white'
+                            : 'bg-[#1e1e1e] text-neutral-400 border-white/[0.04] hover:text-white'
+                        }`}
+                      >
+                        ${amt}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-neutral-400">Discord User ID</label>
-                  <input
-                    type="text"
-                    placeholder="Snowflake ID..."
-                    value={newUserId}
-                    onChange={(e) => setNewUserId(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#1e1e1e] border border-white/[0.06] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-400"
-                  />
-                </div>
-              </div>
-
-              {/* Amount & Currency */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-neutral-400">Loan Amount ($)</label>
-                  <input
-                    type="number"
-                    step="any"
-                    placeholder="50"
-                    value={newAmount}
-                    onChange={(e) => setNewAmount(e.target.value)}
-                    required
-                    className="w-full px-3 py-2 rounded-xl bg-[#1e1e1e] border border-white/[0.06] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-400 font-semibold"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-neutral-400">Crypto Currency</label>
-                  <select
-                    value={newCurrency}
-                    onChange={(e) => setNewCurrency(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#1e1e1e] border border-white/[0.06] text-xs text-white focus:outline-none focus:border-neutral-400"
-                  >
-                    <option value="SOL">SOL (Solana)</option>
-                    <option value="ETH">ETH (Ethereum)</option>
-                    <option value="BTC">BTC (Bitcoin)</option>
-                    <option value="LTC">LTC (Litecoin)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Tier Quick Select Pills */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-medium text-neutral-400">Quick Tier</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {[10, 25, 50, 100, 250, 500].map((amt) => (
-                    <button
-                      type="button"
-                      key={amt}
-                      onClick={() => setNewAmount(amt.toString())}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
-                        newAmount === amt.toString()
-                          ? 'bg-white text-black border-white'
-                          : 'bg-[#1e1e1e] text-neutral-400 border-white/[0.04] hover:text-white'
-                      }`}
-                    >
-                      ${amt}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Notes */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-medium text-neutral-400">Reason / Notes</label>
-                <input
-                  type="text"
-                  placeholder="Ticket reference or collateral note..."
-                  value={newReason}
-                  onChange={(e) => setNewReason(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#1e1e1e] border border-white/[0.06] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-400"
-                />
               </div>
 
               {/* Submit Buttons */}
@@ -658,9 +659,13 @@ export default function RoadmilePage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2 rounded-xl bg-white hover:bg-neutral-100 text-black font-semibold text-xs transition-all disabled:opacity-50"
+                  className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-xs transition-all disabled:opacity-50 cursor-pointer"
                 >
-                  {isSubmitting ? 'Adding...' : 'Add to Board'}
+                  {isSubmitting
+                    ? 'Saving...'
+                    : selectedPendingId
+                    ? 'Mark as Completed'
+                    : 'Record Completed Loan'}
                 </button>
               </div>
             </form>

@@ -20,17 +20,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-black flex flex-col justify-between p-6 select-none font-sans text-white">
-      {/* Top Navbar */}
-      <header className="w-full flex items-center justify-between max-w-6xl mx-auto py-2">
-        <div />
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-medium text-neutral-400">Log in</span>
-        </div>
-      </header>
-
+    <div className="min-h-screen w-full bg-black flex flex-col items-center justify-center p-6 select-none font-sans text-white">
       {/* Center Auth Card */}
-      <main className="w-full flex items-center justify-center my-auto py-8">
+      <main className="w-full flex items-center justify-center">
         <div className="w-full max-w-[420px] bg-[#141414] rounded-3xl p-8 border border-white/[0.06] shadow-2xl space-y-6 text-center">
           {/* Logo */}
           <div className="flex justify-center pb-1">
@@ -65,8 +57,6 @@ export default function LoginPage() {
 
         </div>
       </main>
-
-      <div className="h-6" />
     </div>
   );
 }

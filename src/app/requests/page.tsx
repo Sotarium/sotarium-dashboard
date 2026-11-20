@@ -76,7 +76,6 @@ export default function RequestsPage() {
   };
 
   const handleDeleteRequest = async (id: string) => {
-    if (!confirm('Are you sure you want to permanently delete this loan request?')) return;
     setRequests((prev) => prev.filter((r) => r.id !== id));
     try {
       await fetch(`/api/loan-requests?id=${id}`, { method: 'DELETE' });

@@ -133,7 +133,6 @@ export default function UserProfileModal({
   };
 
   const handleDeleteLoan = async (loanId: string) => {
-    if (!confirm('Are you sure you want to delete this loan record?')) return;
     setActionLoading(`del-${loanId}`);
     try {
       const res = await fetch(`/api/loan-requests?id=${loanId}`, {

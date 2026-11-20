@@ -110,7 +110,6 @@ export default function LoansPage() {
   }, []);
 
   const handleDeleteLoan = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this loan?')) return;
     setLoans((prev) => prev.filter((l) => l.id !== id));
     try {
       await fetch(`/api/loans?id=${id}`, { method: 'DELETE' });

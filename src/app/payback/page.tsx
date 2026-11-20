@@ -227,7 +227,7 @@ export default function PaybackPage() {
           ) : (
             <div className={`soteria-card p-4 border ${selectedCoin.border} bg-gradient-to-b ${selectedCoin.color} space-y-3`}>
               <div>
-                <div className="text-[11px] text-neutral-300 font-semibold uppercase tracking-widest mb-1.5">
+                <div className="text-[11px] text-white font-semibold uppercase tracking-widest mb-1.5">
                   Your Unique {selectedCoin.name} Address
                 </div>
                 <div className="flex items-center justify-between gap-3">
@@ -241,7 +241,7 @@ export default function PaybackPage() {
                 </div>
               </div>
               <div className="border-t border-white/[0.06] pt-3">
-                <div className="text-[11px] text-neutral-300 font-semibold uppercase tracking-widest mb-1.5">
+                <div className="text-[11px] text-white font-semibold uppercase tracking-widest mb-1.5">
                   Exact Amount to Send
                 </div>
                 <div className="flex items-center justify-between gap-3">
@@ -255,11 +255,6 @@ export default function PaybackPage() {
                   </button>
                 </div>
               </div>
-              {payment.expiresAt && (
-                <div className="text-[10px] text-neutral-500">
-                  Address valid until {new Date(payment.expiresAt).toLocaleString()}
-                </div>
-              )}
               <button onClick={() => { setPayment(null); setGenError(''); }}
                 className="text-[11px] text-neutral-500 hover:text-neutral-300 transition-colors cursor-pointer underline underline-offset-2">
                 Regenerate address

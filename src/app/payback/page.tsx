@@ -198,7 +198,7 @@ export default function PaybackPage() {
           {/* Countdown — top center */}
           {loanProgress && (
             <div className="flex justify-center">
-              <span className={`text-xl font-black tabular-nums tracking-widest uppercase ${
+              <span className={`text-xl font-black tabular-nums tracking-widest uppercase font-sans ${
                 loanProgress.dueMs !== null && loanProgress.dueMs <= 0 ? 'text-red-400' : 'text-white'
               }`} style={{ fontFamily: 'monospace', textShadow: '0 0 20px rgba(255,255,255,0.15)' }}>
                 {loanProgress.dueMs === null ? '' : loanProgress.dueMs <= 0 ? '⚠ Overdue' : formatDueCountdown(loanProgress.dueMs)}

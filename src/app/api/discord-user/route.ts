@@ -49,11 +49,17 @@ export async function GET(req: Request) {
     console.error('Failed to fetch Discord avatar for user:', userId, err);
   }
 
-  // Fallback
+  // Fallback: Default Discord avatar (never owner's pfp)
+  let defaultAvatar = 'https://cdn.discordapp.com/embed/avatars/0.png';
+  try {
+    const idx = Number((BigInt(userId) >> BigInt(22)) % BigInt(6));
+    defaultAvatar = `https://cdn.discordapp.com/embed/avatars/${idx}.png`;
+  } catch {}
+
   return NextResponse.json({
     userId,
-    username: 'sotarium',
-    avatarUrl: 'https://cdn.discordapp.com/avatars/1079074717799030824/64db63e7b0bcbe6b841ba40535473949.png?size=128',
+    username: 'User',
+    avatarUrl: defaultAvatar,
     fetchedAt: Date.now(),
   });
 }

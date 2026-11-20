@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
-import { Clock, CheckCircle2, XCircle, Search, ShieldAlert } from 'lucide-react';
+import { Clock, Search, ShieldAlert } from 'lucide-react';
 
 interface LoanRequest {
   id: string;
@@ -216,16 +216,13 @@ export default function RequestsPage() {
 
                     {/* Status badge */}
                     <td className="py-3.5 px-3">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ${
                         req.status === 'approved'
                           ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                           : req.status === 'rejected'
                           ? 'bg-red-500/10 text-red-400 border border-red-500/20'
                           : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                       }`}>
-                        {req.status === 'approved' && <CheckCircle2 className="w-3 h-3 text-emerald-400" />}
-                        {req.status === 'rejected' && <XCircle className="w-3 h-3 text-red-400" />}
-                        {req.status === 'pending' && <Clock className="w-3 h-3 text-amber-400" />}
                         <span className="capitalize">{req.status === 'rejected' ? 'Refused' : req.status}</span>
                       </span>
                     </td>

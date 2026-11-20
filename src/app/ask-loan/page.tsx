@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
-import { Send, Clock, CheckCircle2, XCircle, ChevronDown, Check } from 'lucide-react';
+import { Send, Clock, ChevronDown, Check } from 'lucide-react';
 
 interface LoanRequest {
   id: string;
@@ -104,8 +104,7 @@ export default function AskLoanPage() {
         </div>
 
         {successMsg && (
-          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
             <span>Your loan request has been submitted successfully to the administrators.</span>
           </div>
         )}
@@ -290,16 +289,13 @@ export default function AskLoanPage() {
                       ${(req.amount * 1.15).toFixed(2)}
                     </td>
                     <td className="py-3 px-3">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
                         req.status === 'approved'
                           ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                           : req.status === 'rejected'
                           ? 'bg-red-500/10 text-red-400 border border-red-500/20'
                           : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                       }`}>
-                        {req.status === 'approved' && <CheckCircle2 className="w-3 h-3" />}
-                        {req.status === 'rejected' && <XCircle className="w-3 h-3" />}
-                        {req.status === 'pending' && <Clock className="w-3 h-3" />}
                         <span className="capitalize">{req.status}</span>
                       </span>
                     </td>

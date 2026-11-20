@@ -27,6 +27,7 @@ interface Ticket {
   lastMessageTime?: string | null;
   lastMessageSender?: string | null;
   lastMessageSenderId?: string | null;
+  lastMessageId?: string | null;
 }
 
 interface Message {
@@ -44,6 +45,7 @@ interface LoanApplicant {
   id: string;
   user_id: string;
   user_name: string;
+  user_avatar?: string;
   amount: number;
   crypto_currency: string;
   reason?: string;
@@ -64,15 +66,19 @@ export default function SupportWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Check unread messages for notification dot using a per-ticket last-read map
+  // User-scoped storage key so owner & alt never collide in the same browser
+  const getStorageKey = () => `sotarium_support_read_msgs_${user?.id || 'guest'}`;
+
+  // Check unread messages for notification dot using user-scoped storage & message ID
   const checkUnread = (fetchedTickets: Ticket[]) => {
     try {
-      const readMapStr = localStorage.getItem('sotarium_support_read_tickets');
+      const storageKey = getStorageKey();
+      const readMapStr = localStorage.getItem(storageKey);
       const readMap: Record<string, string> = readMapStr ? JSON.parse(readMapStr) : {};
 
       let unread = 0;
       for (const t of fetchedTickets) {
-        if (!t.lastMessageTime) continue;
+        if (!t.lastMessageId && !t.lastMessageTime) continue;
 
         // Check if latest message is from someone else
         const isFromOther = t.lastMessageSenderId
@@ -81,9 +87,13 @@ export default function SupportWidget() {
 
         if (!isFromOther) continue;
 
-        // If ticket hasn't been opened yet, or latest message is newer than last opened time
-        const lastReadMsgTime = readMap[t.id];
-        if (!lastReadMsgTime || new Date(t.lastMessageTime).getTime() > new Date(lastReadMsgTime).getTime()) {
+        // Unread if message ID differs or not yet tracked
+        const lastReadMsg = readMap[t.id];
+        const isUnread = t.lastMessageId
+          ? lastReadMsg !== t.lastMessageId
+          : (!lastReadMsg || new Date(t.lastMessageTime || '').getTime() > new Date(lastReadMsg).getTime());
+
+        if (isUnread) {
           unread++;
         }
       }
@@ -95,12 +105,15 @@ export default function SupportWidget() {
     }
   };
 
-  const markTicketAsRead = (ticketId: string) => {
+  const markTicketAsRead = (ticketId: string, specificMsgId?: string | null) => {
     try {
-      const readMapStr = localStorage.getItem('sotarium_support_read_tickets');
+      const storageKey = getStorageKey();
+      const readMapStr = localStorage.getItem(storageKey);
       const readMap: Record<string, string> = readMapStr ? JSON.parse(readMapStr) : {};
-      readMap[ticketId] = new Date().toISOString();
-      localStorage.setItem('sotarium_support_read_tickets', JSON.stringify(readMap));
+
+      const currentTicket = tickets.find((t) => t.id === ticketId);
+      readMap[ticketId] = specificMsgId || currentTicket?.lastMessageId || new Date().toISOString();
+      localStorage.setItem(storageKey, JSON.stringify(readMap));
       checkUnread(tickets);
     } catch (e) {
       console.error('Failed to mark ticket as read:', e);
@@ -108,12 +121,19 @@ export default function SupportWidget() {
   };
 
   const handleToggleOpen = () => {
-    setIsOpen((prev) => !prev);
+    setIsOpen((prev) => {
+      const next = !prev;
+      if (next) {
+        checkUnread(tickets);
+      }
+      return next;
+    });
   };
 
   // Loan applicants list for staff to pick borrower
   const [loanApplicants, setLoanApplicants] = useState<LoanApplicant[]>([]);
   const [selectedBorrowerId, setSelectedBorrowerId] = useState<string>('');
+  const [isBorrowerDropdownOpen, setIsBorrowerDropdownOpen] = useState(false);
 
   // New ticket state
   const [targetUserId, setTargetUserId] = useState('');
@@ -142,7 +162,8 @@ export default function SupportWidget() {
   // When viewing chat, mark active ticket as read
   useEffect(() => {
     if (isOpen && view === 'chat' && activeTicket) {
-      markTicketAsRead(activeTicket.id);
+      const latest = messages[messages.length - 1];
+      markTicketAsRead(activeTicket.id, latest?.id || activeTicket.lastMessageId);
     }
   }, [isOpen, view, activeTicket, messages]);
 
@@ -173,9 +194,7 @@ export default function SupportWidget() {
       if (res.ok) {
         const data: Ticket[] = await res.json();
         setTickets(data);
-        if (!isOpen) {
-          checkUnread(data);
-        }
+        checkUnread(data);
       }
     } catch (e) {
       console.error('Failed to fetch tickets:', e);
@@ -284,10 +303,12 @@ export default function SupportWidget() {
     if (applicant) {
       setTargetUserId(applicant.user_id);
       setTargetUserName(applicant.user_name);
+      setTargetUserAvatar(applicant.user_avatar || '');
       setNewSubject(`Loan Inquiry: ${applicant.user_name} ($${applicant.amount.toFixed(2)} ${applicant.crypto_currency})`);
     } else {
       setTargetUserId(user?.id || 'guest');
       setTargetUserName(user?.username || 'Client');
+      setTargetUserAvatar(user?.avatar || '');
       setNewSubject('');
     }
   };
@@ -449,13 +470,17 @@ export default function SupportWidget() {
             <div className="flex border-b border-white/[0.06] bg-[#0f0f0f]">
               <button
                 onClick={() => { setStaffTab('received'); setView('list'); }}
-                className={`flex-1 py-2.5 text-center text-xs font-semibold transition-colors ${
+                className={`flex-1 py-2.5 text-center text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
                   staffTab === 'received'
                     ? 'text-white border-b-2 border-white'
                     : 'text-neutral-400 hover:text-white'
                 }`}
               >
-                Received Tickets {receivedTickets.length > 0 && `(${receivedTickets.length})`}
+                <span>Received Tickets</span>
+                {receivedTickets.length > 0 && <span>({receivedTickets.length})</span>}
+                {hasUnread && (
+                  <span className="w-2 h-2 rounded-full bg-red-500 inline-block animate-pulse shrink-0" />
+                )}
               </button>
               <button
                 onClick={() => { setStaffTab('conversations'); setView('list'); }}
@@ -529,32 +554,50 @@ export default function SupportWidget() {
                       </button>
                     </div>
                   ) : (
-                    displayTickets.map((t) => (
-                      <div
-                        key={t.id}
-                        onClick={() => handleOpenTicket(t)}
-                        className="p-3 rounded-xl hover:bg-white/[0.03] transition-colors cursor-pointer space-y-1.5 group"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={t.user_avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
-                              alt={t.user_name}
-                              className="w-5 h-5 rounded-full object-cover bg-neutral-800"
-                              onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
-                            />
-                            <div className="truncate max-w-[170px]">
-                              <span className="font-semibold text-xs text-white truncate block">
-                                {t.subject || 'Loan Support'}
-                              </span>
-                              {isStaff && (
-                                <span className="text-[10px] text-neutral-500 block truncate">
-                                  Client: {t.user_name}
-                                </span>
-                              )}
+                    displayTickets.map((t) => {
+                      const storageKey = getStorageKey();
+                      let isTicketUnread = false;
+                      try {
+                        const readMap = JSON.parse(localStorage.getItem(storageKey) || '{}');
+                        const isFromOther = t.lastMessageSenderId
+                          ? t.lastMessageSenderId !== user?.id
+                          : t.lastMessageSender?.toLowerCase() !== user?.username?.toLowerCase();
+                        if (isFromOther && t.lastMessageId) {
+                          isTicketUnread = readMap[t.id] !== t.lastMessageId;
+                        }
+                      } catch {}
+
+                      return (
+                        <div
+                          key={t.id}
+                          onClick={() => handleOpenTicket(t)}
+                          className="p-3 rounded-xl hover:bg-white/[0.03] transition-colors cursor-pointer space-y-1.5 group"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={t.user_avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                                alt={t.user_name}
+                                className="w-5 h-5 rounded-full object-cover bg-neutral-800"
+                                onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
+                              />
+                              <div className="truncate max-w-[170px]">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-semibold text-xs text-white truncate block">
+                                    {t.subject || 'Loan Support'}
+                                  </span>
+                                  {isTicketUnread && (
+                                    <span className="w-2 h-2 rounded-full bg-red-500 shadow-sm shadow-red-500/50 shrink-0" />
+                                  )}
+                                </div>
+                                {isStaff && (
+                                  <span className="text-[10px] text-neutral-500 block truncate">
+                                    Client: {t.user_name}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                          </div>
                           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                             t.status === 'open'
                               ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
@@ -574,7 +617,8 @@ export default function SupportWidget() {
                           </span>
                         </div>
                       </div>
-                    ))
+                    );
+                  })
                   )}
                 </div>
 
@@ -610,28 +654,106 @@ export default function SupportWidget() {
                   </span>
                 </div>
 
-                {/* Staff: Borrower / Loan Applicant Picker */}
+                {/* Staff: Custom High-End Borrower Selector */}
                 {isStaff && (
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 relative">
                     <label className="text-[11px] font-semibold text-neutral-300 flex items-center gap-1.5">
                       <Users className="w-3 h-3 text-neutral-400" />
                       <span>Select Loan Applicant / Client</span>
                     </label>
-                    <select
-                      value={selectedBorrowerId}
-                      onChange={(e) => handleSelectBorrower(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-[#141414] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-white/30"
+
+                    {/* Custom Dropdown Trigger */}
+                    <div
+                      onClick={() => setIsBorrowerDropdownOpen((prev) => !prev)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/[0.08] hover:border-white/20 text-xs text-white flex items-center justify-between cursor-pointer transition-all select-none shadow-sm"
                     >
-                      <option value="">Choose a borrower who requested a loan...</option>
-                      {loanApplicants.map((a) => (
-                        <option key={a.id} value={a.user_id}>
-                          {a.user_name} — ${a.amount.toFixed(2)} {a.crypto_currency}
-                        </option>
-                      ))}
-                    </select>
+                      {selectedBorrowerId ? (
+                        <div className="flex items-center gap-2 min-w-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={targetUserAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                            alt={targetUserName}
+                            className="w-5 h-5 rounded-full object-cover border border-white/10 shrink-0 bg-neutral-800"
+                            onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
+                          />
+                          <span className="font-semibold text-xs text-white truncate">
+                            {targetUserName}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-neutral-400 text-xs">
+                          Choose a borrower who requested a loan...
+                        </span>
+                      )}
+
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 text-neutral-400 transition-transform duration-200 shrink-0 ${
+                          isBorrowerDropdownOpen ? 'rotate-180 text-white' : ''
+                        }`}
+                      />
+                    </div>
+
+                    {/* Custom Dropdown Menu */}
+                    {isBorrowerDropdownOpen && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setIsBorrowerDropdownOpen(false)}
+                        />
+                        <div className="absolute left-0 right-0 top-full mt-1.5 bg-[#141414] border border-white/[0.1] rounded-xl p-1.5 shadow-2xl z-50 space-y-1 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 max-h-52 overflow-y-auto">
+                          {loanApplicants.length === 0 ? (
+                            <div className="p-3 text-center text-xs text-neutral-500">
+                              No loan applicants found
+                            </div>
+                          ) : (
+                            loanApplicants.map((applicant) => (
+                              <div
+                                key={applicant.id}
+                                onClick={() => {
+                                  handleSelectBorrower(applicant.user_id);
+                                  setIsBorrowerDropdownOpen(false);
+                                }}
+                                className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
+                                  selectedBorrowerId === applicant.user_id
+                                    ? 'bg-white/10 text-white'
+                                    : 'hover:bg-white/[0.05] text-neutral-300'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={applicant.user_avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                                    alt={applicant.user_name}
+                                    className="w-6 h-6 rounded-full object-cover border border-white/10 bg-neutral-800 shrink-0"
+                                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
+                                  />
+                                  <div className="text-left min-w-0">
+                                    <div className="text-xs font-semibold text-white truncate">
+                                      {applicant.user_name}
+                                    </div>
+                                    <div className="text-[10px] text-neutral-400 font-mono">
+                                      ID: {applicant.user_id.slice(-6)}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="text-right shrink-0">
+                                  <span className="text-[11px] font-semibold text-emerald-400">
+                                    ${applicant.amount.toFixed(2)}
+                                  </span>
+                                  <span className="text-[10px] text-neutral-400 ml-1 font-mono">
+                                    {applicant.crypto_currency}
+                                  </span>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </>
+                    )}
 
                     {selectedBorrowerId && (
-                      <div className="text-[10px] text-emerald-400 flex items-center gap-1 px-1">
+                      <div className="text-[10px] text-emerald-400 flex items-center gap-1 px-1 pt-0.5">
                         <UserCheck className="w-3 h-3" />
                         <span>Connected to borrower: <strong>{targetUserName}</strong></span>
                       </div>

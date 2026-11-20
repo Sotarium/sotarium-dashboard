@@ -26,7 +26,7 @@ export async function GET(req: Request) {
       (tickets || []).map(async (t) => {
         const { data: latestMsg } = await supabase
           .from('support_messages')
-          .select('message, created_at, sender_name, sender_id')
+          .select('id, message, created_at, sender_name, sender_id')
           .eq('ticket_id', t.id)
           .order('created_at', { ascending: false })
           .limit(1)
@@ -38,6 +38,7 @@ export async function GET(req: Request) {
           lastMessageTime: latestMsg?.created_at || t.updated_at,
           lastMessageSender: latestMsg?.sender_name || null,
           lastMessageSenderId: latestMsg?.sender_id || null,
+          lastMessageId: latestMsg?.id || null,
         };
       })
     );

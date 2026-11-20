@@ -8,6 +8,7 @@ interface LoanRequest {
   id: string;
   user_id: string;
   user_name: string;
+  user_avatar?: string;
   amount: number;
   crypto_currency: string;
   reason: string;
@@ -177,7 +178,7 @@ export default function RequestsPage() {
                       <div className="flex items-center gap-2.5">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={discordAvatars[req.user_id] || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                          src={req.user_avatar || discordAvatars[req.user_id] || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                           alt={req.user_name}
                           className="w-7 h-7 rounded-full border border-white/10 object-cover bg-neutral-800 shrink-0"
                           onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}

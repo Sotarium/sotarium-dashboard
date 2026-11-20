@@ -14,7 +14,19 @@ export async function GET(req: Request) {
     const { data, error } = await query;
     if (error) throw error;
 
-    return NextResponse.json(data || []);
+    const userIds = [...new Set((data || []).map((r) => r.user_id))];
+    const { data: dbUsers } = await supabase.from('users').select('id, avatar').in('id', userIds);
+    const avatarMap: Record<string, string> = {};
+    (dbUsers || []).forEach((u) => {
+      if (u.avatar) avatarMap[u.id] = u.avatar;
+    });
+
+    const enriched = (data || []).map((r) => ({
+      ...r,
+      user_avatar: avatarMap[r.user_id] || null,
+    }));
+
+    return NextResponse.json(enriched);
   } catch (err) {
     console.error('Failed to fetch loan requests:', err);
     return NextResponse.json({ error: 'Failed to fetch loan requests' }, { status: 500 });

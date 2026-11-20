@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
-import { Check, X, Clock, CheckCircle2, XCircle, Search, ShieldAlert, ArrowUpRight } from 'lucide-react';
-import Link from 'next/link';
+import { Clock, CheckCircle2, XCircle, Search, ShieldAlert } from 'lucide-react';
 
 interface LoanRequest {
   id: string;
@@ -19,6 +18,7 @@ interface LoanRequest {
 export default function RequestsPage() {
   const { user, isAdmin, isLoaded } = useAuth();
   const [requests, setRequests] = useState<LoanRequest[]>([]);
+  const [discordAvatars, setDiscordAvatars] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
@@ -27,7 +27,22 @@ export default function RequestsPage() {
     fetch('/api/loan-requests')
       .then((res) => res.json())
       .then((data) => {
-        if (Array.isArray(data)) setRequests(data);
+        if (Array.isArray(data)) {
+          setRequests(data);
+          // Fetch Discord avatars for all unique users
+          data.forEach((r: LoanRequest) => {
+            if (r.user_id) {
+              fetch(`/api/discord-user?userId=${r.user_id}`)
+                .then((res) => res.json())
+                .then((u) => {
+                  if (u?.avatarUrl) {
+                    setDiscordAvatars((prev) => ({ ...prev, [r.user_id]: u.avatarUrl }));
+                  }
+                })
+                .catch(() => {});
+            }
+          });
+        }
       })
       .catch((err) => console.error(err));
   };
@@ -135,7 +150,7 @@ export default function RequestsPage() {
         </div>
 
         {/* Requests Table */}
-        <div className="overflow-x-auto pt-2">
+        <div className="overflow-x-auto">
           {filteredRequests.length === 0 ? (
             <div className="text-center py-12 text-neutral-500 text-xs">
               No loan requests match the current filters.
@@ -157,12 +172,23 @@ export default function RequestsPage() {
               <tbody className="divide-y divide-white/[0.04]">
                 {filteredRequests.map((req) => (
                   <tr key={req.id} className="hover:bg-white/[0.02] transition-colors">
+                    {/* Borrower with Discord Avatar */}
                     <td className="py-3.5 px-3">
-                      <div className="font-semibold text-white text-xs">{req.user_name}</div>
+                      <div className="flex items-center gap-2.5">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={discordAvatars[req.user_id] || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                          alt={req.user_name}
+                          className="w-7 h-7 rounded-full border border-white/10 object-cover bg-neutral-800 shrink-0"
+                        />
+                        <span className="font-semibold text-white text-xs">{req.user_name}</span>
+                      </div>
                     </td>
+
                     <td className="py-3.5 px-3 font-semibold text-white">
                       ${req.amount.toFixed(2)}
                     </td>
+
                     <td className="py-3.5 px-3 text-xs font-semibold text-white">
                       <div className="flex items-center gap-2">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -175,36 +201,43 @@ export default function RequestsPage() {
                         <span>{req.crypto_currency}</span>
                       </div>
                     </td>
+
                     <td className="py-3.5 px-3 text-xs font-semibold text-white">
                       ${(req.amount * 1.15).toFixed(2)}
                     </td>
-                    <td className="py-3.5 px-3 text-xs text-neutral-300 max-w-[180px] truncate" title={req.reason}>
+
+                    <td className="py-3.5 px-3 text-xs font-semibold text-neutral-200 tracking-tight max-w-[200px] truncate" title={req.reason}>
                       {req.reason || '—'}
                     </td>
-                    <td className="py-3.5 px-3 text-xs text-neutral-400">
+
+                    <td className="py-3.5 px-3 text-xs font-semibold text-neutral-300 tracking-tight whitespace-nowrap">
                       {new Date(req.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
+
+                    {/* Status with vivid green / vivid red */}
                     <td className="py-3.5 px-3">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${
                         req.status === 'approved'
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          ? 'bg-[#00E676]/20 text-[#00E676] border border-[#00E676]/50 shadow-[0_0_8px_rgba(0,230,118,0.2)]'
                           : req.status === 'rejected'
-                          ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                          ? 'bg-[#FF1744]/20 text-[#FF3D57] border border-[#FF1744]/50 shadow-[0_0_8px_rgba(255,23,68,0.2)]'
                           : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                       }`}>
-                        {req.status === 'approved' && <CheckCircle2 className="w-3 h-3 text-emerald-400" />}
-                        {req.status === 'rejected' && <XCircle className="w-3 h-3 text-rose-400" />}
+                        {req.status === 'approved' && <CheckCircle2 className="w-3 h-3 text-[#00E676]" />}
+                        {req.status === 'rejected' && <XCircle className="w-3 h-3 text-[#FF3D57]" />}
                         {req.status === 'pending' && <Clock className="w-3 h-3 text-amber-400" />}
                         <span className="capitalize">{req.status === 'rejected' ? 'Refused' : req.status}</span>
                       </span>
                     </td>
+
+                    {/* Approve / Refuse with more vibrant green and red colors */}
                     <td className="py-3.5 px-3 text-right">
                       {req.status === 'pending' ? (
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleUpdateStatus(req.id, 'approved')}
                             disabled={isProcessing === req.id}
-                            className="px-3.5 py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 font-semibold text-xs border border-emerald-500/30 transition-all disabled:opacity-50"
+                            className="px-4 py-1.5 rounded-full bg-[#00E676]/25 hover:bg-[#00E676]/40 text-[#00E676] font-bold text-xs border border-[#00E676]/60 shadow-[0_0_12px_rgba(0,230,118,0.3)] transition-all disabled:opacity-50"
                           >
                             Approve
                           </button>
@@ -212,7 +245,7 @@ export default function RequestsPage() {
                           <button
                             onClick={() => handleUpdateStatus(req.id, 'rejected')}
                             disabled={isProcessing === req.id}
-                            className="px-3.5 py-1.5 rounded-full bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 font-semibold text-xs border border-rose-500/30 transition-all disabled:opacity-50"
+                            className="px-4 py-1.5 rounded-full bg-[#FF1744]/25 hover:bg-[#FF1744]/40 text-[#FF2D55] font-bold text-xs border border-[#FF1744]/60 shadow-[0_0_12px_rgba(255,23,68,0.3)] transition-all disabled:opacity-50"
                           >
                             Refuse
                           </button>

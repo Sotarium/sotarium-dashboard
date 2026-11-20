@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
-import { Clock, Search, ShieldAlert } from 'lucide-react';
+import { Clock, Search, ShieldAlert, MessageSquare } from 'lucide-react';
 
 interface LoanRequest {
   id: string;
@@ -172,7 +172,7 @@ export default function RequestsPage() {
               <tbody className="divide-y divide-white/[0.04]">
                 {filteredRequests.map((req) => (
                   <tr key={req.id} className="hover:bg-white/[0.02] transition-colors">
-                    {/* Borrower with Discord Avatar */}
+                    {/* Borrower with Discord Avatar + Message button */}
                     <td className="py-3.5 px-3">
                       <div className="flex items-center gap-2.5">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -180,8 +180,25 @@ export default function RequestsPage() {
                           src={discordAvatars[req.user_id] || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                           alt={req.user_name}
                           className="w-7 h-7 rounded-full border border-white/10 object-cover bg-neutral-800 shrink-0"
+                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
                         />
                         <span className="font-semibold text-white text-xs">{req.user_name}</span>
+                        <button
+                          onClick={() => {
+                            window.dispatchEvent(new CustomEvent('open-support-chat', {
+                              detail: {
+                                userId: req.user_id,
+                                userName: req.user_name,
+                                userAvatar: discordAvatars[req.user_id],
+                                subject: `Loan Request (${req.user_name} - $${req.amount.toFixed(2)} ${req.crypto_currency})`
+                              }
+                            }));
+                          }}
+                          className="p-1 rounded-lg hover:bg-white/[0.08] text-neutral-400 hover:text-white transition-colors"
+                          title={`Message ${req.user_name} in Support`}
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </td>
 

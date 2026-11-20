@@ -10,9 +10,8 @@ import {
   Send, 
   ArrowLeft, 
   Plus, 
-  ShieldCheck,
-  CheckCircle2,
-  Clock
+  UserCheck,
+  Users
 } from 'lucide-react';
 
 interface Ticket {
@@ -40,9 +39,21 @@ interface Message {
   created_at: string;
 }
 
+interface LoanApplicant {
+  id: string;
+  user_id: string;
+  user_name: string;
+  amount: number;
+  crypto_currency: string;
+  reason?: string;
+}
+
 export default function SupportWidget() {
   const { user, isAdmin, isOwner } = useAuth();
+  const isStaff = isOwner || isAdmin;
+
   const [isOpen, setIsOpen] = useState(false);
+  const [staffTab, setStaffTab] = useState<'received' | 'conversations'>('received');
   const [view, setView] = useState<'list' | 'chat' | 'create'>('list');
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
@@ -50,7 +61,14 @@ export default function SupportWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Loan applicants list for staff to pick borrower
+  const [loanApplicants, setLoanApplicants] = useState<LoanApplicant[]>([]);
+  const [selectedBorrowerId, setSelectedBorrowerId] = useState<string>('');
+
   // New ticket state
+  const [targetUserId, setTargetUserId] = useState('');
+  const [targetUserName, setTargetUserName] = useState('');
+  const [targetUserAvatar, setTargetUserAvatar] = useState('');
   const [newSubject, setNewSubject] = useState('');
   const [newInitialMsg, setNewInitialMsg] = useState('');
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
@@ -71,12 +89,28 @@ export default function SupportWidget() {
     }
   }, [messages, view]);
 
+  // Fetch loan applicants (so staff can make tickets with people that asked for loans)
+  const fetchLoanApplicants = async () => {
+    if (!isStaff) return;
+    try {
+      const res = await fetch('/api/loan-requests');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setLoanApplicants(data);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch loan applicants:', e);
+    }
+  };
+
   // Fetch tickets
   const fetchTickets = async (silent = false) => {
     if (!silent) setIsRefreshing(true);
     try {
       const url = user
-        ? `/api/support/tickets?userId=${user.id}&isAdmin=${isAdmin || isOwner}`
+        ? `/api/support/tickets?userId=${user.id}&isAdmin=${isStaff}`
         : `/api/support/tickets`;
       const res = await fetch(url);
       if (res.ok) {
@@ -103,12 +137,44 @@ export default function SupportWidget() {
     }
   };
 
-  // On open or user load, fetch tickets
+  // On open or user load, fetch tickets & applicants
   useEffect(() => {
     if (isOpen) {
       fetchTickets();
+      fetchLoanApplicants();
     }
   }, [isOpen, user]);
+
+  // Listen to global 'open-support-chat' event (e.g. from /requests page)
+  useEffect(() => {
+    const handleOpenChat = (e: Event) => {
+      const customEvent = e as CustomEvent<{
+        userId: string;
+        userName: string;
+        userAvatar?: string;
+        subject?: string;
+      }>;
+      const { userId, userName, userAvatar, subject } = customEvent.detail || {};
+      if (userId) {
+        setIsOpen(true);
+        // Check if ticket already exists
+        const existing = tickets.find((t) => t.user_id === userId);
+        if (existing) {
+          handleOpenTicket(existing);
+        } else {
+          setTargetUserId(userId);
+          setTargetUserName(userName || 'Borrower');
+          setTargetUserAvatar(userAvatar || '');
+          setSelectedBorrowerId(userId);
+          setNewSubject(subject || `Loan Discussion with ${userName || 'Borrower'}`);
+          setView('create');
+        }
+      }
+    };
+
+    window.addEventListener('open-support-chat', handleOpenChat);
+    return () => window.removeEventListener('open-support-chat', handleOpenChat);
+  }, [tickets]);
 
   // Live real-time polling every 3 seconds when widget is open
   useEffect(() => {
@@ -133,6 +199,21 @@ export default function SupportWidget() {
     fetchMessages(ticket.id).finally(() => setIsLoading(false));
   };
 
+  // Handle borrower selection in create ticket form
+  const handleSelectBorrower = (applicantUserId: string) => {
+    setSelectedBorrowerId(applicantUserId);
+    const applicant = loanApplicants.find((a) => a.user_id === applicantUserId);
+    if (applicant) {
+      setTargetUserId(applicant.user_id);
+      setTargetUserName(applicant.user_name);
+      setNewSubject(`Loan Inquiry: ${applicant.user_name} ($${applicant.amount.toFixed(2)} ${applicant.crypto_currency})`);
+    } else {
+      setTargetUserId(user?.id || 'guest');
+      setTargetUserName(user?.username || 'Client');
+      setNewSubject('');
+    }
+  };
+
   // Handle submit new ticket
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,15 +221,24 @@ export default function SupportWidget() {
 
     setIsSubmittingTicket(true);
     try {
+      // If staff is creating for a client, ticket.user_id is the client's ID
+      const finalUserId = isStaff && targetUserId ? targetUserId : (user?.id || 'guest');
+      const finalUserName = isStaff && targetUserName ? targetUserName : (user?.username || 'Client');
+      const finalUserAvatar = isStaff && targetUserAvatar ? targetUserAvatar : (user?.avatar || '');
+
       const res = await fetch('/api/support/tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user?.id || 'guest',
-          userName: user?.username || 'Client',
-          userAvatar: user?.avatar || '',
+          userId: finalUserId,
+          userName: finalUserName,
+          userAvatar: finalUserAvatar,
           subject: newSubject.trim() || 'Loan Support Ticket',
           message: newInitialMsg.trim(),
+          creatorId: user?.id,
+          creatorName: user?.username || 'Sotarium (Staff)',
+          creatorRole: isOwner ? 'owner' : isStaff ? 'admin' : 'user',
+          creatorAvatar: user?.avatar || '',
         }),
       });
 
@@ -156,6 +246,9 @@ export default function SupportWidget() {
         const data = await res.json();
         setNewSubject('');
         setNewInitialMsg('');
+        setSelectedBorrowerId('');
+        setTargetUserId('');
+        setTargetUserName('');
         await fetchTickets(true);
         handleOpenTicket(data.ticket);
       }
@@ -175,14 +268,14 @@ export default function SupportWidget() {
     setChatInput('');
     setIsSendingMsg(true);
 
-    const senderRole = isOwner ? 'owner' : isAdmin ? 'admin' : 'user';
+    const senderRole = isOwner ? 'owner' : isStaff ? 'admin' : 'user';
 
     // Optimistic message update
     const optimisticMsg: Message = {
       id: `temp-${Date.now()}`,
       ticket_id: activeTicket.id,
       sender_id: user?.id || 'guest',
-      sender_name: user?.username || (isOwner ? 'Sotarium (Owner)' : 'Client'),
+      sender_name: user?.username || (isStaff ? 'Sotarium' : 'Client'),
       sender_role: senderRole,
       sender_avatar: user?.avatar,
       message: text,
@@ -198,7 +291,7 @@ export default function SupportWidget() {
         body: JSON.stringify({
           ticketId: activeTicket.id,
           senderId: user?.id || 'guest',
-          senderName: user?.username || (isOwner ? 'Sotarium' : 'Client'),
+          senderName: user?.username || (isStaff ? 'Sotarium' : 'Client'),
           senderRole,
           senderAvatar: user?.avatar || '',
           message: text,
@@ -237,17 +330,24 @@ export default function SupportWidget() {
     }
   };
 
+  // Filter tickets depending on staff tab
+  const receivedTickets = tickets.filter((t) => t.user_id !== user?.id);
+  const myConversations = tickets.filter((t) => t.user_id === user?.id);
+  const displayTickets = isStaff 
+    ? (staffTab === 'received' ? receivedTickets : myConversations)
+    : tickets;
+
   return (
     <>
       {/* Support Window Card */}
       {isOpen && (
-        <div className="fixed bottom-22 right-6 z-50 w-[360px] max-w-[calc(100vw-2rem)] h-[490px] max-h-[calc(100vh-7rem)] bg-[#0d0d0d] border border-white/[0.08] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.85)] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed bottom-22 right-6 z-50 w-[360px] max-w-[calc(100vw-2rem)] h-[510px] max-h-[calc(100vh-7rem)] bg-[#0d0d0d] border border-white/[0.08] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.85)] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
           
           {/* Header */}
           <div className="p-4 border-b border-white/[0.06] flex items-center justify-between bg-[#121212]/80 backdrop-blur-md">
             <div className="flex items-center gap-2">
               <span className="font-bold text-white text-base tracking-tight font-sans">Support</span>
-              {(isOwner || isAdmin) && (
+              {isStaff && (
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.06] text-neutral-300">
                   Staff
                 </span>
@@ -262,12 +362,37 @@ export default function SupportWidget() {
             </button>
           </div>
 
-          {/* Tab Subheader: "Your Conversations" */}
-          <div className="border-b border-white/[0.06] bg-[#0f0f0f]">
-            <div className="px-4 py-2.5 text-center text-xs font-semibold text-white border-b-2 border-white relative inline-block w-full">
-              Your Conversations
+          {/* Tab Subheader: Received Tickets vs Your Conversations for Staff */}
+          {isStaff ? (
+            <div className="flex border-b border-white/[0.06] bg-[#0f0f0f]">
+              <button
+                onClick={() => { setStaffTab('received'); setView('list'); }}
+                className={`flex-1 py-2.5 text-center text-xs font-semibold transition-colors ${
+                  staffTab === 'received'
+                    ? 'text-white border-b-2 border-white'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                Received Tickets {receivedTickets.length > 0 && `(${receivedTickets.length})`}
+              </button>
+              <button
+                onClick={() => { setStaffTab('conversations'); setView('list'); }}
+                className={`flex-1 py-2.5 text-center text-xs font-semibold transition-colors ${
+                  staffTab === 'conversations'
+                    ? 'text-white border-b-2 border-white'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                Your Conversations
+              </button>
             </div>
-          </div>
+          ) : (
+            <div className="border-b border-white/[0.06] bg-[#0f0f0f]">
+              <div className="px-4 py-2.5 text-center text-xs font-semibold text-white border-b-2 border-white relative inline-block w-full">
+                Your Conversations
+              </div>
+            </div>
+          )}
 
           {/* Main Body */}
           <div className="flex-1 overflow-hidden flex flex-col bg-[#0a0a0a]">
@@ -277,7 +402,8 @@ export default function SupportWidget() {
                 {/* Tickets Subheader */}
                 <div className="px-4 py-3 flex items-center justify-between border-b border-white/[0.04]">
                   <span className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
-                    YOUR TICKETS {tickets.length > 0 && `(${tickets.length})`}
+                    {isStaff && staffTab === 'received' ? 'RECEIVED TICKETS' : 'YOUR TICKETS'}{' '}
+                    {displayTickets.length > 0 && `(${displayTickets.length})`}
                   </span>
                   <div className="flex items-center gap-2">
                     <button
@@ -289,7 +415,10 @@ export default function SupportWidget() {
                       <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-white' : ''}`} />
                     </button>
                     <button
-                      onClick={() => setView('create')}
+                      onClick={() => {
+                        fetchLoanApplicants();
+                        setView('create');
+                      }}
                       className="p-1 rounded-md bg-white/[0.06] hover:bg-white/[0.12] text-white text-xs transition-colors"
                       title="New Ticket"
                     >
@@ -300,18 +429,25 @@ export default function SupportWidget() {
 
                 {/* Tickets Scrollable List */}
                 <div className="flex-1 overflow-y-auto divide-y divide-white/[0.04] p-2 space-y-1">
-                  {tickets.length === 0 ? (
+                  {displayTickets.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center p-6 text-center space-y-3">
-                      <span className="text-neutral-500 text-xs">No tickets yet</span>
+                      <span className="text-neutral-500 text-xs">
+                        {isStaff && staffTab === 'received' 
+                          ? 'No received client tickets yet' 
+                          : 'No tickets yet'}
+                      </span>
                       <button
-                        onClick={() => setView('create')}
+                        onClick={() => {
+                          fetchLoanApplicants();
+                          setView('create');
+                        }}
                         className="px-4 py-1.5 rounded-full bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition-colors shadow-sm"
                       >
-                        Start conversation
+                        {isStaff ? 'Message a loan applicant' : 'Start conversation'}
                       </button>
                     </div>
                   ) : (
-                    tickets.map((t) => (
+                    displayTickets.map((t) => (
                       <div
                         key={t.id}
                         onClick={() => handleOpenTicket(t)}
@@ -326,9 +462,16 @@ export default function SupportWidget() {
                               className="w-5 h-5 rounded-full object-cover bg-neutral-800"
                               onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
                             />
-                            <span className="font-semibold text-xs text-white truncate max-w-[170px]">
-                              {t.subject || 'Loan Support'}
-                            </span>
+                            <div className="truncate max-w-[170px]">
+                              <span className="font-semibold text-xs text-white truncate block">
+                                {t.subject || 'Loan Support'}
+                              </span>
+                              {isStaff && (
+                                <span className="text-[10px] text-neutral-500 block truncate">
+                                  Client: {t.user_name}
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                             t.status === 'open'
@@ -356,11 +499,14 @@ export default function SupportWidget() {
                 {/* Bottom Bar in List */}
                 <div className="p-3 border-t border-white/[0.06] bg-[#0c0c0c]">
                   <button
-                    onClick={() => setView('create')}
+                    onClick={() => {
+                      fetchLoanApplicants();
+                      setView('create');
+                    }}
                     className="w-full py-2.5 rounded-xl bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition-colors shadow-sm flex items-center justify-center gap-2"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>New Ticket</span>
+                    <span>{isStaff ? 'New Ticket / Message Applicant' : 'New Ticket'}</span>
                   </button>
                 </div>
               </div>
@@ -368,7 +514,7 @@ export default function SupportWidget() {
 
             {/* VIEW 2: CREATE NEW TICKET */}
             {view === 'create' && (
-              <form onSubmit={handleCreateTicket} className="flex-1 flex flex-col p-4 space-y-3">
+              <form onSubmit={handleCreateTicket} className="flex-1 flex flex-col p-4 space-y-3 overflow-y-auto">
                 <div className="flex items-center gap-2 pb-2 border-b border-white/[0.06]">
                   <button
                     type="button"
@@ -377,8 +523,39 @@ export default function SupportWidget() {
                   >
                     <ArrowLeft className="w-4 h-4" />
                   </button>
-                  <span className="text-xs font-semibold text-white">Create New Support Ticket</span>
+                  <span className="text-xs font-semibold text-white">
+                    {isStaff ? 'Open Ticket with Client' : 'Create New Support Ticket'}
+                  </span>
                 </div>
+
+                {/* Staff: Borrower / Loan Applicant Picker */}
+                {isStaff && (
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold text-neutral-300 flex items-center gap-1.5">
+                      <Users className="w-3 h-3 text-neutral-400" />
+                      <span>Select Loan Applicant / Client</span>
+                    </label>
+                    <select
+                      value={selectedBorrowerId}
+                      onChange={(e) => handleSelectBorrower(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-[#141414] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-white/30"
+                    >
+                      <option value="">Choose a borrower who requested a loan...</option>
+                      {loanApplicants.map((a) => (
+                        <option key={a.id} value={a.user_id}>
+                          {a.user_name} — ${a.amount.toFixed(2)} {a.crypto_currency}
+                        </option>
+                      ))}
+                    </select>
+
+                    {selectedBorrowerId && (
+                      <div className="text-[10px] text-emerald-400 flex items-center gap-1 px-1">
+                        <UserCheck className="w-3 h-3" />
+                        <span>Connected to borrower: <strong>{targetUserName}</strong></span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-semibold text-neutral-300">Subject / Topic</label>
@@ -394,9 +571,9 @@ export default function SupportWidget() {
                 <div className="space-y-1.5 flex-1 flex flex-col">
                   <label className="text-[11px] font-semibold text-neutral-300">Message</label>
                   <textarea
-                    rows={5}
+                    rows={4}
                     required
-                    placeholder="Describe how we can assist you..."
+                    placeholder={isStaff ? 'Type your message to this borrower...' : 'Describe how we can assist you...'}
                     value={newInitialMsg}
                     onChange={(e) => setNewInitialMsg(e.target.value)}
                     className="w-full flex-1 px-3 py-2.5 rounded-xl bg-[#141414] border border-white/[0.08] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white/30 resize-none"
@@ -441,7 +618,7 @@ export default function SupportWidget() {
                         {activeTicket.subject}
                       </div>
                       <div className="text-[10px] text-neutral-400 truncate">
-                        {activeTicket.user_name} (ID: {activeTicket.user_id.slice(-6)})
+                        {activeTicket.user_name}
                       </div>
                     </div>
                   </div>
@@ -470,7 +647,7 @@ export default function SupportWidget() {
                   ) : (
                     messages.map((m) => {
                       const isMe = m.sender_id === user?.id;
-                      const isStaff = m.sender_role === 'owner' || m.sender_role === 'admin';
+                      const isStaffMsg = m.sender_role === 'owner' || m.sender_role === 'admin';
 
                       return (
                         <div
@@ -479,7 +656,7 @@ export default function SupportWidget() {
                         >
                           <div className="flex items-center gap-1 text-[10px] text-neutral-400 px-1">
                             <span>{m.sender_name}</span>
-                            {isStaff && (
+                            {isStaffMsg && (
                               <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-semibold">
                                 Staff
                               </span>
@@ -537,7 +714,7 @@ export default function SupportWidget() {
       {/* Floating Circular Launcher Button (Bottom Right) */}
       <button
         onClick={() => setIsOpen((prev) => !prev)}
-        className="fixed bottom-6 right-6 z-50 w-13 h-13 w-12 h-12 rounded-full bg-[#181818] border border-white/[0.12] hover:border-white/30 text-white flex items-center justify-center shadow-2xl transition-all cursor-pointer hover:scale-105 active:scale-95"
+        className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-[#181818] border border-white/[0.12] hover:border-white/30 text-white flex items-center justify-center shadow-2xl transition-all cursor-pointer hover:scale-105 active:scale-95"
         title={isOpen ? 'Close Support' : 'Open Support'}
         aria-label="Support Ticket Widget"
       >

@@ -51,7 +51,17 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { userId, userName, userAvatar, subject, message } = body;
+    const { 
+      userId, 
+      userName, 
+      userAvatar, 
+      subject, 
+      message, 
+      creatorId, 
+      creatorName, 
+      creatorRole, 
+      creatorAvatar 
+    } = body;
 
     if (!userId || !message) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -62,7 +72,7 @@ export async function POST(req: Request) {
       .from('support_tickets')
       .insert({
         user_id: userId,
-        user_name: userName || 'User',
+        user_name: userName || 'Borrower',
         user_avatar: userAvatar || '',
         subject: subject || 'Loan Support Ticket',
         status: 'open',
@@ -73,15 +83,20 @@ export async function POST(req: Request) {
     if (ticketErr) throw ticketErr;
 
     // 2. Insert initial message
-    const isOwner = userId === OWNER_DISCORD_ID;
+    const senderId = creatorId || userId;
+    const senderName = creatorName || userName || 'User';
+    const isOwnerSender = senderId === OWNER_DISCORD_ID || creatorRole === 'owner';
+    const senderRole = isOwnerSender ? 'owner' : (creatorRole || 'user');
+    const senderAvatar = creatorAvatar || userAvatar || '';
+
     const { data: firstMsg, error: msgErr } = await supabase
       .from('support_messages')
       .insert({
         ticket_id: ticket.id,
-        sender_id: userId,
-        sender_name: userName || 'User',
-        sender_role: isOwner ? 'owner' : 'user',
-        sender_avatar: userAvatar || '',
+        sender_id: senderId,
+        sender_name: senderName,
+        sender_role: senderRole,
+        sender_avatar: senderAvatar,
         message: message.trim(),
       })
       .select()

@@ -348,7 +348,7 @@ export default function LoansPage() {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-white font-sans">Active Loans</h1>
-            <p className="text-sm text-neutral-500 mt-1">Live countdown · approved loans</p>
+            <p className="text-sm text-neutral-500 mt-1"></p>
           </div>
           <div className="px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs font-semibold text-neutral-300">
             {loans.length} loan{loans.length !== 1 ? 's' : ''}
@@ -382,12 +382,11 @@ export default function LoansPage() {
                 <thead>
                   <tr className="border-b border-white/[0.06] text-xs font-medium text-neutral-400">
                     <th className="pb-3 px-3">Borrower</th>
-                    <th className="pb-3 px-3">Principal</th>
+                    <th className="pb-3 px-3">Borrowed</th>
                     <th className="pb-3 px-3">Interest (15%)</th>
                     <th className="pb-3 px-3">Total Due</th>
                     <th className="pb-3 px-3">Time Left</th>
-                    <th className="pb-3 px-3">Progress</th>
-                    <th className="pb-3 px-3">Reason</th>
+                    <th className="pb-3 px-3">Paid Back</th>
                     <th className="pb-3 px-3 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -424,36 +423,26 @@ export default function LoansPage() {
                         {/* Progress bar */}
                         <td className="py-4 px-3 min-w-[120px]">
                           {(() => {
-                            if (isPaid) return <div className="w-full h-1.5 rounded-full bg-emerald-500/20"><div className="h-full rounded-full bg-emerald-500 w-full" /></div>;
-                            const loanTs = new Date(loan.loanDate).getTime();
-                            const dueTs = new Date(loan.dueDate).getTime();
-                            const nowTs = Date.now();
-                            const total = dueTs - loanTs;
-                            const elapsed = nowTs - loanTs;
-                            const pct = Math.min(100, Math.max(0, (elapsed / total) * 100));
-                            const isUrgent = pct > 85;
-                            const isWarn = pct > 60;
+                            const totalDueCalc = loan.principal * 1.15;
+                            const pct = totalDueCalc > 0
+                              ? Math.min(100, Math.max(0, (loan.repaidAmount / totalDueCalc) * 100))
+                              : 0;
+                            const color = pct >= 100 ? '#00E823' : '#00AAE8';
                             return (
-                              <div className="space-y-1">
-                                <div className="w-full h-1.5 rounded-full bg-white/[0.06]">
-                                  <div
-                                    className={`h-full rounded-full transition-all ${isUrgent ? 'bg-red-500' : isWarn ? 'bg-amber-400' : 'bg-white'}`}
-                                    style={{ width: `${pct}%` }}
-                                  />
-                                </div>
-                                <div className="text-[10px] text-neutral-500 text-right">{pct.toFixed(0)}%</div>
+                              <div className="relative w-full h-5 rounded-full bg-white/[0.06] overflow-hidden">
+                                <div
+                                  className="h-full rounded-full transition-all duration-700"
+                                  style={{ width: `${pct}%`, backgroundColor: color }}
+                                />
+                                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-white drop-shadow">
+                                  {pct.toFixed(0)}%
+                                </span>
                               </div>
                             );
                           })()}
                         </td>
 
-                        {/* Reason */}
-                        <td className="py-4 px-3 text-neutral-400 text-xs max-w-[160px]">
-                          <span className="truncate block">{loan.reason || <span className="text-neutral-600 italic">—</span>}</span>
-                          {loan.notes && (
-                            <span className="text-neutral-600 italic truncate block">{loan.notes}</span>
-                          )}
-                        </td>
+                        {/* Reason removed */}
 
                         {/* Actions — edit & delete only shown to admins */}
                         <td className="py-4 px-3">

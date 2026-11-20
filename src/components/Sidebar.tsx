@@ -1,15 +1,11 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
-  Home, 
-  Coins,
-  Wallet,
-  Inbox,
   LogOut,
   Search,
-  TrendingUp
+  Inbox
 } from 'lucide-react';
 
 function CautionSign({ className = "w-4 h-4" }: { className?: string }) {
@@ -64,7 +60,6 @@ export default function Sidebar() {
                   : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
               }`}
             >
-              <Home className="w-4 h-4" />
               <span>Home</span>
             </Link>
           )}
@@ -78,7 +73,6 @@ export default function Sidebar() {
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
             }`}
           >
-            <Wallet className="w-4 h-4" />
             <span>House Bal</span>
           </Link>
 
@@ -91,7 +85,6 @@ export default function Sidebar() {
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
             }`}
           >
-            <Coins className="w-4 h-4" />
             <span>Ask loan</span>
           </Link>
 
@@ -104,21 +97,20 @@ export default function Sidebar() {
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
             }`}
           >
-            <TrendingUp className="w-4 h-4" />
             <span>Payback</span>
           </Link>
 
-          {/* Hall of Shame Tab: Publicly Visible to Everyone */}
+          {/* Scammers Tab (formerly Hall of Shame): Publicly Visible to Everyone */}
           <Link
-            href="/hall-of-shame"
+            href="/scammers"
             className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
-              pathname === '/hall-of-shame' 
+              pathname === '/scammers' 
                 ? 'bg-yellow-400 text-black font-semibold shadow-sm' 
                 : 'text-neutral-400 hover:text-yellow-400 hover:bg-neutral-900/60'
             }`}
           >
             <CautionSign className="w-4 h-4 shrink-0" />
-            <span>Hall of Shame</span>
+            <span>Scammers</span>
           </Link>
         </div>
 
@@ -226,6 +218,3 @@ export default function Sidebar() {
     </aside>
   );
 }
-
-
-

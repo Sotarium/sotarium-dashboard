@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Copy, Check, Loader2, ChevronRight, RefreshCw, AlertCircle, Clock } from 'lucide-react';
+import { Copy, Check, Loader2, ChevronRight, RefreshCw, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
 const COINS = [
@@ -75,6 +75,18 @@ function formatDueCountdown(ms: number): string {
   return `${s}s`;
 }
 
+function SuccessAnim() {
+  return (
+    <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 z-50">
+      <video
+        src="https://cdnl.iconscout.com/lottie/free/preview/free-success-animation-gif-download-4503215.mp4"
+        autoPlay muted playsInline
+        className="w-16 h-16 object-contain"
+      />
+    </span>
+  );
+}
+
 export default function PaybackPage() {
   const { user } = useAuth();
   const [myLoan, setMyLoan] = useState<LoanSummary | null>(null);
@@ -85,11 +97,12 @@ export default function PaybackPage() {
   const [genError, setGenError] = useState('');
   const [copiedAddr, setCopiedAddr] = useState(false);
   const [copiedAmt, setCopiedAmt] = useState(false);
+  const [animAddr, setAnimAddr] = useState(false);
+  const [animAmt, setAnimAmt] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [now, setNow] = useState(0);
 
-  // Tick every second for countdowns
   useEffect(() => {
     setNow(Date.now());
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -112,8 +125,13 @@ export default function PaybackPage() {
 
   const handleCopy = (text: string, type: 'addr' | 'amt') => {
     navigator.clipboard.writeText(text);
-    if (type === 'addr') { setCopiedAddr(true); setTimeout(() => setCopiedAddr(false), 2000); }
-    else { setCopiedAmt(true); setTimeout(() => setCopiedAmt(false), 2000); }
+    if (type === 'addr') {
+      setCopiedAddr(true); setAnimAddr(true);
+      setTimeout(() => { setCopiedAddr(false); setAnimAddr(false); }, 2000);
+    } else {
+      setCopiedAmt(true); setAnimAmt(true);
+      setTimeout(() => { setCopiedAmt(false); setAnimAmt(false); }, 2000);
+    }
   };
 
   const generateAddress = async () => {
@@ -155,7 +173,6 @@ export default function PaybackPage() {
     }
   };
 
-  // Loan repayment progress bar calculation
   const loanProgress = (() => {
     if (!myLoan) return null;
     const pct = myLoan.totalDue > 0
@@ -197,11 +214,11 @@ export default function PaybackPage() {
         <div className="soteria-card p-5 space-y-4">
           {/* Countdown — top center */}
           {loanProgress && (
-            <div className="flex justify-center">
-              <span className={`text-xs font-semibold tracking-tight flex items-center gap-1 ${
-                loanProgress.dueMs !== null && loanProgress.dueMs <= 0 ? 'text-red-400' : 'text-neutral-200'
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500">Time Left</span>
+              <span className={`text-base font-semibold tracking-tight ${
+                loanProgress.dueMs !== null && loanProgress.dueMs <= 0 ? 'text-red-400' : 'text-white'
               }`}>
-                <Clock className="w-3 h-3 opacity-60" aria-hidden="true" />
                 {loanProgress.dueMs === null ? '' : loanProgress.dueMs <= 0 ? '⚠ Overdue' : formatDueCountdown(loanProgress.dueMs)}
               </span>
             </div>
@@ -221,7 +238,7 @@ export default function PaybackPage() {
             </div>
           </div>
 
-          {/* Progress bar with % overlaid */}
+          {/* Progress bar */}
           {loanProgress && (
             <div className="relative w-full h-5 rounded-full bg-white/[0.06] overflow-hidden">
               <div
@@ -262,7 +279,6 @@ export default function PaybackPage() {
                   <div className={`text-sm font-bold ${active ? coin.text : 'text-white'}`}>{coin.symbol}</div>
                   <div className="text-[10px] text-neutral-500">{coin.name}</div>
                 </div>
-                {active && <div className={`w-1.5 h-1.5 rounded-full ${coin.dot}`} />}
               </button>
             );
           })}
@@ -317,12 +333,10 @@ export default function PaybackPage() {
                 const expired = msLeft <= 0;
                 return (
                   <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full w-fit border ${
-                    expired
-                      ? 'bg-red-500/10 border-red-500/20'
-                      : 'bg-amber-500/10 border-amber-500/20'
+                    expired ? 'bg-red-500/10 border-red-500/20' : 'bg-amber-500/10 border-amber-500/20'
                   }`}>
                     <CautionIcon className={`w-3.5 h-3.5 shrink-0 ${expired ? 'text-red-400' : 'text-amber-400'}`} />
-                    <span className={`text-xs font-semibold font-mono ${expired ? 'text-red-400' : 'text-amber-400'}`}>
+                    <span className={`text-base font-semibold tracking-tight ${expired ? 'text-red-400' : 'text-white'}`}>
                       {expired ? 'Address Expired — Regenerate' : `Expires in ${formatCountdown(msLeft)}`}
                     </span>
                   </div>
@@ -337,8 +351,11 @@ export default function PaybackPage() {
                   <div className={`text-xs font-mono font-semibold ${selectedCoin.text} break-all leading-relaxed`}>
                     {payment.address}
                   </div>
-                  <button onClick={() => handleCopy(payment.address, 'addr')}
-                    className="p-2.5 rounded-xl bg-white/[0.06] hover:bg-white/10 border border-white/[0.08] text-neutral-400 hover:text-white transition-all shrink-0 cursor-pointer">
+                  <button
+                    onClick={() => handleCopy(payment.address, 'addr')}
+                    className="relative p-2.5 rounded-xl bg-white/[0.06] hover:bg-white/10 border border-white/[0.08] text-neutral-400 hover:text-white transition-all shrink-0 cursor-pointer"
+                  >
+                    {animAddr && <SuccessAnim />}
                     {copiedAddr ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
@@ -352,8 +369,11 @@ export default function PaybackPage() {
                     {payment.amount} {selectedCoin.symbol}
                     <span className="text-neutral-500 font-normal text-xs ml-1.5">(≈ ${amount} USD)</span>
                   </div>
-                  <button onClick={() => handleCopy(payment.amount.toString(), 'amt')}
-                    className="p-2.5 rounded-xl bg-white/[0.06] hover:bg-white/10 border border-white/[0.08] text-neutral-400 hover:text-white transition-all shrink-0 cursor-pointer">
+                  <button
+                    onClick={() => handleCopy(payment.amount.toString(), 'amt')}
+                    className="relative p-2.5 rounded-xl bg-white/[0.06] hover:bg-white/10 border border-white/[0.08] text-neutral-400 hover:text-white transition-all shrink-0 cursor-pointer"
+                  >
+                    {animAmt && <SuccessAnim />}
                     {copiedAmt ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>

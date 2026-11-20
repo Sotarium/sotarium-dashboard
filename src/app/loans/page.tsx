@@ -211,8 +211,33 @@ function EditLoanModal({
               className="w-full bg-[#1a1a1e] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-white/30 transition-all"
             />
           </div>
+                        {/* Progress bar */}
+                        <td className="py-4 px-3 min-w-[120px]">
+                          {(() => {
+                            if (isPaid) return <div className="w-full h-1.5 rounded-full bg-emerald-500/20"><div className="h-full rounded-full bg-emerald-500 w-full" /></div>;
+                            const loanTs = new Date(loan.loanDate).getTime();
+                            const dueTs = new Date(loan.dueDate).getTime();
+                            const nowTs = Date.now();
+                            const total = dueTs - loanTs;
+                            const elapsed = nowTs - loanTs;
+                            const pct = Math.min(100, Math.max(0, (elapsed / total) * 100));
+                            const isUrgent = pct > 85;
+                            const isWarn = pct > 60;
+                            return (
+                              <div className="space-y-1">
+                                <div className="w-full h-1.5 rounded-full bg-white/[0.06]">
+                                  <div
+                                    className={`h-full rounded-full transition-all ${isUrgent ? 'bg-red-500' : isWarn ? 'bg-amber-400' : 'bg-white'}`}
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                </div>
+                                <div className="text-[10px] text-neutral-500 text-right">{pct.toFixed(0)}%</div>
+                              </div>
+                            );
+                          })()}
+                        </td>
 
-          {/* Reason */}
+                        {/* Reason */}
           <div>
             <label className="text-[11px] text-neutral-400 font-medium block mb-1">Reason</label>
             <input
@@ -386,6 +411,7 @@ export default function LoansPage() {
                     <th className="pb-3 px-3">Interest (15%)</th>
                     <th className="pb-3 px-3">Total Due</th>
                     <th className="pb-3 px-3">Time Left</th>
+                    <th className="pb-3 px-3">Progress</th>
                     <th className="pb-3 px-3">Reason</th>
                     <th className="pb-3 px-3 text-right">Actions</th>
                   </tr>
@@ -419,6 +445,31 @@ export default function LoansPage() {
                         {/* Countdown */}
                         <td className="py-4 px-3">
                           <TimeLeftCell dueDate={loan.dueDate} loanDate={loan.loanDate} status={loan.status} />
+                        </td>
+                        {/* Progress bar */}
+                        <td className="py-4 px-3 min-w-[120px]">
+                          {(() => {
+                            if (isPaid) return <div className="w-full h-1.5 rounded-full bg-emerald-500/20"><div className="h-full rounded-full bg-emerald-500 w-full" /></div>;
+                            const loanTs = new Date(loan.loanDate).getTime();
+                            const dueTs = new Date(loan.dueDate).getTime();
+                            const nowTs = Date.now();
+                            const total = dueTs - loanTs;
+                            const elapsed = nowTs - loanTs;
+                            const pct = Math.min(100, Math.max(0, (elapsed / total) * 100));
+                            const isUrgent = pct > 85;
+                            const isWarn = pct > 60;
+                            return (
+                              <div className="space-y-1">
+                                <div className="w-full h-1.5 rounded-full bg-white/[0.06]">
+                                  <div
+                                    className={`h-full rounded-full transition-all ${isUrgent ? 'bg-red-500' : isWarn ? 'bg-amber-400' : 'bg-white'}`}
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                </div>
+                                <div className="text-[10px] text-neutral-500 text-right">{pct.toFixed(0)}%</div>
+                              </div>
+                            );
+                          })()}
                         </td>
 
                         {/* Reason */}
@@ -475,3 +526,4 @@ export default function LoansPage() {
     </>
   );
 }
+

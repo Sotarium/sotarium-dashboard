@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -8,7 +8,8 @@ import {
   Wallet,
   Inbox,
   LogOut,
-  Search
+  Search,
+  TrendingUp
 } from 'lucide-react';
 
 function CautionSign({ className = "w-4 h-4" }: { className?: string }) {
@@ -151,6 +152,17 @@ export default function Sidebar() {
                 }}
               />
               <span>Loans</span>
+            </Link>            {/* Payback Tab */}
+            <Link
+              href="/payback"
+              className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+                pathname === '/payback' 
+                  ? 'bg-emerald-500 text-white font-semibold shadow-sm' 
+                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+              }`}
+            >
+              <TrendingUp className="w-4 h-4" />
+              <span>Payback</span>
             </Link>
 
             {/* Search Tab - Owner ONLY */}
@@ -212,3 +224,4 @@ export default function Sidebar() {
     </aside>
   );
 }
+

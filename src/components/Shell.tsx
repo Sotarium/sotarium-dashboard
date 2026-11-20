@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
+import SupportWidget from '@/components/SupportWidget';
 import { AuthProvider } from '@/lib/auth';
 
 export default function Shell({ children }: { children: React.ReactNode }) {
@@ -24,6 +25,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           </main>
         </div>
       </div>
+      <SupportWidget />
     </AuthProvider>
   );
 }

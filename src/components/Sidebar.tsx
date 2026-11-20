@@ -8,7 +8,8 @@ import {
   Wallet,
   Inbox,
   LogOut,
-  Search
+  Search,
+  Skull
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
@@ -73,6 +74,19 @@ export default function Sidebar() {
           >
             <Coins className="w-4 h-4" />
             <span>Ask loan</span>
+          </Link>
+
+          {/* Hall of Shame Tab: Publicly Visible to Everyone */}
+          <Link
+            href="/hall-of-shame"
+            className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+              pathname === '/hall-of-shame' 
+                ? 'bg-rose-500/20 text-rose-300 font-semibold border border-rose-500/30 shadow-sm' 
+                : 'text-neutral-400 hover:text-rose-400 hover:bg-neutral-900/60'
+            }`}
+          >
+            <Skull className="w-4 h-4 text-rose-500" />
+            <span>Hall of Shame</span>
           </Link>
         </div>
 

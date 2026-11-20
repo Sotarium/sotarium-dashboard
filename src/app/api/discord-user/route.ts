@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
 
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
 
@@ -19,47 +20,81 @@ export async function GET(req: Request) {
     return NextResponse.json(cached);
   }
 
+  // 1. Check Supabase users table first
   try {
-    const res = await fetch(`https://discord.com/api/v10/users/${userId}`, {
-      headers: {
-        Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
-      },
-      next: { revalidate: 600 },
-    });
+    const { data: dbUser } = await supabase
+      .from('users')
+      .select('username, avatar')
+      .eq('id', userId)
+      .single();
 
-    if (res.ok) {
-      const data = await res.json();
-      let avatarUrl = 'https://cdn.discordapp.com/embed/avatars/0.png';
-
-      if (data.avatar) {
-        avatarUrl = `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png?size=128`;
-      }
-
+    if (dbUser && dbUser.avatar && !dbUser.avatar.includes('embed/avatars/0.png')) {
       const result = {
-        userId: data.id,
-        username: data.global_name || data.username,
-        avatarUrl,
+        userId,
+        username: dbUser.username || 'User',
+        avatarUrl: dbUser.avatar,
         fetchedAt: Date.now(),
       };
-
       avatarCache[userId] = result;
       return NextResponse.json(result);
     }
-  } catch (err) {
-    console.error('Failed to fetch Discord avatar for user:', userId, err);
+  } catch {
+    // continue
   }
 
-  // Fallback: Default Discord avatar (never owner's pfp)
-  let defaultAvatar = 'https://cdn.discordapp.com/embed/avatars/0.png';
+  // 2. If it's a valid Discord snowflake (17-20 digits), try Discord API
+  if (/^\d{17,20}$/.test(userId)) {
+    try {
+      const res = await fetch(`https://discord.com/api/v10/users/${userId}`, {
+        headers: {
+          Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+        },
+        next: { revalidate: 600 },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.avatar) {
+          // Verify Discord CDN avatar actually exists and does not 404
+          const cdnUrl = `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png?size=128`;
+          try {
+            const checkRes = await fetch(cdnUrl, { method: 'HEAD' });
+            if (checkRes.ok) {
+              const result = {
+                userId: data.id,
+                username: data.global_name || data.username,
+                avatarUrl: cdnUrl,
+                fetchedAt: Date.now(),
+              };
+              avatarCache[userId] = result;
+              return NextResponse.json(result);
+            }
+          } catch {}
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch Discord avatar for user:', userId, err);
+    }
+  }
+
+  // 3. Fallback: Aesthetic local avatar, never the default blue discord controller logo
+  const fallbackAvatars = [
+    '/avatars/slax.jpg',
+    '/avatars/azrael.jpg',
+    '/avatars/default.jpg',
+  ];
+  let avatarIndex = 0;
   try {
-    const idx = Number((BigInt(userId) >> BigInt(22)) % BigInt(6));
-    defaultAvatar = `https://cdn.discordapp.com/embed/avatars/${idx}.png`;
+    avatarIndex = Math.abs(userId.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0)) % fallbackAvatars.length;
   } catch {}
 
-  return NextResponse.json({
+  const result = {
     userId,
     username: 'User',
-    avatarUrl: defaultAvatar,
+    avatarUrl: fallbackAvatars[avatarIndex] || '/avatars/default.jpg',
     fetchedAt: Date.now(),
-  });
+  };
+
+  avatarCache[userId] = result;
+  return NextResponse.json(result);
 }

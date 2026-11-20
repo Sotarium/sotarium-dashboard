@@ -41,7 +41,7 @@ export async function POST(req: Request) {
       await supabase.from('users').insert({
         id,
         username: username || 'Discord Member',
-        avatar: avatar || 'https://cdn.discordapp.com/embed/avatars/0.png',
+        avatar: avatar || '/avatars/default.jpg',
         role,
         hwid: hwid || null,
         last_login: new Date().toISOString(),

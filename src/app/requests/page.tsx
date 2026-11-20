@@ -36,7 +36,7 @@ export default function RequestsPage() {
               fetch(`/api/discord-user?userId=${r.user_id}`)
                 .then((res) => res.json())
                 .then((u) => {
-                  if (u?.avatarUrl) {
+                  if (u?.avatarUrl && !u.avatarUrl.includes('embed/avatars/0.png')) {
                     setDiscordAvatars((prev) => ({ ...prev, [r.user_id]: u.avatarUrl }));
                   }
                 })
@@ -178,10 +178,10 @@ export default function RequestsPage() {
                       <div className="flex items-center gap-2.5">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={req.user_avatar || discordAvatars[req.user_id] || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                          src={req.user_avatar || discordAvatars[req.user_id] || '/avatars/default.jpg'}
                           alt={req.user_name}
                           className="w-7 h-7 rounded-full border border-white/10 object-cover bg-neutral-800 shrink-0"
-                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
+                          onError={(e) => { (e.target as HTMLImageElement).src = '/avatars/default.jpg'; }}
                         />
                         <span className="font-semibold text-white text-xs">{req.user_name}</span>
                         <button

@@ -201,7 +201,7 @@ export default function LoansPage() {
                           src={userAvatar}
                           alt={loan.userName}
                           className="w-8 h-8 rounded-full border border-white/10 shadow-sm object-cover bg-neutral-800"
-                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
+                          onError={(e) => { (e.target as HTMLImageElement).src = '/avatars/default.jpg'; }}
                         />
                         <div className="font-semibold text-white text-sm">
                           {loan.userName}

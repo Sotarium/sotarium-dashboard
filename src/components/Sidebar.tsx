@@ -18,8 +18,18 @@ export default function Sidebar() {
   return (
     <aside className="w-[260px] h-screen fixed left-0 top-0 flex flex-col justify-between p-4 bg-black select-none z-40 border-r border-white/[0.04]">
       {/* Top Section */}
-      <div className="space-y-6">
-        <div className="pt-2" />
+      <div className="space-y-4">
+        {/* Brand Watermark / Logo */}
+        <div className="px-3 pt-1 pb-1">
+          <Link href="/" className="inline-block transition-opacity hover:opacity-85">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img 
+              src="/sotarium-watermark.png" 
+              alt="Sotarium" 
+              className="h-10 w-auto object-contain select-none"
+            />
+          </Link>
+        </div>
 
         {/* General Nav */}
         <div className="space-y-1">

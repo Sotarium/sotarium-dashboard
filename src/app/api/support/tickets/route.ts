@@ -21,6 +21,13 @@ export async function GET(req: Request) {
     const { data: tickets, error } = await query;
     if (error) throw error;
 
+    const userIds = [...new Set((tickets || []).map((t) => t.user_id))];
+    const { data: dbUsers } = await supabase.from('users').select('id, avatar').in('id', userIds);
+    const avatarMap: Record<string, string> = {};
+    (dbUsers || []).forEach((u) => {
+      if (u.avatar) avatarMap[u.id] = u.avatar;
+    });
+
     // Fetch latest message for each ticket to show preview
     const ticketsWithPreview = await Promise.all(
       (tickets || []).map(async (t) => {
@@ -34,6 +41,7 @@ export async function GET(req: Request) {
 
         return {
           ...t,
+          user_avatar: avatarMap[t.user_id] || t.user_avatar || '/avatars/default.jpg',
           lastMessage: latestMsg?.message || null,
           lastMessageTime: latestMsg?.created_at || t.updated_at,
           lastMessageSender: latestMsg?.sender_name || null,

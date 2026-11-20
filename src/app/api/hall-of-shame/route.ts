@@ -100,3 +100,22 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to fetch hall of shame' }, { status: 500 });
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const { id, requesterId } = await req.json();
+    const OWNER_ID = '1079074717799030824';
+    if (requesterId !== OWNER_ID) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+
+    const { error } = await supabase.from('loan_requests').delete().eq('id', id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('Delete scammer error:', err);
+    return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
+  }
+}

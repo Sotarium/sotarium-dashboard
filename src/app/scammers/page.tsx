@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Loader2, RefreshCw, Info, X } from 'lucide-react';
+import { Search, Loader2, RefreshCw, Info, X, Trash2 } from 'lucide-react';
 import UserProfileModal, { type UserProfileData } from '@/components/UserProfileModal';
+import { useAuth } from '@/lib/auth';
 
 function ScammerInfoOverlay({ scammer, onClose }: { scammer: ScammerEntry; onClose: () => void }) {
   return (
@@ -91,11 +92,13 @@ interface ScammerEntry {
 }
 
 export default function HallOfShamePage() {
+  const { user, isOwner } = useAuth();
   const [scammers, setScammers] = useState<ScammerEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selectedScammer, setSelectedScammer] = useState<ScammerEntry | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const fetchScammers = async () => {
     setLoading(true);
     try {
@@ -121,6 +124,25 @@ export default function HallOfShamePage() {
 
   const openProfile = (scammer: ScammerEntry) => {
     setSelectedScammer(scammer);
+  };
+
+  const handleDelete = async (scammer: ScammerEntry) => {
+    if (!user?.id) return;
+    setDeletingId(scammer.id);
+    try {
+      const res = await fetch('/api/hall-of-shame', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: scammer.id, requesterId: user.id }),
+      });
+      if (res.ok) {
+        setScammers((prev) => prev.filter((s) => s.id !== scammer.id));
+      }
+    } catch (err) {
+      console.error('Delete failed:', err);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const filtered = scammers.filter((s) => {
@@ -214,6 +236,18 @@ export default function HallOfShamePage() {
                   >
                     <Info className="w-4 h-4" />
                   </button>
+                  {isOwner && (
+                    <button
+                      onClick={() => handleDelete(scammer)}
+                      disabled={deletingId === scammer.id}
+                      className="p-2 rounded-xl bg-red-500/[0.08] hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      title="Remove scammer"
+                    >
+                      {deletingId === scammer.id
+                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                        : <Trash2 className="w-4 h-4" />}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

@@ -63,15 +63,30 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
-    const { id, status } = body;
+    const { id, status, due_date, notes, amount, reason } = body;
 
-    if (!id || !status || !['approved', 'rejected', 'pending', 'completed'].includes(status)) {
-      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
+
+    // Build the update object — only include defined fields
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updatePayload: Record<string, any> = {};
+
+    if (status !== undefined) {
+      if (!['approved', 'rejected', 'pending', 'completed', 'active', 'repaid'].includes(status)) {
+        return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+      }
+      updatePayload.status = status;
+    }
+    if (due_date !== undefined) updatePayload.due_date = due_date;
+    if (notes !== undefined) updatePayload.notes = notes;
+    if (amount !== undefined) updatePayload.amount = parseFloat(amount);
+    if (reason !== undefined) updatePayload.reason = reason;
 
     const { data, error } = await supabase
       .from('loan_requests')
-      .update({ status })
+      .update(updatePayload)
       .eq('id', id)
       .select()
       .single();

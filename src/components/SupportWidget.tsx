@@ -814,7 +814,7 @@ export default function SupportWidget() {
       {/* Floating Circular Launcher Button (Bottom Right) */}
       <button
         onClick={handleToggleOpen}
-        className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-[#181818] border border-white/[0.12] hover:border-white/30 text-white flex items-center justify-center shadow-2xl transition-all cursor-pointer hover:scale-105 active:scale-95 group relative"
+        className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-[#181818] border border-white/[0.12] hover:border-white/30 text-white flex items-center justify-center shadow-2xl transition-all cursor-pointer hover:scale-105 active:scale-95 group"
         title={isOpen ? 'Close Support' : 'Open Support'}
         aria-label="Support Ticket Widget"
       >

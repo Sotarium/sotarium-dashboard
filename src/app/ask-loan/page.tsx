@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
-import { Send, Clock, ChevronDown, Check } from 'lucide-react';
+import { Send, Clock, ChevronDown } from 'lucide-react';
 
 interface LoanRequest {
   id: string;
@@ -148,7 +148,7 @@ export default function AskLoanPage() {
                   />
                   <div className="text-left">
                     <div className="font-semibold text-xs text-white leading-tight">
-                      {selectedCrypto.name} <span className="text-neutral-400 font-mono">({selectedCrypto.symbol})</span>
+                      {selectedCrypto.name}
                     </div>
                     {selectedCrypto.badge && (
                       <div className="text-[10px] text-neutral-400 leading-tight">
@@ -191,7 +191,7 @@ export default function AskLoanPage() {
                           />
                           <div className="text-left">
                             <div className="text-xs font-semibold text-white">
-                              {crypto.name} <span className="text-neutral-400 font-mono">({crypto.symbol})</span>
+                              {crypto.name}
                             </div>
                             {crypto.badge && (
                               <div className="text-[10px] text-neutral-400">
@@ -200,10 +200,6 @@ export default function AskLoanPage() {
                             )}
                           </div>
                         </div>
-
-                        {selectedCrypto.symbol === crypto.symbol && (
-                          <Check className="w-4 h-4 text-emerald-400" />
-                        )}
                       </div>
                     ))}
                   </div>

@@ -211,7 +211,16 @@ export default function PaybackPage() {
           {/* Progress bar + countdown */}
           {loanProgress && (
             <div className="space-y-2">
-              <div className="w-full h-2 rounded-full bg-white/[0.06]">
+              {/* Timer above bar */}
+              <div className="flex justify-end">
+                <span className={`text-[11px] font-mono font-semibold ${
+                  loanProgress.dueMs !== null && loanProgress.dueMs <= 0 ? 'text-red-400' : 'text-neutral-400'
+                }`}>
+                  {loanProgress.dueMs === null ? '' : loanProgress.dueMs <= 0 ? '⚠ Overdue' : `⏱ ${formatDueCountdown(loanProgress.dueMs)}`}
+                </span>
+              </div>
+              {/* Bar with % label */}
+              <div className="relative w-full h-2 rounded-full bg-white/[0.06]">
                 <div
                   className="h-full rounded-full transition-all duration-700"
                   style={{
@@ -219,15 +228,8 @@ export default function PaybackPage() {
                     backgroundColor: loanProgress.pct >= 100 ? '#00E823' : '#00AAE8',
                   }}
                 />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono font-semibold" style={{ color: loanProgress.pct >= 100 ? '#00E823' : '#00AAE8' }}>
-                  ${myLoan.repaidAmount.toFixed(2)} / ${myLoan.totalDue.toFixed(2)} paid
-                </span>
-                <span className={`text-[10px] font-mono font-semibold ${
-                  loanProgress.dueMs !== null && loanProgress.dueMs <= 0 ? 'text-red-400' : 'text-neutral-500'
-                }`}>
-                  {loanProgress.dueMs === null ? '' : loanProgress.dueMs <= 0 ? '⚠ Overdue' : `⏱ ${formatDueCountdown(loanProgress.dueMs)} left`}
+                <span className="absolute right-0 -top-4 text-[10px] font-mono font-semibold text-neutral-500">
+                  {loanProgress.pct.toFixed(0)}%
                 </span>
               </div>
             </div>

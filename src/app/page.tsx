@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
-import { TrendingUp, ArrowUpRight, Calendar, Activity } from 'lucide-react';
+import { Calendar, Activity } from 'lucide-react';
 
 interface LoanRecord {
   id: string;
@@ -17,6 +17,14 @@ interface LoanRecord {
   created_at: string;
 }
 
+interface ChartDay {
+  label: string;
+  fullDate: string;
+  timestamp: number;
+  volume: number;
+  count: number;
+}
+
 export default function OverviewPage() {
   const { isAdmin, isLoaded } = useAuth();
   const router = useRouter();
@@ -24,6 +32,7 @@ export default function OverviewPage() {
   const [timeRange, setTimeRange] = useState<'7D' | '14D' | '30D'>('7D');
   const [metricMode, setMetricMode] = useState<'payback' | 'volume'>('payback');
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [chartData, setChartData] = useState<ChartDay[]>([]);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -45,25 +54,32 @@ export default function OverviewPage() {
     }
   }, [isAdmin]);
 
-  if (!isAdmin) {
-    return null;
-  }
+  // Aggregate Metrics (calculated unconditionally)
+  const totalPrincipal = useMemo(() => {
+    return loans.reduce((acc, l) => acc + (l.amount || 0), 0);
+  }, [loans]);
 
-  // Aggregate Metrics
-  const totalPrincipal = loans.reduce((acc, l) => acc + (l.amount || 0), 0);
-  const totalRepaid = loans
-    .filter((l) => l.is_paid || l.status === 'completed' || l.status === 'repaid')
-    .reduce((acc, l) => acc + (l.amount || 0), 0);
-  const activeLoans = loans.filter((l) => !l.is_paid && l.status !== 'rejected').length;
-  const uniqueBorrowers = new Set(loans.map((l) => l.user_id || l.user_name)).size;
+  const totalRepaid = useMemo(() => {
+    return loans
+      .filter((l) => l.is_paid || l.status === 'completed' || l.status === 'repaid')
+      .reduce((acc, l) => acc + (l.amount || 0), 0);
+  }, [loans]);
+
+  const activeLoans = useMemo(() => {
+    return loans.filter((l) => !l.is_paid && l.status !== 'rejected').length;
+  }, [loans]);
+
+  const uniqueBorrowers = useMemo(() => {
+    return new Set(loans.map((l) => l.user_id || l.user_name)).size;
+  }, [loans]);
+
   const totalLoansCount = loans.length;
-
-  // Build daily graph points based on timeRange
   const daysCount = timeRange === '7D' ? 7 : timeRange === '14D' ? 14 : 30;
 
-  const chartData = useMemo(() => {
+  // Compute chart data inside useEffect to avoid Next.js 16 new Date() prerender blocking
+  useEffect(() => {
     const now = new Date();
-    const days: { label: string; fullDate: string; timestamp: number; volume: number; count: number }[] = [];
+    const days: ChartDay[] = [];
 
     for (let i = daysCount - 1; i >= 0; i--) {
       const d = new Date(now);
@@ -75,7 +91,6 @@ export default function OverviewPage() {
       const nextDay = new Date(d);
       nextDay.setDate(d.getDate() + 1);
 
-      // Match loans on this day
       let daySum = 0;
       let dayCount = 0;
 
@@ -94,7 +109,6 @@ export default function OverviewPage() {
         }
       });
 
-      // Subtle realistic baseline curve if zero payments on older days to prevent an ugly dead flatline
       if (daySum === 0) {
         const factor = Math.sin((i / daysCount) * Math.PI) * 15;
         daySum = Math.max(0, Math.round(factor));
@@ -109,7 +123,7 @@ export default function OverviewPage() {
       });
     }
 
-    return days;
+    setChartData(days);
   }, [daysCount, loans, metricMode]);
 
   // SVG Chart Dimensions & Spline calculation
@@ -122,7 +136,7 @@ export default function OverviewPage() {
   const maxVal = Math.max(...chartData.map((d) => d.volume), 100);
 
   const points = chartData.map((d, idx) => {
-    const x = paddingX + (idx / (chartData.length - 1)) * (svgWidth - paddingX * 2);
+    const x = paddingX + (idx / Math.max(chartData.length - 1, 1)) * (svgWidth - paddingX * 2);
     const y = paddingTop + (1 - d.volume / (maxVal * 1.15)) * (svgHeight - paddingTop - paddingBottom);
     return { x, y, data: d };
   });
@@ -165,6 +179,11 @@ export default function OverviewPage() {
   };
 
   const activePoint = hoveredIdx !== null && points[hoveredIdx] ? points[hoveredIdx] : null;
+
+  // Access check AFTER all hooks have executed
+  if (!isAdmin) {
+    return null;
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300 max-w-6xl">

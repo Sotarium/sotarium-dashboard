@@ -77,11 +77,35 @@ function formatDueCountdown(ms: number): string {
 
 function SuccessAnim() {
   return (
-    <span className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/40 animate-in zoom-in-50 fade-in duration-200">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-emerald-400">
-        <polyline points="20 6 9 17 4 12" />
-      </svg>
-    </span>
+    <>
+      <style>{`
+        @keyframes cm-stroke { 100% { stroke-dashoffset: 0; } }
+        @keyframes cm-scale { 0%,100% { transform:none; } 50% { transform:scale3d(1.1,1.1,1); } }
+        @keyframes cm-fill { 100% { box-shadow:inset 0px 0px 0px 30px #27F53F; } }
+        .cm-root {
+          width:56px; height:56px; border-radius:50%; display:block;
+          stroke-width:2; stroke:#fff; stroke-miterlimit:10;
+          box-shadow:inset 0px 0px 0px #27F53F;
+          animation: cm-fill .4s ease-in-out .4s forwards, cm-scale .3s ease-in-out .9s both;
+        }
+        .cm-circle {
+          stroke-dasharray:166; stroke-dashoffset:166;
+          stroke-width:2; stroke-miterlimit:10; stroke:#27F53F; fill:none;
+          animation: cm-stroke .6s cubic-bezier(0.65,0,0.45,1) forwards;
+        }
+        .cm-check {
+          transform-origin:50% 50%;
+          stroke-dasharray:48; stroke-dashoffset:48;
+          animation: cm-stroke .3s cubic-bezier(0.65,0,0.45,1) .8s forwards;
+        }
+      `}</style>
+      <span className="pointer-events-none absolute -top-16 left-1/2 -translate-x-1/2 z-50">
+        <svg className="cm-root" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+          <circle className="cm-circle" cx="26" cy="26" r="25" fill="none"/>
+          <path className="cm-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+        </svg>
+      </span>
+    </>
   );
 }
 

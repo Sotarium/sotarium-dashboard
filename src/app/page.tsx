@@ -65,26 +65,31 @@ export default function OverviewPage() {
     }
   }, [isAdmin]);
 
-  // Aggregate Metrics (calculated unconditionally)
-  const totalPrincipal = useMemo(() => {
-    return loans.reduce((acc, l) => acc + (l.amount || 0), 0);
+  // Aggregate Metrics: Only consider accepted / approved / issued loans
+  const issuedLoans = useMemo(() => {
+    return loans.filter((l) => l.status === 'approved' || l.status === 'active' || l.status === 'completed' || l.status === 'repaid');
   }, [loans]);
+
+  const totalPrincipal = useMemo(() => {
+    return issuedLoans.reduce((acc, l) => acc + (l.amount || 0), 0);
+  }, [issuedLoans]);
 
   const totalRepaid = useMemo(() => {
-    return loans
+    return issuedLoans
       .filter((l) => l.is_paid || l.status === 'completed' || l.status === 'repaid')
       .reduce((acc, l) => acc + (l.amount || 0), 0);
-  }, [loans]);
+  }, [issuedLoans]);
 
   const activeLoans = useMemo(() => {
-    return loans.filter((l) => !l.is_paid && l.status !== 'rejected').length;
+    return loans.filter((l) => (l.status === 'approved' || l.status === 'active') && !l.is_paid).length;
   }, [loans]);
 
   const uniqueBorrowers = useMemo(() => {
-    return new Set(loans.map((l) => l.user_id || l.user_name)).size;
+    const activeBorrowersList = loans.filter((l) => (l.status === 'approved' || l.status === 'active') && !l.is_paid);
+    return new Set(activeBorrowersList.map((l) => l.user_id || l.user_name).filter(Boolean)).size;
   }, [loans]);
 
-  const totalLoansCount = loans.length;
+  const totalLoansCount = issuedLoans.length;
 
   // Build daily graph points for the currently selected month
   useEffect(() => {

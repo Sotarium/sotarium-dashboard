@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef } from 'react';
-import { Copy, Check } from 'lucide-react';
+import { Copy } from 'lucide-react';
 
 interface CopyButtonProps {
   text: string;
@@ -21,17 +21,18 @@ export function CopyButton({ text, className, iconClassName = 'w-4 h-4', childre
   };
 
   return (
-    <button
-      onClick={handleCopy}
-      className={`relative transition-all duration-200 ${className ?? ''}`}
-    >
-      {children ? (
-        copied ? <Check className={`${iconClassName} text-emerald-400`} /> : children
-      ) : copied ? (
-        <Check className={`${iconClassName} text-emerald-400`} />
-      ) : (
-        <Copy className={iconClassName} />
+    <button onClick={handleCopy} className={`relative ${className ?? ''}`}>
+      {copied && (
+        <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 z-50">
+          <video
+            src="https://cdnl.iconscout.com/lottie/free/preview/free-success-animation-gif-download-4503215.mp4"
+            autoPlay muted playsInline
+            className="w-16 h-16 object-contain"
+            style={{ mixBlendMode: 'screen' }}
+          />
+        </span>
       )}
+      {children ? children : <Copy className={iconClassName} />}
     </button>
   );
 }
@@ -46,5 +47,16 @@ export function useCopy() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  return { copied, copy, AnimOverlay: null, showAnim: false };
+  const AnimOverlay = copied ? (
+    <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 z-50">
+      <video
+        src="https://cdnl.iconscout.com/lottie/free/preview/free-success-animation-gif-download-4503215.mp4"
+        autoPlay muted playsInline
+        className="w-16 h-16 object-contain"
+        style={{ mixBlendMode: 'screen' }}
+      />
+    </span>
+  ) : null;
+
+  return { copied, copy, AnimOverlay, showAnim: copied };
 }

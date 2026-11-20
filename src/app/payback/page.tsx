@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Copy, Check, Loader2, ChevronRight, RefreshCw, AlertCircle } from 'lucide-react';
+import { Copy, Check, Loader2, ChevronRight, RefreshCw, AlertCircle, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
 const COINS = [
@@ -198,9 +198,10 @@ export default function PaybackPage() {
           {/* Countdown — top center */}
           {loanProgress && (
             <div className="flex justify-center">
-              <span className={`text-2xl font-bold text-white ${
-                loanProgress.dueMs !== null && loanProgress.dueMs <= 0 ? 'text-red-400' : 'text-white'
-              }`} style={{ fontFamily: 'monospace', textShadow: '0 0 20px rgba(255,255,255,0.15)' }}>
+              <span className={`text-xs font-semibold tracking-tight flex items-center gap-1 ${
+                loanProgress.dueMs !== null && loanProgress.dueMs <= 0 ? 'text-red-400' : 'text-neutral-200'
+              }`}>
+                <Clock className="w-3 h-3 opacity-60" aria-hidden="true" />
                 {loanProgress.dueMs === null ? '' : loanProgress.dueMs <= 0 ? '⚠ Overdue' : formatDueCountdown(loanProgress.dueMs)}
               </span>
             </div>

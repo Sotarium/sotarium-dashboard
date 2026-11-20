@@ -195,7 +195,7 @@ export default function PaybackPage() {
       {/* Loan Summary Card */}
       {myLoan && (
         <div className="soteria-card p-5 space-y-4">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-start justify-between gap-4">
             <div>
               <div className="text-xs text-neutral-400 mb-0.5">Amount Due</div>
               <div className="text-2xl font-bold text-white font-sans">
@@ -203,35 +203,34 @@ export default function PaybackPage() {
                 <span className="text-sm text-neutral-400 font-normal ml-1.5">+15% interest</span>
               </div>
             </div>
-            <div className="px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-400 shrink-0">
-              Active
-            </div>
-          </div>
-
-          {/* Progress bar + countdown */}
-          {loanProgress && (
-            <div className="space-y-3">
-              {/* Centered countdown */}
-              <div className="flex justify-center">
-                <span className={`text-sm font-mono font-bold tracking-widest ${
+            {/* Right side: Active badge + countdown stacked */}
+            <div className="flex flex-col items-end gap-1.5 shrink-0">
+              <div className="px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-400">
+                Active
+              </div>
+              {loanProgress && (
+                <span className={`text-xs font-mono font-bold tabular-nums ${
                   loanProgress.dueMs !== null && loanProgress.dueMs <= 0 ? 'text-red-400' : 'text-white'
                 }`}>
                   {loanProgress.dueMs === null ? '' : loanProgress.dueMs <= 0 ? '⚠ Overdue' : formatDueCountdown(loanProgress.dueMs)}
                 </span>
-              </div>
-              {/* Bar with % overlaid on it */}
-              <div className="relative w-full h-4 rounded-full bg-white/[0.06] overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-700"
-                  style={{
-                    width: `${loanProgress.pct}%`,
-                    backgroundColor: loanProgress.pct >= 100 ? '#00E823' : '#00AAE8',
-                  }}
-                />
-                <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black tracking-wide text-white drop-shadow-sm" style={{ fontFamily: 'monospace' }}>
-                  {loanProgress.pct.toFixed(0)}%
-                </span>
-              </div>
+              )}
+            </div>
+          </div>
+
+          {/* Progress bar with % overlaid */}
+          {loanProgress && (
+            <div className="relative w-full h-5 rounded-full bg-white/[0.06] overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{
+                  width: `${loanProgress.pct}%`,
+                  backgroundColor: loanProgress.pct >= 100 ? '#00E823' : '#00AAE8',
+                }}
+              />
+              <span className="absolute inset-0 flex items-center justify-center text-xs font-black text-white drop-shadow">
+                {loanProgress.pct.toFixed(0)}%
+              </span>
             </div>
           )}
         </div>

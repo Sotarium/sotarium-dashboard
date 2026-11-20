@@ -26,6 +26,7 @@ interface Ticket {
   lastMessage?: string | null;
   lastMessageTime?: string | null;
   lastMessageSender?: string | null;
+  lastMessageSenderId?: string | null;
 }
 
 interface Message {
@@ -33,7 +34,7 @@ interface Message {
   ticket_id: string;
   sender_id: string;
   sender_name: string;
-  sender_role: 'user' | 'owner' | 'admin';
+  sender_role: 'user' | 'owner' | 'admin' | 'staff';
   sender_avatar?: string;
   message: string;
   created_at: string;
@@ -53,6 +54,8 @@ export default function SupportWidget() {
   const isStaff = isOwner || isAdmin;
 
   const [isOpen, setIsOpen] = useState(false);
+  const [hasUnread, setHasUnread] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [staffTab, setStaffTab] = useState<'received' | 'conversations'>('received');
   const [view, setView] = useState<'list' | 'chat' | 'create'>('list');
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -60,6 +63,53 @@ export default function SupportWidget() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Check unread messages for notification dot
+  const checkUnread = (fetchedTickets: Ticket[]) => {
+    try {
+      const lastSeenStr = localStorage.getItem('sotarium_support_last_seen');
+      if (!lastSeenStr) {
+        localStorage.setItem('sotarium_support_last_seen', Date.now().toString());
+        setHasUnread(false);
+        setUnreadCount(0);
+        return;
+      }
+      const lastSeenTime = Number(lastSeenStr);
+
+      let unread = 0;
+      for (const t of fetchedTickets) {
+        if (!t.lastMessageTime) continue;
+        const msgTime = new Date(t.lastMessageTime).getTime();
+
+        const isFromOther = t.lastMessageSenderId
+          ? t.lastMessageSenderId !== user?.id
+          : t.lastMessageSender?.toLowerCase() !== user?.username?.toLowerCase();
+
+        if (msgTime > lastSeenTime && isFromOther) {
+          unread++;
+        }
+      }
+
+      setUnreadCount(unread);
+      setHasUnread(unread > 0);
+    } catch (e) {
+      console.error('Failed to check unread messages:', e);
+    }
+  };
+
+  const handleToggleOpen = () => {
+    setIsOpen((prev) => {
+      const next = !prev;
+      if (next) {
+        setHasUnread(false);
+        setUnreadCount(0);
+        try {
+          localStorage.setItem('sotarium_support_last_seen', Date.now().toString());
+        } catch {}
+      }
+      return next;
+    });
+  };
 
   // Loan applicants list for staff to pick borrower
   const [loanApplicants, setLoanApplicants] = useState<LoanApplicant[]>([]);
@@ -89,6 +139,17 @@ export default function SupportWidget() {
     }
   }, [messages, view]);
 
+  // When viewing chat, mark messages as read
+  useEffect(() => {
+    if (isOpen && view === 'chat') {
+      try {
+        localStorage.setItem('sotarium_support_last_seen', Date.now().toString());
+        setHasUnread(false);
+        setUnreadCount(0);
+      } catch {}
+    }
+  }, [isOpen, view, messages]);
+
   // Fetch loan applicants (so staff can make tickets with people that asked for loans)
   const fetchLoanApplicants = async () => {
     if (!isStaff) return;
@@ -114,8 +175,11 @@ export default function SupportWidget() {
         : `/api/support/tickets`;
       const res = await fetch(url);
       if (res.ok) {
-        const data = await res.json();
+        const data: Ticket[] = await res.json();
         setTickets(data);
+        if (!isOpen) {
+          checkUnread(data);
+        }
       }
     } catch (e) {
       console.error('Failed to fetch tickets:', e);
@@ -137,6 +201,18 @@ export default function SupportWidget() {
     }
   };
 
+  // Background polling every 7s when widget is closed to show unread red dot in real time
+  useEffect(() => {
+    if (isOpen) return;
+
+    fetchTickets(true);
+    const interval = setInterval(() => {
+      fetchTickets(true);
+    }, 7000);
+
+    return () => clearInterval(interval);
+  }, [isOpen, user]);
+
   // On open or user load, fetch tickets & applicants
   useEffect(() => {
     if (isOpen) {
@@ -157,6 +233,11 @@ export default function SupportWidget() {
       const { userId, userName, userAvatar, subject } = customEvent.detail || {};
       if (userId) {
         setIsOpen(true);
+        setHasUnread(false);
+        setUnreadCount(0);
+        try {
+          localStorage.setItem('sotarium_support_last_seen', Date.now().toString());
+        } catch {}
         // Check if ticket already exists
         const existing = tickets.find((t) => t.user_id === userId);
         if (existing) {
@@ -196,6 +277,11 @@ export default function SupportWidget() {
     setActiveTicket(ticket);
     setView('chat');
     setIsLoading(true);
+    try {
+      localStorage.setItem('sotarium_support_last_seen', Date.now().toString());
+    } catch {}
+    setHasUnread(false);
+    setUnreadCount(0);
     fetchMessages(ticket.id).finally(() => setIsLoading(false));
   };
 
@@ -236,7 +322,7 @@ export default function SupportWidget() {
           subject: newSubject.trim() || 'Loan Support Ticket',
           message: newInitialMsg.trim(),
           creatorId: user?.id,
-          creatorName: user?.username || 'Sotarium (Staff)',
+          creatorName: user?.username || (isOwner ? 'Sotarium' : isStaff ? 'Staff' : 'Client'),
           creatorRole: isOwner ? 'owner' : isStaff ? 'admin' : 'user',
           creatorAvatar: user?.avatar || '',
         }),
@@ -275,7 +361,7 @@ export default function SupportWidget() {
       id: `temp-${Date.now()}`,
       ticket_id: activeTicket.id,
       sender_id: user?.id || 'guest',
-      sender_name: user?.username || (isStaff ? 'Sotarium' : 'Client'),
+      sender_name: user?.username || (isOwner ? 'Sotarium' : isStaff ? 'Staff' : 'Client'),
       sender_role: senderRole,
       sender_avatar: user?.avatar,
       message: text,
@@ -291,7 +377,7 @@ export default function SupportWidget() {
         body: JSON.stringify({
           ticketId: activeTicket.id,
           senderId: user?.id || 'guest',
-          senderName: user?.username || (isStaff ? 'Sotarium' : 'Client'),
+          senderName: user?.username || (isOwner ? 'Sotarium' : isStaff ? 'Staff' : 'Client'),
           senderRole,
           senderAvatar: user?.avatar || '',
           message: text,
@@ -347,11 +433,15 @@ export default function SupportWidget() {
           <div className="p-4 border-b border-white/[0.06] flex items-center justify-between bg-[#121212]/80 backdrop-blur-md">
             <div className="flex items-center gap-2">
               <span className="font-bold text-white text-base tracking-tight font-sans">Support</span>
-              {isStaff && (
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.06] text-neutral-300">
+              {isOwner ? (
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold tracking-wide">
+                  Owner
+                </span>
+              ) : isStaff ? (
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.06] text-neutral-300 font-semibold">
                   Staff
                 </span>
-              )}
+              ) : null}
             </div>
             <button
               onClick={() => setIsOpen(false)}
@@ -647,20 +737,30 @@ export default function SupportWidget() {
                   ) : (
                     messages.map((m) => {
                       const isMe = m.sender_id === user?.id;
-                      const isStaffMsg = m.sender_role === 'owner' || m.sender_role === 'admin';
+                      const isOwnerMsg =
+                        m.sender_role === 'owner' ||
+                        m.sender_id === OWNER_DISCORD_ID ||
+                        m.sender_name?.toLowerCase() === 'sotarium';
+                      const isStaffMsg =
+                        !isOwnerMsg &&
+                        (m.sender_role === 'admin' || m.sender_role === 'staff');
 
                       return (
                         <div
                           key={m.id}
                           className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}
                         >
-                          <div className="flex items-center gap-1 text-[10px] text-neutral-400 px-1">
-                            <span>{m.sender_name}</span>
-                            {isStaffMsg && (
-                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-semibold">
+                          <div className="flex items-center gap-1.5 text-[10px] text-neutral-400 px-1">
+                            <span className="font-medium text-neutral-300">{m.sender_name}</span>
+                            {isOwnerMsg ? (
+                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold">
+                                Owner
+                              </span>
+                            ) : isStaffMsg ? (
+                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 font-semibold">
                                 Staff
                               </span>
-                            )}
+                            ) : null}
                           </div>
 
                           <div
@@ -713,15 +813,23 @@ export default function SupportWidget() {
 
       {/* Floating Circular Launcher Button (Bottom Right) */}
       <button
-        onClick={() => setIsOpen((prev) => !prev)}
-        className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-[#181818] border border-white/[0.12] hover:border-white/30 text-white flex items-center justify-center shadow-2xl transition-all cursor-pointer hover:scale-105 active:scale-95"
+        onClick={handleToggleOpen}
+        className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-[#181818] border border-white/[0.12] hover:border-white/30 text-white flex items-center justify-center shadow-2xl transition-all cursor-pointer hover:scale-105 active:scale-95 group relative"
         title={isOpen ? 'Close Support' : 'Open Support'}
         aria-label="Support Ticket Widget"
       >
         {isOpen ? (
           <X className="w-5 h-5 text-white" />
         ) : (
-          <MessageSquare className="w-5 h-5 text-white" />
+          <>
+            <MessageSquare className="w-5 h-5 text-white" />
+            {hasUnread && (
+              <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 border-2 border-[#181818]" />
+              </span>
+            )}
+          </>
         )}
       </button>
     </>

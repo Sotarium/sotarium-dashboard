@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { OWNER_DISCORD_ID } from '@/lib/auth';
 
 export async function GET(req: Request) {
   try {
@@ -34,13 +35,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    const isOwnerSender = senderId === OWNER_DISCORD_ID || senderRole === 'owner' || senderName?.toLowerCase() === 'sotarium';
+    const finalRole = isOwnerSender ? 'owner' : (senderRole || 'user');
+
     const { data: newMsg, error: msgErr } = await supabase
       .from('support_messages')
       .insert({
         ticket_id: ticketId,
         sender_id: senderId,
         sender_name: senderName || 'User',
-        sender_role: senderRole || 'user',
+        sender_role: finalRole,
         sender_avatar: senderAvatar || '',
         message: message.trim(),
       })

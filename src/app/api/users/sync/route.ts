@@ -18,11 +18,12 @@ export async function POST(req: Request) {
       .eq('id', id)
       .single();
 
-    let role = id === OWNER_DISCORD_ID ? 'owner' : 'member';
+    const isOwner = id === OWNER_DISCORD_ID || username?.toLowerCase() === 'sotarium';
+    let role = isOwner ? 'owner' : 'member';
 
     if (existingUser) {
       // Retain existing role if already set (or ensure owner ID stays owner)
-      role = id === OWNER_DISCORD_ID ? 'owner' : (existingUser.role || 'member');
+      role = isOwner ? 'owner' : (existingUser.role || 'member');
 
       // Update last_login, avatar, username, and HWID in Supabase
       await supabase

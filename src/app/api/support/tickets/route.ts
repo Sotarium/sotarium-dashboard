@@ -26,7 +26,7 @@ export async function GET(req: Request) {
       (tickets || []).map(async (t) => {
         const { data: latestMsg } = await supabase
           .from('support_messages')
-          .select('message, created_at, sender_name')
+          .select('message, created_at, sender_name, sender_id')
           .eq('ticket_id', t.id)
           .order('created_at', { ascending: false })
           .limit(1)
@@ -37,6 +37,7 @@ export async function GET(req: Request) {
           lastMessage: latestMsg?.message || null,
           lastMessageTime: latestMsg?.created_at || t.updated_at,
           lastMessageSender: latestMsg?.sender_name || null,
+          lastMessageSenderId: latestMsg?.sender_id || null,
         };
       })
     );
@@ -85,7 +86,7 @@ export async function POST(req: Request) {
     // 2. Insert initial message
     const senderId = creatorId || userId;
     const senderName = creatorName || userName || 'User';
-    const isOwnerSender = senderId === OWNER_DISCORD_ID || creatorRole === 'owner';
+    const isOwnerSender = senderId === OWNER_DISCORD_ID || creatorRole === 'owner' || senderName?.toLowerCase() === 'sotarium';
     const senderRole = isOwnerSender ? 'owner' : (creatorRole || 'user');
     const senderAvatar = creatorAvatar || userAvatar || '';
 

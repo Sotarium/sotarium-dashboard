@@ -45,7 +45,7 @@ export default function LoginPage() {
           <div className="space-y-1.5 text-center">
             <h1 className="text-2xl font-bold tracking-tight text-white">Welcome to Sotarium</h1>
             <p className="text-xs text-neutral-400 max-w-xs mx-auto">
-              Sign in with your Discord account to access loans, active requests, and support.
+              Sign in with your Discord account to access loans.
             </p>
           </div>
 
@@ -63,9 +63,6 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className="pt-2 text-center text-[11px] text-neutral-500">
-            Authentication is securely verified through Discord OAuth2.
-          </div>
         </div>
       </main>
 

@@ -64,28 +64,26 @@ export default function SupportWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Check unread messages for notification dot
+  // Check unread messages for notification dot using a per-ticket last-read map
   const checkUnread = (fetchedTickets: Ticket[]) => {
     try {
-      const lastSeenStr = localStorage.getItem('sotarium_support_last_seen');
-      if (!lastSeenStr) {
-        localStorage.setItem('sotarium_support_last_seen', Date.now().toString());
-        setHasUnread(false);
-        setUnreadCount(0);
-        return;
-      }
-      const lastSeenTime = Number(lastSeenStr);
+      const readMapStr = localStorage.getItem('sotarium_support_read_tickets');
+      const readMap: Record<string, string> = readMapStr ? JSON.parse(readMapStr) : {};
 
       let unread = 0;
       for (const t of fetchedTickets) {
         if (!t.lastMessageTime) continue;
-        const msgTime = new Date(t.lastMessageTime).getTime();
 
+        // Check if latest message is from someone else
         const isFromOther = t.lastMessageSenderId
           ? t.lastMessageSenderId !== user?.id
           : t.lastMessageSender?.toLowerCase() !== user?.username?.toLowerCase();
 
-        if (msgTime > lastSeenTime && isFromOther) {
+        if (!isFromOther) continue;
+
+        // If ticket hasn't been opened yet, or latest message is newer than last opened time
+        const lastReadMsgTime = readMap[t.id];
+        if (!lastReadMsgTime || new Date(t.lastMessageTime).getTime() > new Date(lastReadMsgTime).getTime()) {
           unread++;
         }
       }
@@ -97,18 +95,20 @@ export default function SupportWidget() {
     }
   };
 
+  const markTicketAsRead = (ticketId: string) => {
+    try {
+      const readMapStr = localStorage.getItem('sotarium_support_read_tickets');
+      const readMap: Record<string, string> = readMapStr ? JSON.parse(readMapStr) : {};
+      readMap[ticketId] = new Date().toISOString();
+      localStorage.setItem('sotarium_support_read_tickets', JSON.stringify(readMap));
+      checkUnread(tickets);
+    } catch (e) {
+      console.error('Failed to mark ticket as read:', e);
+    }
+  };
+
   const handleToggleOpen = () => {
-    setIsOpen((prev) => {
-      const next = !prev;
-      if (next) {
-        setHasUnread(false);
-        setUnreadCount(0);
-        try {
-          localStorage.setItem('sotarium_support_last_seen', Date.now().toString());
-        } catch {}
-      }
-      return next;
-    });
+    setIsOpen((prev) => !prev);
   };
 
   // Loan applicants list for staff to pick borrower
@@ -139,16 +139,12 @@ export default function SupportWidget() {
     }
   }, [messages, view]);
 
-  // When viewing chat, mark messages as read
+  // When viewing chat, mark active ticket as read
   useEffect(() => {
-    if (isOpen && view === 'chat') {
-      try {
-        localStorage.setItem('sotarium_support_last_seen', Date.now().toString());
-        setHasUnread(false);
-        setUnreadCount(0);
-      } catch {}
+    if (isOpen && view === 'chat' && activeTicket) {
+      markTicketAsRead(activeTicket.id);
     }
-  }, [isOpen, view, messages]);
+  }, [isOpen, view, activeTicket, messages]);
 
   // Fetch loan applicants (so staff can make tickets with people that asked for loans)
   const fetchLoanApplicants = async () => {
@@ -277,11 +273,7 @@ export default function SupportWidget() {
     setActiveTicket(ticket);
     setView('chat');
     setIsLoading(true);
-    try {
-      localStorage.setItem('sotarium_support_last_seen', Date.now().toString());
-    } catch {}
-    setHasUnread(false);
-    setUnreadCount(0);
+    markTicketAsRead(ticket.id);
     fetchMessages(ticket.id).finally(() => setIsLoading(false));
   };
 
@@ -812,26 +804,28 @@ export default function SupportWidget() {
       )}
 
       {/* Floating Circular Launcher Button (Bottom Right) */}
-      <button
-        onClick={handleToggleOpen}
-        className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-[#181818] border border-white/[0.12] hover:border-white/30 text-white flex items-center justify-center shadow-2xl transition-all cursor-pointer hover:scale-105 active:scale-95 group"
-        title={isOpen ? 'Close Support' : 'Open Support'}
-        aria-label="Support Ticket Widget"
-      >
-        {isOpen ? (
-          <X className="w-5 h-5 text-white" />
-        ) : (
-          <>
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={handleToggleOpen}
+          className="relative w-12 h-12 rounded-full bg-[#181818] border border-white/[0.12] hover:border-white/30 text-white flex items-center justify-center shadow-2xl transition-all cursor-pointer hover:scale-105 active:scale-95"
+          title={isOpen ? 'Close Support' : 'Open Support'}
+          aria-label="Support Ticket Widget"
+        >
+          {isOpen ? (
+            <X className="w-5 h-5 text-white" />
+          ) : (
             <MessageSquare className="w-5 h-5 text-white" />
-            {hasUnread && (
-              <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 border-2 border-[#181818]" />
-              </span>
-            )}
-          </>
-        )}
-      </button>
+          )}
+
+          {/* Unread Reply Notification Dot */}
+          {hasUnread && !isOpen && (
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 pointer-events-none">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+              <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-[#121212] shadow-lg shadow-red-500/50" />
+            </span>
+          )}
+        </button>
+      </div>
     </>
   );
 }

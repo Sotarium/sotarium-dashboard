@@ -378,50 +378,48 @@ export default function LoansPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm border-collapse">
-                <thead>
-                  <tr className="border-b border-white/[0.06] text-xs font-medium text-neutral-400">
-                    <th className="pb-3 px-3 font-medium select-none">Borrower</th>
-                    <th className="pb-3 px-3 font-medium select-none">Borrowed</th>
-                    <th className="pb-3 px-3 font-medium select-none">Interest (15%)</th>
-                    <th className="pb-3 px-3 font-medium select-none">Total Due</th>
-                    <th className="pb-3 px-3 font-medium select-none">Time Left</th>
-                    <th className="pb-3 px-3 font-medium select-none">Paid Back</th>
-                    <th className="pb-3 px-3 font-medium select-none text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.04]">
+              {/* Grid: Borrower | Borrowed | Interest | Total Due | Time Left | Paid Back | Actions */}
+              <div className="min-w-[700px]">
+                {/* Header */}
+                <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1.5fr_auto] gap-x-3 px-3 pb-3 border-b border-white/[0.06] text-xs font-medium text-neutral-400">
+                  <div>Borrower</div>
+                  <div>Borrowed</div>
+                  <div>Interest (15%)</div>
+                  <div>Total Due</div>
+                  <div>Time Left</div>
+                  <div>Paid Back</div>
+                  <div className="text-right w-28">Actions</div>
+                </div>
+                {/* Rows */}
+                <div className="divide-y divide-white/[0.04]">
                   {filteredLoans.map((loan) => {
                     const interest = Math.round(loan.principal * 0.15 * 100) / 100;
                     const totalDue = Math.round((loan.principal + interest) * 100) / 100;
                     const isPaid = loan.status === 'completed';
 
                     return (
-                      <tr key={loan.id} className="hover:bg-white/[0.02] transition-colors group">
+                      <div key={loan.id} className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1.5fr_auto] gap-x-3 px-3 py-4 items-center hover:bg-white/[0.02] transition-colors">
                         {/* Borrower */}
-                        <td className="py-4 px-3">
-                          <div className="flex items-center gap-3">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={loan.userAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
-                              alt={loan.userName}
-                              className="w-8 h-8 rounded-full border border-white/10 shadow-sm object-cover bg-neutral-800"
-                              onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
-                            />
-                            <div className="font-semibold text-white text-sm">{loan.userName}</div>
-                          </div>
-                        </td>
-
-                        <td className="py-4 px-3 font-medium text-white">${loan.principal.toFixed(2)}</td>
-                        <td className="py-4 px-3 text-neutral-400">${interest.toFixed(2)}</td>
-                        <td className="py-4 px-3 font-semibold text-white">${totalDue.toFixed(2)}</td>
-
-                        {/* Countdown */}
-                        <td className="py-4 px-3">
-                          <TimeLeftCell dueDate={loan.dueDate} loanDate={loan.loanDate} status={loan.status} />
-                        </td>
-                        {/* Progress bar */}
-                        <td className="py-4 px-3 min-w-[120px]">
+                        <div className="flex items-center gap-3">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={loan.userAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                            alt={loan.userName}
+                            className="w-8 h-8 rounded-full border border-white/10 shadow-sm object-cover bg-neutral-800 shrink-0"
+                            onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
+                          />
+                          <div className="font-semibold text-white text-sm truncate">{loan.userName}</div>
+                        </div>
+                        {/* Borrowed */}
+                        <div className="font-medium text-white text-sm">${loan.principal.toFixed(2)}</div>
+                        {/* Interest */}
+                        <div className="text-neutral-400 text-sm">${interest.toFixed(2)}</div>
+                        {/* Total Due */}
+                        <div className="font-semibold text-white text-sm">${totalDue.toFixed(2)}</div>
+                        {/* Time Left */}
+                        <div><TimeLeftCell dueDate={loan.dueDate} loanDate={loan.loanDate} status={loan.status} /></div>
+                        {/* Paid Back bar */}
+                        <div>
                           {(() => {
                             const totalDueCalc = loan.principal * 1.15;
                             const pct = totalDueCalc > 0
@@ -440,49 +438,42 @@ export default function LoansPage() {
                               </div>
                             );
                           })()}
-                        </td>
-
-                        {/* Reason removed */}
-
-                        {/* Actions — edit & delete only shown to admins */}
-                        <td className="py-4 px-3">
-                          <div className="flex items-center justify-end gap-2">
-                            {isPaid ? (
-                              <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                Paid
-                              </span>
-                            ) : (
-                              <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-white text-black">
-                                Active
-                              </span>
-                            )}
-
-                            {isAdmin && (
-                              <>
-                                <button
-                                  onClick={() => setEditingLoan(loan)}
-                                  className="p-1.5 rounded-lg hover:bg-white/[0.08] text-neutral-500 hover:text-white transition-colors cursor-pointer"
-                                  title="Edit loan"
-                                >
-                                  <Pencil className="w-3.5 h-3.5" />
-                                </button>
-
-                                <button
-                                  onClick={() => handleDelete(loan.id)}
-                                  className="p-1.5 rounded-lg hover:bg-white/[0.08] text-neutral-500 hover:text-red-400 transition-colors cursor-pointer"
-                                  title="Delete loan record"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
+                        </div>
+                        {/* Actions */}
+                        <div className="flex items-center justify-end gap-2 w-28">
+                          {isPaid ? (
+                            <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                              Paid
+                            </span>
+                          ) : (
+                            <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-white text-black">
+                              Active
+                            </span>
+                          )}
+                          {isAdmin && (
+                            <>
+                              <button
+                                onClick={() => setEditingLoan(loan)}
+                                className="p-1.5 rounded-lg hover:bg-white/[0.08] text-neutral-500 hover:text-white transition-colors cursor-pointer"
+                                title="Edit loan"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(loan.id)}
+                                className="p-1.5 rounded-lg hover:bg-white/[0.08] text-neutral-500 hover:text-red-400 transition-colors cursor-pointer"
+                                title="Delete loan record"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
+                </div>
+              </div>
             </div>
           )}
         </div>

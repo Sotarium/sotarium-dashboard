@@ -150,11 +150,6 @@ export default function AskLoanPage() {
                     <div className="font-semibold text-xs text-white leading-tight">
                       {selectedCrypto.name}
                     </div>
-                    {selectedCrypto.badge && (
-                      <div className="text-[10px] text-neutral-400 leading-tight">
-                        {selectedCrypto.badge}
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -193,11 +188,6 @@ export default function AskLoanPage() {
                             <div className="text-xs font-semibold text-white">
                               {crypto.name}
                             </div>
-                            {crypto.badge && (
-                              <div className="text-[10px] text-neutral-400">
-                                {crypto.badge}
-                              </div>
-                            )}
                           </div>
                         </div>
                       </div>

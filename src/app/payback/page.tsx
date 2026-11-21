@@ -387,9 +387,7 @@ export default function PaybackPage() {
             disabled={submitting}
             className="w-full py-3.5 rounded-2xl bg-white hover:bg-neutral-100 text-black font-semibold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-60"
           >
-            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (
-              <><Check className="w-4 h-4" /> I&apos;ve Sent the Payment</>
-            )}
+            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "I've Sent the Payment"}
           </button>
 
         </div>

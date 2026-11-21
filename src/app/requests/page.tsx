@@ -22,7 +22,7 @@ export default function RequestsPage() {
   const [requests, setRequests] = useState<LoanRequest[]>([]);
   const [discordAvatars, setDiscordAvatars] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [search, setSearch] = useState('');
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
   const fetchRequests = () => {
@@ -108,8 +108,7 @@ export default function RequestsPage() {
       r.user_id.includes(search) ||
       (r.reason && r.reason.toLowerCase().includes(search.toLowerCase()));
 
-    if (filter === 'all') return matchesSearch;
-    return matchesSearch && r.status === filter;
+    return matchesSearch && r.status === 'pending';
   });
 
   const pendingCount = requests.filter((r) => r.status === 'pending').length;
@@ -142,22 +141,6 @@ export default function RequestsPage() {
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#171717] border border-white/[0.06] text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white/30 transition-all"
             />
-          </div>
-
-          <div className="flex items-center gap-2 bg-[#171717] p-1 rounded-xl border border-white/[0.06] self-start md:self-auto">
-            {(['all', 'pending', 'approved', 'rejected'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setFilter(tab)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all ${
-                  filter === tab
-                    ? 'bg-white text-black shadow-sm'
-                    : 'text-neutral-400 hover:text-white'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
           </div>
         </div>
 

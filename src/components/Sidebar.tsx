@@ -117,20 +117,7 @@ export default function Sidebar() {
             </Link>
           </div>
 
-          {/* OTHERS category */}
-          <div className="space-y-1">
-            <div className="px-4 text-[10px] font-bold text-neutral-600 uppercase tracking-[0.12em] mb-1 font-sans">Others</div>
-            <Link
-              href="/house-balance"
-              className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
-                pathname === '/house-balance'
-                  ? 'bg-white text-black font-semibold shadow-sm'
-                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
-              }`}
-            >
-              <span>House Bal</span>
-            </Link>
-          </div>
+
         </div>
 
         {/* Manage Section: Requests, Loans & Roadmap - Visible for Admin & Owner ONLY */}

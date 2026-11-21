@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Copy, Check, Loader2, ChevronRight, RefreshCw, AlertCircle } from 'lucide-react';
+import { Copy, Check, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import { CheckmarkAnim } from '@/components/CopyButton';
 import { useAuth } from '@/lib/auth';
 
@@ -91,7 +91,6 @@ export default function PaybackPage() {
   const [animAddr, setAnimAddr] = useState(false);
   const [animAmt, setAnimAmt] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [now, setNow] = useState(0);
 
   useEffect(() => {
@@ -146,23 +145,6 @@ export default function PaybackPage() {
     }
   };
 
-  const handlePaidNotify = async () => {
-    if (!payment || !selectedCoin) return;
-    setSubmitting(true);
-    try {
-      await fetch('/api/support/tickets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subject: 'Payback Submitted',
-          message: `Payment of $${amount} USD (${payment.amount} ${selectedCoin.symbol}) sent. Payment ID: ${payment.paymentId}. Address: ${payment.address}`,
-        }),
-      });
-    } catch { /* silent */ } finally {
-      setSubmitting(false);
-      setSubmitted(true);
-    }
-  };
 
   const loanProgress = (() => {
     if (!myLoan) return null;
@@ -173,28 +155,6 @@ export default function PaybackPage() {
     return { pct, dueMs };
   })();
 
-  if (submitted) {
-    return (
-      <div className="space-y-8 animate-in fade-in duration-300 max-w-2xl">
-        <h1 className="text-3xl font-bold tracking-tight text-white font-sans">Payback</h1>
-        <div className="soteria-card p-10 text-center space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto">
-            <Check className="w-6 h-6 text-emerald-400" />
-          </div>
-          <div className="text-white font-semibold">Payment Notified ✓</div>
-          <p className="text-neutral-500 text-xs max-w-xs mx-auto">
-            Your ${amount} {selectedCoin?.symbol} payment (ID: {payment?.paymentId}) has been submitted. Admin will verify and update your balance.
-          </p>
-          <button
-            onClick={() => { setSubmitted(false); setPayment(null); setAmount(''); setSelectedCoin(null); }}
-            className="mt-2 px-5 py-2 rounded-full bg-white/[0.06] hover:bg-white/10 border border-white/[0.08] text-xs font-medium text-neutral-300 hover:text-white transition-all cursor-pointer"
-          >
-            Make Another Payment
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300 max-w-2xl">
@@ -377,21 +337,6 @@ export default function PaybackPage() {
       )}
 
       {/* Step 4 — Notify */}
-      {payment && (
-        <div className="space-y-3 animate-in fade-in duration-200">
-          <div className="text-xs font-semibold text-neutral-400 uppercase tracking-widest px-1">
-            4 · Confirm
-          </div>
-          <button
-            onClick={handlePaidNotify}
-            disabled={submitting}
-            className="w-full py-3.5 rounded-2xl bg-white hover:bg-neutral-100 text-black font-semibold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-60"
-          >
-            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "I've Sent the Payment"}
-          </button>
-
-        </div>
-      )}
     </div>
   );
 }

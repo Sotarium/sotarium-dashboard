@@ -388,12 +388,10 @@ export default function PaybackPage() {
             className="w-full py-3.5 rounded-2xl bg-white hover:bg-neutral-100 text-black font-semibold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-60"
           >
             {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (
-              <><Check className="w-4 h-4" /> I&apos;ve Sent the Payment <ChevronRight className="w-4 h-4" /></>
+              <><Check className="w-4 h-4" /> I&apos;ve Sent the Payment</>
             )}
           </button>
-          <p className="text-[11px] text-neutral-500 text-center">
-            Admin will verify on-chain and update your loan balance.
-          </p>
+
         </div>
       )}
     </div>

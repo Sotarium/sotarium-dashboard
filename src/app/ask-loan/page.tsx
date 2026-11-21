@@ -101,7 +101,7 @@ export default function AskLoanPage() {
       <div className="soteria-card p-6 md:p-8 space-y-6">
         <div className="space-y-1">
           <h2 className="text-lg font-semibold text-white">Loan Application</h2>
-          <p className="text-xs text-neutral-400">Fixed 15% interest applies to all standard loan approvals.</p>
+          <p className="text-xs text-neutral-400">Interest rate varies based on loan amount.</p>ls.</p>
         </div>
 
         {successMsg && (
@@ -223,9 +223,9 @@ export default function AskLoanPage() {
           <div className="flex items-center justify-between pt-2">
             <div className="text-xs text-neutral-400">
               {amount && !isNaN(parseFloat(amount)) ? (
-                <span>Total repayment (+interest): <strong className="text-white">${(getTotalDue(parseFloat(amount))).toFixed(2)}</strong></span>
+                <span>Total repayment: <strong className="text-white">${(getTotalDue(parseFloat(amount))).toFixed(2)}</strong></span>
               ) : (
-                <span>15% flat interest calculation</span>
+                <span>Interest applied at checkout</span>
               )}
             </div>
 
@@ -257,7 +257,7 @@ export default function AskLoanPage() {
                   <th className="pb-3 px-3">Date</th>
                   <th className="pb-3 px-3">Amount</th>
                   <th className="pb-3 px-3">Coin</th>
-                  <th className="pb-3 px-3">Total Due (+interest)</th>
+                  <th className="pb-3 px-3">Total Due</th>
                   <th className="pb-3 px-3">Status</th>
                 </tr>
               </thead>

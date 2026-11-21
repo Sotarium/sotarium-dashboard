@@ -384,7 +384,7 @@ export default function LoansPage() {
                 <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1fr_auto] gap-x-3 px-3 pb-3 border-b border-white/[0.06] text-xs font-medium text-neutral-400">
                   <div className="text-neutral-400">Borrower</div>
                   <div className="text-neutral-400">Borrowed</div>
-                  <div className="text-neutral-400">Interest (15%)</div>
+                  <div className="text-neutral-400">Interest</div>
                   <div className="text-neutral-400">Total Due</div>
                   <div className="text-neutral-400 text-center">Time Left</div>
                   <div className="text-neutral-400 text-center">Paid Back</div>

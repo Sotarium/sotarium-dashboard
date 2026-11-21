@@ -15,18 +15,19 @@ const CM_STYLES = `
   @keyframes cm-fill { 100% { box-shadow:inset 0px 0px 0px 30px #27F53F; } }
   .cm-root {
     border-radius:50%; display:block;
-    stroke-width:2; stroke:#fff; stroke-miterlimit:10;
+    stroke-width:4; stroke:#fff; stroke-miterlimit:10;
     box-shadow:inset 0px 0px 0px #27F53F;
     animation: cm-fill .4s ease-in-out .4s forwards, cm-scale .3s ease-in-out .9s both;
   }
   .cm-circle {
     stroke-dasharray:166; stroke-dashoffset:166;
-    stroke-width:2; stroke-miterlimit:10; stroke:#27F53F; fill:none;
+    stroke-width:3; stroke-miterlimit:10; stroke:#27F53F; fill:none;
     animation: cm-stroke .6s cubic-bezier(0.65,0,0.45,1) forwards;
   }
   .cm-check {
     transform-origin:50% 50%;
     stroke-dasharray:48; stroke-dashoffset:48;
+    stroke-width:5;
     animation: cm-stroke .3s cubic-bezier(0.65,0,0.45,1) .8s forwards;
   }
 `;

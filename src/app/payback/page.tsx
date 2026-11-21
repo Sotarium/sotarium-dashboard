@@ -380,7 +380,7 @@ export default function PaybackPage() {
       {payment && (
         <div className="space-y-3 animate-in fade-in duration-200">
           <div className="text-xs font-semibold text-neutral-400 uppercase tracking-widest px-1">
-            4 · After sending, notify us
+            4 · Confirm
           </div>
           <button
             onClick={handlePaidNotify}

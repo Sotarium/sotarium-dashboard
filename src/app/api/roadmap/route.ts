@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { getTotalDue } from '@/lib/interest';
 
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
 const avatarCache: Record<string, string> = {};
@@ -63,7 +64,7 @@ export async function GET(req: Request) {
           user_name: item.user_name || 'Borrower',
           user_avatar: avatar,
           amount: parseFloat(item.amount) || 0,
-          total_due: Math.round((parseFloat(item.amount) || 0) * 1.15 * 100) / 100,
+          total_due: Math.round(getTotalDue(parseFloat(item.amount) || 0) * 100) / 100,
           crypto_currency: item.crypto_currency || 'SOL',
           reason: item.reason || '',
           status: item.status || 'pending',
@@ -158,3 +159,4 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: 'Failed to delete roadmap item' }, { status: 500 });
   }
 }
+

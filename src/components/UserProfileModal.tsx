@@ -1,4 +1,5 @@
 'use client';
+import { getTotalDue } from '@/lib/interest';
 
 import { useState, useEffect, useCallback } from 'react';
 import { 
@@ -303,7 +304,7 @@ export default function UserProfileModal({
               displayedLoans.map((loan) => {
                 const isPaid = loan.status === 'completed' || loan.status === 'repaid' || loan.is_paid;
                 const isApproved = loan.status === 'approved' || loan.status === 'active';
-                const dueAmt = isApproved ? (loan.total_due || Math.round(loan.amount * 1.15 * 100) / 100) : 0;
+                const dueAmt = isApproved ? (loan.total_due || getTotalDue(loan.amount)) : 0;
 
                 return (
                   <div
@@ -394,3 +395,6 @@ export default function UserProfileModal({
     </div>
   );
 }
+
+
+

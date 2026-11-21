@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { getTotalDue } from '@/lib/interest';
 
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
 const avatarCache: Record<string, string> = {};
@@ -82,7 +83,7 @@ export async function GET() {
           userName: item.user_name || 'Defaulter',
           userAvatar: avatarMap[item.user_id] || 'https://cdn.discordapp.com/embed/avatars/0.png',
           principal: amt,
-          totalDue: Math.round(amt * 1.15 * 100) / 100,
+          totalDue: Math.round(getTotalDue(amt) * 100) / 100,
           cryptoCurrency: item.crypto_currency || 'SOL',
           dueDate: new Date(dueTs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
           overdueDays,

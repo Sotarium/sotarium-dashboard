@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { getTotalDue } from '@/lib/interest';
 
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
 
@@ -93,7 +94,7 @@ export async function GET(req: Request) {
           totalPaid += amt;
           totalLent += amt;
         } else if (isApproved) {
-          totalDue += Math.round(amt * 1.15 * 100) / 100;
+          totalDue += Math.round(getTotalDue(amt) * 100) / 100;
           totalLent += amt;
         }
         // Rejected loans do NOT add to totalDue or totalLent ($0 due)
@@ -172,7 +173,7 @@ export async function GET(req: Request) {
           totalLent += amt;
           completedCount++;
         } else if (l.status === 'approved' || l.status === 'active') {
-          totalDue += Math.round(amt * 1.15 * 100) / 100;
+          totalDue += Math.round(getTotalDue(amt) * 100) / 100;
           totalLent += amt;
           pendingCount++;
         }
@@ -213,7 +214,7 @@ export async function GET(req: Request) {
             totalLent += amt;
             completedCount++;
           } else if (item.status === 'approved' || item.status === 'active') {
-            totalDue += Math.round(amt * 1.15 * 100) / 100;
+            totalDue += Math.round(getTotalDue(amt) * 100) / 100;
             totalLent += amt;
             pendingCount++;
           }
@@ -254,3 +255,4 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Failed to lookup users' }, { status: 500 });
   }
 }
+

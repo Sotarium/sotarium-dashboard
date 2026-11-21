@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Search, Trash2, Pencil, Loader2, X, Check, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
+import { getInterest, getTotalDue } from '@/lib/interest';
 
 interface ActiveLoan {
   id: string;
@@ -76,8 +77,7 @@ function TimeLeftCell({ dueDate, loanDate, status }: { dueDate: string; loanDate
     : `${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`;
 
   return (
-    <span className={`text-xs font-semibold tracking-tight flex items-center gap-1 ${isUrgent ? 'text-red-400' : isWarning ? 'text-amber-400' : 'text-neutral-200'}`}>
-      <Clock className="w-3 h-3 opacity-60" />
+    <span className={`text-xs font-semibold tracking-tight ${isUrgent ? 'text-red-400' : isWarning ? 'text-amber-400' : 'text-neutral-200'}`}>
       {text}
     </span>
   );
@@ -381,24 +381,24 @@ export default function LoansPage() {
               {/* Grid: Borrower | Borrowed | Interest | Total Due | Time Left | Paid Back | Actions */}
               <div className="min-w-[700px]">
                 {/* Header */}
-                <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1.5fr_auto] gap-x-3 px-3 pb-3 border-b border-white/[0.06] text-xs font-medium text-neutral-400">
+                <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1fr_auto] gap-x-3 px-3 pb-3 border-b border-white/[0.06] text-xs font-medium text-neutral-400">
                   <div className="text-neutral-400">Borrower</div>
                   <div className="text-neutral-400">Borrowed</div>
                   <div className="text-neutral-400">Interest (15%)</div>
                   <div className="text-neutral-400">Total Due</div>
-                  <div className="text-neutral-400">Time Left</div>
-                  <div className="text-neutral-400">Paid Back</div>
+                  <div className="text-neutral-400 text-center">Time Left</div>
+                  <div className="text-neutral-400 text-center">Paid Back</div>
                   <div className="text-neutral-400 text-right w-28">Actions</div>
                 </div>
                 {/* Rows */}
                 <div className="divide-y divide-white/[0.04]">
                   {filteredLoans.map((loan) => {
-                    const interest = Math.round(loan.principal * 0.15 * 100) / 100;
-                    const totalDue = Math.round((loan.principal + interest) * 100) / 100;
+                    const interest = getInterest(loan.principal);
+                    const totalDue = getTotalDue(loan.principal);
                     const isPaid = loan.status === 'completed';
 
                     return (
-                      <div key={loan.id} className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1.5fr_auto] gap-x-3 px-3 py-4 items-center hover:bg-white/[0.02] transition-colors">
+                      <div key={loan.id} className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1fr_auto] gap-x-3 px-3 py-4 items-center hover:bg-white/[0.02] transition-colors">
                         {/* Borrower */}
                         <div className="flex items-center gap-3">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -417,11 +417,11 @@ export default function LoansPage() {
                         {/* Total Due */}
                         <div className="font-semibold text-white text-sm">${totalDue.toFixed(2)}</div>
                         {/* Time Left */}
-                        <div><TimeLeftCell dueDate={loan.dueDate} loanDate={loan.loanDate} status={loan.status} /></div>
+                        <div className="flex justify-center"><TimeLeftCell dueDate={loan.dueDate} loanDate={loan.loanDate} status={loan.status} /></div>
                         {/* Paid Back bar */}
-                        <div>
+                        <div className="flex items-center justify-center">
                           {(() => {
-                            const totalDueCalc = loan.principal * 1.15;
+                            const totalDueCalc = getTotalDue(loan.principal);
                             const pct = totalDueCalc > 0
                               ? Math.min(100, Math.max(0, (loan.repaidAmount / totalDueCalc) * 100))
                               : 0;
@@ -445,11 +445,7 @@ export default function LoansPage() {
                             <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                               Paid
                             </span>
-                          ) : (
-                            <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-white text-black">
-                              Active
-                            </span>
-                          )}
+                          ) : null}
                           {isAdmin && (
                             <>
                               <button

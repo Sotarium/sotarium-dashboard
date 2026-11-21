@@ -1,4 +1,5 @@
 'use client';
+import { getTotalDue } from '@/lib/interest';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
@@ -222,7 +223,7 @@ export default function AskLoanPage() {
           <div className="flex items-center justify-between pt-2">
             <div className="text-xs text-neutral-400">
               {amount && !isNaN(parseFloat(amount)) ? (
-                <span>Total repayment (+15%): <strong className="text-white">${(parseFloat(amount) * 1.15).toFixed(2)}</strong></span>
+                <span>Total repayment (+interest): <strong className="text-white">${(getTotalDue(parseFloat(amount))).toFixed(2)}</strong></span>
               ) : (
                 <span>15% flat interest calculation</span>
               )}
@@ -256,7 +257,7 @@ export default function AskLoanPage() {
                   <th className="pb-3 px-3">Date</th>
                   <th className="pb-3 px-3">Amount</th>
                   <th className="pb-3 px-3">Coin</th>
-                  <th className="pb-3 px-3">Total Due (+15%)</th>
+                  <th className="pb-3 px-3">Total Due (+interest)</th>
                   <th className="pb-3 px-3">Status</th>
                 </tr>
               </thead>
@@ -282,7 +283,7 @@ export default function AskLoanPage() {
                       </div>
                     </td>
                     <td className="py-3 px-3 text-xs font-semibold text-white">
-                      ${(req.amount * 1.15).toFixed(2)}
+                      ${(getTotalDue(req.amount)).toFixed(2)}
                     </td>
                     <td className="py-3 px-3">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
@@ -305,3 +306,5 @@ export default function AskLoanPage() {
     </div>
   );
 }
+
+

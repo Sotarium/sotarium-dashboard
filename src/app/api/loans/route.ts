@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { getInterestRate, getInterest, getTotalDue } from '@/lib/interest';
 
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
 const avatarCache: Record<string, string> = {};
@@ -76,8 +77,8 @@ export async function GET() {
       .filter((item) => !overdueSet.has(item.id))
       .map((item) => {
         const principal = parseFloat(item.amount) || 0;
-        const interest = Math.round(principal * 0.15 * 100) / 100;
-        const totalDue = Math.round((principal + interest) * 100) / 100;
+        const interest = getInterest(principal);
+        const totalDue = getTotalDue(principal);
         const isPaid = item.status === 'completed' || item.status === 'repaid';
 
         let dueDate = item.due_date || null;
@@ -91,7 +92,7 @@ export async function GET() {
           userName: item.user_name || 'Borrower',
           userAvatar: avatarMap[item.user_id] || 'https://cdn.discordapp.com/embed/avatars/0.png',
           principal,
-          interestRate: 0.15,
+          interestRate: getInterestRate(principal),
           interestAmount: interest,
           totalDue,
           repaidAmount: isPaid ? totalDue : (parseFloat(item.amount_paid) || 0),

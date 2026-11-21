@@ -1,4 +1,5 @@
 'use client';
+import { getTotalDue } from '@/lib/interest';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
@@ -231,7 +232,7 @@ export default function RequestsPage() {
                     </td>
 
                     <td className="py-3.5 px-3 text-xs font-semibold text-white">
-                      ${(req.amount * 1.15).toFixed(2)}
+                      ${(getTotalDue(req.amount)).toFixed(2)}
                     </td>
 
                     <td className="py-3.5 px-3 text-xs font-semibold text-neutral-200 tracking-tight max-w-[200px] truncate" title={req.reason}>
@@ -305,3 +306,5 @@ export default function RequestsPage() {
     </div>
   );
 }
+
+

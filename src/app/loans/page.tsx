@@ -382,13 +382,13 @@ export default function LoansPage() {
               <div className="min-w-[700px]">
                 {/* Header */}
                 <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1.5fr_auto] gap-x-3 px-3 pb-3 border-b border-white/[0.06] text-xs font-medium text-neutral-400">
-                  <div>Borrower</div>
-                  <div>Borrowed</div>
-                  <div>Interest (15%)</div>
-                  <div>Total Due</div>
-                  <div>Time Left</div>
-                  <div>Paid Back</div>
-                  <div className="text-right w-28">Actions</div>
+                  <div className="text-neutral-400">Borrower</div>
+                  <div className="text-neutral-400">Borrowed</div>
+                  <div className="text-neutral-400">Interest (15%)</div>
+                  <div className="text-neutral-400">Total Due</div>
+                  <div className="text-neutral-400">Time Left</div>
+                  <div className="text-neutral-400">Paid Back</div>
+                  <div className="text-neutral-400 text-right w-28">Actions</div>
                 </div>
                 {/* Rows */}
                 <div className="divide-y divide-white/[0.04]">

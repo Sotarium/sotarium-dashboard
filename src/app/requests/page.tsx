@@ -22,7 +22,6 @@ export default function RequestsPage() {
   const [requests, setRequests] = useState<LoanRequest[]>([]);
   const [discordAvatars, setDiscordAvatars] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
-  const [search, setSearch] = useState('');
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
   const fetchRequests = () => {

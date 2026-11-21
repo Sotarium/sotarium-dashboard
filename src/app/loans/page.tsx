@@ -86,10 +86,12 @@ function TimeLeftCell({ dueDate, loanDate, status }: { dueDate: string; loanDate
 // --- Edit Modal ---
 function EditLoanModal({
   loan,
+  requesterId,
   onClose,
   onSaved,
 }: {
   loan: ActiveLoan;
+  requesterId?: string;
   onClose: () => void;
   onSaved: (updated: Partial<ActiveLoan> & { id: string }) => void;
 }) {
@@ -122,7 +124,7 @@ function EditLoanModal({
   const handleSave = async () => {
     setSaving(true);
     try {
-      const payload: Record<string, unknown> = { id: loan.id };
+      const payload: Record<string, unknown> = { id: loan.id, requesterId };
       payload.due_date = computedDueISO();
       if (notes !== loan.notes) payload.notes = notes;
       if (reason !== loan.reason) payload.reason = reason;
@@ -274,7 +276,7 @@ function EditLoanModal({
 
 // --- Main Page ---
 export default function LoansPage() {
-  const { isAdmin, isLoaded } = useAuth();
+  const { user, isAdmin, isLoaded } = useAuth();
   const [loans, setLoans] = useState<ActiveLoan[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -302,7 +304,7 @@ export default function LoansPage() {
   const handleDelete = async (id: string) => {
     setLoans((prev) => prev.filter((l) => l.id !== id));
     try {
-      await fetch(`/api/loan-requests?id=${id}`, { method: 'DELETE' });
+      await fetch(`/api/loan-requests?id=${id}&requesterId=${user?.id || ''}`, { method: 'DELETE' });
     } catch (err) {
       console.error(err);
       fetchLoans();
@@ -335,6 +337,7 @@ export default function LoansPage() {
       {editingLoan && (
         <EditLoanModal
           loan={editingLoan}
+          requesterId={user?.id}
           onClose={() => setEditingLoan(null)}
           onSaved={(updated) => {
             handleSaved(updated);

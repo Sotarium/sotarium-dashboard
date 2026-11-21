@@ -10,7 +10,7 @@ interface LoanRequest {
   amount: number;
   crypto_currency: string;
   reason: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'completed' | 'repaid' | 'active' | 'scammer';
   created_at: string;
 }
 
@@ -33,14 +33,26 @@ const CRYPTO_OPTIONS = [
 ];
 
 export default function AskLoanPage() {
-  const { user } = useAuth();
-  const [amount, setAmount] = useState('');
+  const { user, isOwner, isAdmin } = useAuth();
+  const [amount, setAmount] = useState('1');
   const [selectedCrypto, setSelectedCrypto] = useState(CRYPTO_OPTIONS[0]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [requests, setRequests] = useState<LoanRequest[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const userMaxLimit = (() => {
+    if (isOwner || isAdmin || user?.role?.includes('bypass')) return Infinity;
+    if (user?.role && user.role.includes(':limit:')) {
+      const match = user.role.match(/:limit:(\d+)/);
+      if (match) return parseInt(match[1], 10);
+    }
+    return 1;
+  })();
+
+  const hasPaidLoan = isOwner || isAdmin || userMaxLimit > 1 || requests.some((r) => r.status === 'completed' || r.status === 'repaid');
 
   useEffect(() => {
     if (user?.id) {
@@ -53,9 +65,24 @@ export default function AskLoanPage() {
     }
   }, [user]);
 
+  const triggerError = (msg: string) => {
+    setErrorMsg(msg);
+    setTimeout(() => setErrorMsg(''), 5000);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || parseFloat(amount) <= 0 || !user) return;
+
+    setErrorMsg('');
+    const parsedAmount = parseFloat(amount);
+    if (!hasPaidLoan && parsedAmount > userMaxLimit) {
+      const errorText = userMaxLimit > 1
+        ? `Your approved limit is up to $${userMaxLimit}. You gotta make your proofs first before requesting more!`
+        : 'You gotta make your proofs with a $1 loan first before asking for more!';
+      triggerError(errorText);
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -71,16 +98,20 @@ export default function AskLoanPage() {
         }),
       });
 
-      if (res.ok) {
-        const created = await res.json();
-        setRequests((prev) => [created, ...prev]);
-        setAmount('');
-        setReason('');
-        setSuccessMsg(true);
-        setTimeout(() => setSuccessMsg(false), 4000);
+      const data = await res.json();
+      if (!res.ok) {
+        triggerError(data.error || 'Failed to submit loan request');
+        return;
       }
+
+      setRequests((prev) => [data, ...prev]);
+      setAmount('1');
+      setReason('');
+      setSuccessMsg(true);
+      setTimeout(() => setSuccessMsg(false), 4000);
     } catch (e) {
       console.error(e);
+      triggerError('Failed to submit loan request. Try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -108,6 +139,16 @@ export default function AskLoanPage() {
             <span>Your loan request has been submitted successfully to the administrators.</span>
           </div>
         )}
+
+        {errorMsg ? (
+          <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2.5 animate-in fade-in duration-200">
+            <span>{errorMsg}</span>
+          </div>
+        ) : !hasPaidLoan ? (
+          <div className="p-3.5 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs flex items-center gap-2.5 animate-in fade-in duration-200">
+            <span>First-time borrowers start with a <strong>$1.00</strong> loan to build proof of repayment before unlocking larger amounts.</span>
+          </div>
+        ) : null}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

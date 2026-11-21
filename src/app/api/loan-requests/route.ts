@@ -42,10 +42,61 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    const requestedAmount = parseFloat(amount);
+    if (isNaN(requestedAmount) || requestedAmount <= 0) {
+      return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
+    }
+
+    // Check if user has completed/repaid at least one loan before requesting more than $1, unless they are granted tier limit or owner
+    if (requestedAmount > 1) {
+      const isOwner = userId === OWNER_DISCORD_ID || userName?.toLowerCase() === 'sotarium';
+
+      // Check if user has explicit tier limit in database (e.g. member:limit:50)
+      const { data: dbUser } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', userId)
+        .single();
+
+      let userMaxLimit = 1;
+      if (isOwner || dbUser?.role === 'owner' || dbUser?.role === 'admin' || dbUser?.role?.includes('bypass')) {
+        userMaxLimit = Infinity;
+      } else if (dbUser?.role && dbUser.role.includes(':limit:')) {
+        const match = dbUser.role.match(/:limit:(\d+)/);
+        if (match) {
+          userMaxLimit = parseInt(match[1], 10);
+        }
+      }
+
+      // If user has not been granted a limit that covers this amount:
+      if (requestedAmount > userMaxLimit) {
+        const { data: userLoans, error: userLoansError } = await supabase
+          .from('loan_requests')
+          .select('id, status')
+          .eq('user_id', userId)
+          .in('status', ['completed', 'repaid']);
+
+        if (userLoansError) {
+          console.error('Error checking user loan history:', userLoansError);
+        }
+
+        const hasRepaidLoan = (userLoans || []).length > 0;
+        if (!hasRepaidLoan) {
+          const limitMsg = userMaxLimit > 1
+            ? `Your approved limit is up to $${userMaxLimit}. You gotta make your proofs first before requesting more!`
+            : 'First-time borrowers can only request up to $1. You gotta make your proofs with a $1 loan first!';
+          return NextResponse.json(
+            { error: limitMsg },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
     const { data, error } = await supabase.from('loan_requests').insert({
       user_id: userId,
       user_name: userName || 'Borrower',
-      amount: parseFloat(amount),
+      amount: requestedAmount,
       reason: reason || '',
       crypto_currency: cryptoCurrency || 'SOL',
       status: 'pending',
@@ -60,10 +111,30 @@ export async function POST(req: Request) {
   }
 }
 
+const OWNER_DISCORD_ID = "1079074717799030824";
+
+async function verifyIsAdmin(userId?: string): Promise<boolean> {
+  if (!userId) return false;
+  if (userId === OWNER_DISCORD_ID) return true;
+
+  const { data: user } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', userId)
+    .single();
+
+  return user?.role === 'admin' || user?.role === 'owner';
+}
+
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
-    const { id, status, due_date, notes, amount, reason } = body;
+    const { id, status, due_date, notes, amount, reason, requesterId } = body;
+
+    const isAdmin = await verifyIsAdmin(requesterId);
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized: Admin privileges required' }, { status: 403 });
+    }
 
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
@@ -104,6 +175,12 @@ export async function DELETE(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
+    const requesterId = searchParams.get('requesterId') || undefined;
+
+    const isAdmin = await verifyIsAdmin(requesterId);
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized: Admin privileges required' }, { status: 403 });
+    }
 
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });

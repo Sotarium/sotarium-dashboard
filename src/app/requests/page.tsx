@@ -60,7 +60,7 @@ export default function RequestsPage() {
       const res = await fetch('/api/loan-requests', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status: newStatus }),
+        body: JSON.stringify({ id, status: newStatus, requesterId: user?.id }),
       });
 
       if (res.ok) {
@@ -78,7 +78,7 @@ export default function RequestsPage() {
   const handleDeleteRequest = async (id: string) => {
     setRequests((prev) => prev.filter((r) => r.id !== id));
     try {
-      await fetch(`/api/loan-requests?id=${id}`, { method: 'DELETE' });
+      await fetch(`/api/loan-requests?id=${id}&requesterId=${user?.id || ''}`, { method: 'DELETE' });
     } catch (err) {
       console.error('Failed to delete request:', err);
       fetchRequests();

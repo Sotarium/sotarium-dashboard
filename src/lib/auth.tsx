@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 1. INSTANT SYNCHRONOUS LOCAL RESTORATION (0ms delay)
     let sessionUser: DiscordUser | null = null;
     try {
-      const stored = localStorage.getItem('soteria_discord_session');
+      const stored = localStorage.getItem('sotarium_discord_session') || localStorage.getItem('soteria_discord_session');
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed && (parsed.id || parsed.username)) {
@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               synced.role = 'owner';
             }
             setUser(synced);
-            localStorage.setItem('soteria_discord_session', JSON.stringify(synced));
+            localStorage.setItem('sotarium_discord_session', JSON.stringify(synced));
           }
         } catch {
           // Maintain cached session on failure
@@ -125,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (res.ok) {
         const synced = await res.json();
         setUser(synced);
-        localStorage.setItem('soteria_discord_session', JSON.stringify(synced));
+        localStorage.setItem('sotarium_discord_session', JSON.stringify(synced));
       } else {
         const fallbackUser: DiscordUser = {
           ...userData,
@@ -133,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           hwid,
         };
         setUser(fallbackUser);
-        localStorage.setItem('soteria_discord_session', JSON.stringify(fallbackUser));
+        localStorage.setItem('sotarium_discord_session', JSON.stringify(fallbackUser));
       }
     } catch {
       const fallbackUser: DiscordUser = {
@@ -141,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: userData.id === OWNER_DISCORD_ID ? 'owner' : (userData.role || 'member'),
       };
       setUser(fallbackUser);
-      localStorage.setItem('soteria_discord_session', JSON.stringify(fallbackUser));
+      localStorage.setItem('sotarium_discord_session', JSON.stringify(fallbackUser));
     }
 
     // Redirect based on role
@@ -154,6 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('sotarium_discord_session');
     localStorage.removeItem('soteria_discord_session');
     router.push('/login');
   };

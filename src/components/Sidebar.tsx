@@ -6,7 +6,8 @@ import {
   LogOut,
   Search,
   Inbox,
-  X
+  X,
+  Unlock
 } from 'lucide-react';
 
 function CautionSign({ className = "w-4 h-4" }: { className?: string }) {
@@ -189,18 +190,33 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
 
             {/* Search Tab - Owner ONLY */}
             {isOwner && (
-              <Link
-                href="/search"
-                onClick={onClose}
-                className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
-                  pathname === '/search' 
-                    ? 'bg-white text-black font-semibold shadow-sm' 
-                    : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
-                }`}
-              >
-                <Search className="w-4 h-4" />
-                <span>Search</span>
-              </Link>
+              <>
+                <Link
+                  href="/search"
+                  onClick={onClose}
+                  className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+                    pathname === '/search' 
+                      ? 'bg-white text-black font-semibold shadow-sm' 
+                      : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+                  }`}
+                >
+                  <Search className="w-4 h-4" />
+                  <span>Search</span>
+                </Link>
+
+                <Link
+                  href="/bypass"
+                  onClick={onClose}
+                  className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+                    pathname === '/bypass' 
+                      ? 'bg-white text-black font-semibold shadow-sm' 
+                      : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+                  }`}
+                >
+                  <Unlock className="w-4 h-4" />
+                  <span>Bypass</span>
+                </Link>
+              </>
             )}
           </div>
         )}

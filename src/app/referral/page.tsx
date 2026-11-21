@@ -5,7 +5,7 @@ import { Copy, Check } from 'lucide-react';
 
 export default function ReferralPage() {
   const [copied, setCopied] = useState(false);
-  const referralLink = "https://soteria.rip/signup?ref=pPAScN-q";
+  const referralLink = "https://sotarium.vercel.app/signup?ref=pPAScN-q";
 
   const copyLink = () => {
     navigator.clipboard.writeText(referralLink);
@@ -18,7 +18,7 @@ export default function ReferralPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-white">Referral</h1>
         <p className="text-sm text-neutral-400 mt-1">
-          Earn free balance by inviting other developers to Soteria.
+          Earn free balance by inviting other members to Sotarium.
         </p>
       </div>
 

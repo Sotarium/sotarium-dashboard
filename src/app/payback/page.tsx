@@ -133,7 +133,7 @@ export default function PaybackPage() {
       const res = await fetch('/api/nowpayments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ coin: selectedCoin.symbol, amount, userId: user?.id || 'anonymous', userName: user?.username || 'User' }),
+        body: JSON.stringify({ coin: selectedCoin.symbol, amount, userId: user?.id || 'anonymous', userName: user?.username || 'User', loanId: myLoan?.id }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to generate address');

@@ -12,7 +12,7 @@ const COIN_MAP: Record<string, string> = {
 
 export async function POST(req: Request) {
   try {
-    const { coin, amount, userId, userName } = await req.json();
+    const { coin, amount, userId, userName, loanId } = await req.json();
 
     if (!coin || !amount || !userId) {
       return NextResponse.json({ error: 'coin, amount and userId are required' }, { status: 400 });
@@ -23,12 +23,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `Unsupported coin: ${coin}` }, { status: 400 });
     }
 
+    // Encode loanId in order_id so webhook can find the right loan
+    const orderId = loanId
+      ? `${loanId}:${userId}:${Date.now()}`
+      : `${userId}:${Date.now()}`;
+
     // Create a payment invoice on NOWPayments
     const body = {
       price_amount: parseFloat(amount),
       price_currency: 'usd',
       pay_currency: currency,
-      order_id: `${userId}-${Date.now()}`,
+      order_id: orderId,
       order_description: `Loan payback from ${userName || userId}`,
       is_fixed_rate: false,
       is_fee_paid_by_user: false,

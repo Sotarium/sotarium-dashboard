@@ -101,7 +101,7 @@ export default function AskLoanPage() {
       <div className="soteria-card p-6 md:p-8 space-y-6">
         <div className="space-y-1">
           <h2 className="text-lg font-semibold text-white">Loan Application</h2>
-          <p className="text-xs text-neutral-400">Interest rate varies based on loan amount.</p>ls.</p>
+          <p className="text-xs text-neutral-400">Interest rate varies based on loan amount.</p>
         </div>
 
         {successMsg && (

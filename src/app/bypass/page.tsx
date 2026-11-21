@@ -130,10 +130,7 @@ export default function BypassPage() {
       {/* Title Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white font-sans">Bypass & Limit Manager</h1>
-          <p className="text-sm text-neutral-400 mt-1">
-            Grant permission for users to borrow up to $250 with green checkmarks.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-white font-sans">Bypass</h1>
         </div>
 
         {/* Search */}
@@ -141,7 +138,7 @@ export default function BypassPage() {
           <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search user or ID..."
+            placeholder="Search user..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-[#1e1e20] border border-white/[0.08] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-400 transition-colors"
@@ -151,15 +148,6 @@ export default function BypassPage() {
 
       {/* Gray GUI Table Card */}
       <div className="bg-[#18181a] border border-white/[0.08] rounded-3xl p-6 shadow-2xl space-y-4">
-        <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
-          <div className="flex items-center gap-2.5 text-xs text-neutral-300 font-medium">
-            <UserCheck className="w-4 h-4 text-neutral-400" />
-            <span>Borrower Permissions Grid</span>
-          </div>
-          <span className="text-[11px] text-neutral-500">
-            Click any column to grant limits up to that amount
-          </span>
-        </div>
 
         {loading ? (
           <div className="text-center py-12 text-neutral-400 text-xs">Loading borrower roster...</div>
@@ -198,14 +186,11 @@ export default function BypassPage() {
                           <img
                             src={u.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                             alt={u.username}
-                            className="w-7 h-7 rounded-full border border-white/[0.1] object-cover bg-neutral-900 shrink-0"
+                            className="w-8 h-8 rounded-full border border-white/[0.1] object-cover bg-neutral-900 shrink-0"
                           />
-                          <div className="leading-tight truncate max-w-[140px]">
+                          <div className="leading-tight truncate max-w-[150px]">
                             <div className="font-semibold text-white text-xs truncate">
                               {u.username || 'User'}
-                            </div>
-                            <div className="text-[10px] text-neutral-500 font-mono truncate mt-0.5">
-                              {u.id}
                             </div>
                           </div>
                         </div>

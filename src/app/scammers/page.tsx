@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Loader2, RefreshCw, Info, X, Trash2 } from 'lucide-react';
+import { Search, Loader2, Info, X, Trash2 } from 'lucide-react';
 import UserProfileModal, { type UserProfileData } from '@/components/UserProfileModal';
 import { useAuth } from '@/lib/auth';
 
@@ -46,7 +46,7 @@ function ScammerInfoOverlay({ scammer, onClose }: { scammer: ScammerEntry; onClo
             <span className="font-bold text-white">{scammer.userName}</span>{' '}
             scammed <span className="font-bold text-yellow-400">${scammer.totalDue.toFixed(2)}</span>
             <br />
-            <span className="text-neutral-400">He had </span>
+            <span className="text-neutral-400">They had </span>
             <span className="font-bold text-white">{scammer.overdueDays} day{scammer.overdueDays !== 1 ? 's' : ''}</span>
             <span className="text-neutral-400"> to Payback</span>
           </p>
@@ -161,17 +161,10 @@ export default function HallOfShamePage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-white">Scammers</h1>
-            <p className="text-xs text-neutral-500">{scammers.length} defaulted loan{scammers.length !== 1 ? 's' : ''}</p>
+
           </div>
         </div>
-        <button
-          onClick={fetchScammers}
-          disabled={loading}
-          className="px-3.5 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-white/[0.08] text-xs font-medium flex items-center gap-2 transition-all cursor-pointer"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
+
       </div>
 
       {/* Search */}

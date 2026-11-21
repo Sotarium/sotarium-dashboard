@@ -24,7 +24,6 @@ const CRYPTO_OPTIONS = [
     symbol: 'ETH',
     name: 'Ethereum',
     iconUrl: '/assets/eth.svg',
-    badge: 'ERC-20'
   },
   {
     symbol: 'LTC',
@@ -245,9 +244,9 @@ export default function AskLoanPage() {
       <div className="soteria-card p-6 space-y-4">
         <h3 className="text-base font-semibold text-white">Your Requests</h3>
 
-        {requests.length === 0 ? (
+        {requests.filter(r => r.status === 'pending').length === 0 ? (
           <div className="text-center py-8 text-neutral-500 text-xs">
-            No previous loan applications found.
+            No pending loan applications.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -262,7 +261,7 @@ export default function AskLoanPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
-                {requests.map((req) => (
+                {requests.filter(r => r.status === 'pending').map((req) => (
                   <tr key={req.id} className="hover:bg-white/[0.02] transition-colors">
                     <td className="py-3.5 px-3 text-xs text-neutral-400 font-sans">
                       {new Date(req.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}

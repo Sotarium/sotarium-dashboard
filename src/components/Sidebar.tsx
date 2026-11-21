@@ -5,7 +5,8 @@ import { usePathname } from 'next/navigation';
 import { 
   LogOut,
   Search,
-  Inbox
+  Inbox,
+  X
 } from 'lucide-react';
 
 function CautionSign({ className = "w-4 h-4" }: { className?: string }) {
@@ -28,17 +29,23 @@ function CautionSign({ className = "w-4 h-4" }: { className?: string }) {
 }
 import { useAuth } from '@/lib/auth';
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
   const { user, isAdmin, isOwner, isLoaded, logout } = useAuth();
 
   return (
-    <aside className="w-[260px] h-screen fixed left-0 top-0 flex flex-col justify-between p-4 bg-black select-none z-40 border-r border-white/[0.04]">
+    <aside className={`
+      w-[260px] h-screen fixed left-0 top-0 flex flex-col justify-between p-4 
+      bg-black select-none z-40 border-r border-white/[0.04]
+      transition-transform duration-300 ease-in-out
+      ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+      md:translate-x-0
+    `}>
       {/* Top Section */}
       <div className="space-y-4">
         {/* Brand Watermark / Logo */}
-        <div className="px-3 pt-1 pb-1">
-          <Link href="/" className="inline-block transition-opacity hover:opacity-85">
+        <div className="px-3 pt-1 pb-1 flex items-center justify-between">
+          <Link href="/" className="inline-block transition-opacity hover:opacity-85" onClick={onClose}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src="/sotarium-watermark.png" 
@@ -46,6 +53,14 @@ export default function Sidebar() {
               className="h-10 w-auto object-contain select-none"
             />
           </Link>
+          {/* Close button — mobile only */}
+          <button
+            onClick={onClose}
+            className="md:hidden p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-900/60 transition-colors"
+            aria-label="Close menu"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
         {/* General Nav */}
@@ -55,6 +70,7 @@ export default function Sidebar() {
             <div className="space-y-1">
               <Link
                 href="/"
+                onClick={onClose}
                 className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
                   pathname === '/'
                     ? 'bg-white text-black font-semibold shadow-sm'
@@ -71,6 +87,7 @@ export default function Sidebar() {
             <div className="px-4 text-[10px] font-bold text-neutral-600 uppercase tracking-[0.12em] mb-1 font-sans">Important</div>
             <Link
               href="/scammers"
+              onClick={onClose}
               className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
                 pathname === '/scammers'
                   ? 'bg-yellow-400 text-black font-semibold shadow-sm'
@@ -87,6 +104,7 @@ export default function Sidebar() {
             <div className="px-4 text-[10px] font-bold text-neutral-600 uppercase tracking-[0.12em] mb-1 font-sans">Loan</div>
             <Link
               href="/ask-loan"
+              onClick={onClose}
               className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
                 pathname === '/ask-loan'
                   ? 'bg-white text-black font-semibold shadow-sm'
@@ -97,6 +115,7 @@ export default function Sidebar() {
             </Link>
             <Link
               href="/payback"
+              onClick={onClose}
               className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
                 pathname === '/payback'
                   ? 'bg-white text-black font-semibold shadow-sm'
@@ -107,6 +126,7 @@ export default function Sidebar() {
             </Link>
             <Link
               href="/loans"
+              onClick={onClose}
               className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
                 pathname === '/loans'
                   ? 'bg-white text-black font-semibold shadow-sm'
@@ -130,6 +150,7 @@ export default function Sidebar() {
             {/* Requests Tab */}
             <Link
               href="/requests"
+              onClick={onClose}
               className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
                 pathname === '/requests' 
                   ? 'bg-white text-black font-semibold shadow-sm' 
@@ -143,6 +164,7 @@ export default function Sidebar() {
             {/* Loans Tab */}
             <Link
               href="/loans"
+              onClick={onClose}
               className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
                 pathname === '/loans' 
                   ? 'bg-white text-black font-semibold shadow-sm' 
@@ -169,6 +191,7 @@ export default function Sidebar() {
             {isOwner && (
               <Link
                 href="/search"
+                onClick={onClose}
                 className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
                   pathname === '/search' 
                     ? 'bg-white text-black font-semibold shadow-sm' 

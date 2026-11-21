@@ -378,17 +378,17 @@ export default function LoansPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              {/* Grid: Borrower | Borrowed | Interest | Total Due | Time Left | Paid Back | Actions */}
+              {/* Grid: columns differ for admin vs member */}
               <div className="min-w-[700px]">
                 {/* Header */}
-                <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1fr_auto] gap-x-3 px-3 pb-3 border-b border-white/[0.06] text-xs font-medium text-neutral-400">
+                <div className={`grid ${isAdmin ? 'grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1fr_auto]' : 'grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1fr]'} gap-x-3 px-3 pb-3 border-b border-white/[0.06] text-xs font-medium text-neutral-400`}>
                   <div className="text-neutral-400">Borrower</div>
                   <div className="text-neutral-400">Borrowed</div>
                   <div className="text-neutral-400">Interest</div>
                   <div className="text-neutral-400">Total Due</div>
                   <div className="text-neutral-400 text-center">Time Left</div>
                   <div className="text-neutral-400 text-center">Paid Back</div>
-                  <div className="text-neutral-400 text-right w-28">Actions</div>
+                  {isAdmin && <div className="text-neutral-400 text-right w-28">Actions</div>}
                 </div>
                 {/* Rows */}
                 <div className="divide-y divide-white/[0.04]">
@@ -398,7 +398,7 @@ export default function LoansPage() {
                     const isPaid = loan.status === 'completed';
 
                     return (
-                      <div key={loan.id} className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1fr_auto] gap-x-3 px-3 py-4 items-center hover:bg-white/[0.02] transition-colors">
+                      <div key={loan.id} className={`grid ${isAdmin ? 'grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1fr_auto]' : 'grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1fr]'} gap-x-3 px-3 py-4 items-center hover:bg-white/[0.02] transition-colors`}>
                         {/* Borrower */}
                         <div className="flex items-center gap-3">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -440,31 +440,29 @@ export default function LoansPage() {
                           })()}
                         </div>
                         {/* Actions */}
+                        {isAdmin && (
                         <div className="flex items-center justify-end gap-2 w-28">
                           {isPaid ? (
                             <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                               Paid
                             </span>
                           ) : null}
-                          {isAdmin && (
-                            <>
-                              <button
-                                onClick={() => setEditingLoan(loan)}
-                                className="p-1.5 rounded-lg hover:bg-white/[0.08] text-neutral-500 hover:text-white transition-colors cursor-pointer"
-                                title="Edit loan"
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => handleDelete(loan.id)}
-                                className="p-1.5 rounded-lg hover:bg-white/[0.08] text-neutral-500 hover:text-red-400 transition-colors cursor-pointer"
-                                title="Delete loan record"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </>
-                          )}
+                          <button
+                            onClick={() => setEditingLoan(loan)}
+                            className="p-1.5 rounded-lg hover:bg-white/[0.08] text-neutral-500 hover:text-white transition-colors cursor-pointer"
+                            title="Edit loan"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(loan.id)}
+                            className="p-1.5 rounded-lg hover:bg-white/[0.08] text-neutral-500 hover:text-red-400 transition-colors cursor-pointer"
+                            title="Delete loan record"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
+                        )}
                       </div>
                     );
                   })}

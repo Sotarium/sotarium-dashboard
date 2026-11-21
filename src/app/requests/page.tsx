@@ -174,7 +174,7 @@ export default function RequestsPage() {
                   <th className="pb-3 px-3">Borrower</th>
                   <th className="pb-3 px-3">Amount</th>
                   <th className="pb-3 px-3">Coin</th>
-                  <th className="pb-3 px-3">Total Due (+15%)</th>
+                  <th className="pb-3 px-3">Total Due</th>
                   <th className="pb-3 px-3">Reason / Ticket</th>
                   <th className="pb-3 px-3">Date</th>
                   <th className="pb-3 px-3">Status</th>
@@ -306,5 +306,6 @@ export default function RequestsPage() {
     </div>
   );
 }
+
 
 

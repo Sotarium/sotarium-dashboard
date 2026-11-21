@@ -68,7 +68,7 @@ export default function Sidebar() {
 
           {/* IMPORTANT category */}
           <div className="space-y-1">
-            <div className="px-4 text-[11px] font-medium text-neutral-500 uppercase tracking-wider mb-1">Important</div>
+            <div className="px-4 text-[10px] font-bold text-neutral-600 uppercase tracking-[0.12em] mb-1 font-sans">Important</div>
             <Link
               href="/scammers"
               className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
@@ -84,7 +84,7 @@ export default function Sidebar() {
 
           {/* LOAN category */}
           <div className="space-y-1">
-            <div className="px-4 text-[11px] font-medium text-neutral-500 uppercase tracking-wider mb-1">Loan</div>
+            <div className="px-4 text-[10px] font-bold text-neutral-600 uppercase tracking-[0.12em] mb-1 font-sans">Loan</div>
             <Link
               href="/ask-loan"
               className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
@@ -119,7 +119,7 @@ export default function Sidebar() {
 
           {/* OTHERS category */}
           <div className="space-y-1">
-            <div className="px-4 text-[11px] font-medium text-neutral-500 uppercase tracking-wider mb-1">Others</div>
+            <div className="px-4 text-[10px] font-bold text-neutral-600 uppercase tracking-[0.12em] mb-1 font-sans">Others</div>
             <Link
               href="/house-balance"
               className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
@@ -136,7 +136,7 @@ export default function Sidebar() {
         {/* Manage Section: Requests, Loans & Roadmap - Visible for Admin & Owner ONLY */}
         {isAdmin && (
           <div className="space-y-1">
-            <div className="px-4 text-[11px] font-medium text-neutral-500 uppercase tracking-wider mb-1">
+            <div className="px-4 text-[10px] font-bold text-neutral-600 uppercase tracking-[0.12em] mb-1 font-sans">
               <span>Manage</span>
             </div>
 
@@ -237,3 +237,4 @@ export default function Sidebar() {
     </aside>
   );
 }
+

@@ -49,69 +49,78 @@ export default function Sidebar() {
         </div>
 
         {/* General Nav */}
-        <div className="space-y-1">
+        <div className="space-y-4">
           {/* Home Tab: Visible for Admins & Owners ONLY */}
           {isAdmin && (
+            <div className="space-y-1">
+              <Link
+                href="/"
+                className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+                  pathname === '/'
+                    ? 'bg-white text-black font-semibold shadow-sm'
+                    : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+                }`}
+              >
+                <span>Home</span>
+              </Link>
+            </div>
+          )}
+
+          {/* IMPORTANT category */}
+          <div className="space-y-1">
+            <div className="px-4 text-[11px] font-medium text-neutral-500 uppercase tracking-wider mb-1">Important</div>
             <Link
-              href="/"
+              href="/scammers"
               className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
-                pathname === '/' 
-                  ? 'bg-white text-black font-semibold shadow-sm' 
+                pathname === '/scammers'
+                  ? 'bg-yellow-400 text-black font-semibold shadow-sm'
+                  : 'text-neutral-400 hover:text-yellow-400 hover:bg-neutral-900/60'
+              }`}
+            >
+              <CautionSign className="w-4 h-4 shrink-0" />
+              <span>Scammers</span>
+            </Link>
+          </div>
+
+          {/* LOAN category */}
+          <div className="space-y-1">
+            <div className="px-4 text-[11px] font-medium text-neutral-500 uppercase tracking-wider mb-1">Loan</div>
+            <Link
+              href="/ask-loan"
+              className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+                pathname === '/ask-loan'
+                  ? 'bg-white text-black font-semibold shadow-sm'
                   : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
               }`}
             >
-              <span>Home</span>
+              <span>Ask Loan</span>
             </Link>
-          )}
+            <Link
+              href="/payback"
+              className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+                pathname === '/payback'
+                  ? 'bg-white text-black font-semibold shadow-sm'
+                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+              }`}
+            >
+              <span>Payback</span>
+            </Link>
+          </div>
 
-          {/* House Bal Tab: Publicly Visible to Everyone */}
-          <Link
-            href="/house-balance"
-            className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
-              pathname === '/house-balance' 
-                ? 'bg-white text-black font-semibold shadow-sm' 
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
-            }`}
-          >
-            <span>House Bal</span>
-          </Link>
-
-          {/* Ask loan Tab: Visible to Everyone */}
-          <Link
-            href="/ask-loan"
-            className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
-              pathname === '/ask-loan' 
-                ? 'bg-white text-black font-semibold shadow-sm' 
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
-            }`}
-          >
-            <span>Ask loan</span>
-          </Link>
-
-          {/* Payback Tab: Publicly Visible to Everyone */}
-          <Link
-            href="/payback"
-            className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
-              pathname === '/payback' 
-                ? 'bg-white text-black font-semibold shadow-sm' 
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
-            }`}
-          >
-            <span>Payback</span>
-          </Link>
-
-          {/* Scammers Tab (formerly Hall of Shame): Publicly Visible to Everyone */}
-          <Link
-            href="/scammers"
-            className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
-              pathname === '/scammers' 
-                ? 'bg-yellow-400 text-black font-semibold shadow-sm' 
-                : 'text-neutral-400 hover:text-yellow-400 hover:bg-neutral-900/60'
-            }`}
-          >
-            <CautionSign className="w-4 h-4 shrink-0" />
-            <span>Scammers</span>
-          </Link>
+          {/* OTHERS category */}
+          <div className="space-y-1">
+            <div className="px-4 text-[11px] font-medium text-neutral-500 uppercase tracking-wider mb-1">Others</div>
+            <Link
+              href="/house-balance"
+              className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+                pathname === '/house-balance'
+                  ? 'bg-white text-black font-semibold shadow-sm'
+                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+              }`}
+            >
+              <span>House Bal</span>
+            </Link>
+          </div>
         </div>
 
         {/* Manage Section: Requests, Loans & Roadmap - Visible for Admin & Owner ONLY */}

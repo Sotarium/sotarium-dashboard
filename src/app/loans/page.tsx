@@ -378,16 +378,16 @@ export default function LoansPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="w-full text-left text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-white/[0.06] text-xs font-medium text-neutral-400">
-                    <th className="pb-3 px-3">Borrower</th>
-                    <th className="pb-3 px-3">Borrowed</th>
-                    <th className="pb-3 px-3">Interest (15%)</th>
-                    <th className="pb-3 px-3">Total Due</th>
-                    <th className="pb-3 px-3">Time Left</th>
-                    <th className="pb-3 px-3">Paid Back</th>
-                    <th className="pb-3 px-3 text-right">Actions</th>
+                    <th className="pb-3 px-3 font-medium select-none">Borrower</th>
+                    <th className="pb-3 px-3 font-medium select-none">Borrowed</th>
+                    <th className="pb-3 px-3 font-medium select-none">Interest (15%)</th>
+                    <th className="pb-3 px-3 font-medium select-none">Total Due</th>
+                    <th className="pb-3 px-3 font-medium select-none">Time Left</th>
+                    <th className="pb-3 px-3 font-medium select-none">Paid Back</th>
+                    <th className="pb-3 px-3 font-medium select-none text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.04]">

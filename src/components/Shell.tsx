@@ -43,11 +43,14 @@ export default function Shell({ children }: { children: React.ReactNode }) {
               <Menu className="w-5 h-5" />
             </button>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/sotarium-watermark.png"
-              alt="Sotarium"
-              className="h-7 w-auto object-contain select-none"
-            />
+            <div className="flex items-center gap-2">
+              <img
+                src="/logo.png"
+                alt="Sotarium"
+                className="h-7 w-7 object-contain select-none"
+              />
+              <span className="font-bold text-base text-white tracking-tight font-sans">Sotarium</span>
+            </div>
           </div>
 
           <Header />

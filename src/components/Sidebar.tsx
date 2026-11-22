@@ -47,13 +47,14 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
       <div className="space-y-4">
         {/* Brand Watermark / Logo */}
         <div className="px-3 pt-1 pb-1 flex items-center justify-between">
-          <Link href="/" className="inline-block transition-opacity hover:opacity-85" onClick={onClose}>
+          <Link href="/" className="inline-flex items-center gap-2.5 transition-opacity hover:opacity-85" onClick={onClose}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
-              src="/sotarium-watermark.png" 
+              src="/logo.png" 
               alt="Sotarium" 
-              className="h-10 w-auto object-contain select-none"
+              className="h-9 w-9 object-contain select-none"
             />
+            <span className="font-bold text-lg text-white tracking-tight font-sans">Sotarium</span>
           </Link>
           {/* Close button — mobile only */}
           <button

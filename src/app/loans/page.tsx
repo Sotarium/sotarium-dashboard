@@ -413,6 +413,7 @@ export default function LoansPage() {
                           <img
                             src={loan.userAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                             alt={loan.userName}
+                            referrerPolicy="no-referrer"
                             className="w-8 h-8 rounded-full border border-white/10 shadow-sm object-cover bg-neutral-800 shrink-0"
                             onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
                           />

@@ -173,6 +173,7 @@ export default function RequestsPage() {
                         <img
                           src={discordAvatars[req.user_id] || req.user_avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                           alt={req.user_name}
+                          referrerPolicy="no-referrer"
                           className="w-7 h-7 rounded-full border border-white/10 object-cover bg-neutral-800 shrink-0"
                           onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
                         />

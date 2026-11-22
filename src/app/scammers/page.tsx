@@ -28,6 +28,7 @@ function ScammerInfoOverlay({ scammer, onClose }: { scammer: ScammerEntry; onClo
             <img
               src={scammer.userAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
               alt={scammer.userName}
+              referrerPolicy="no-referrer"
               className="w-full h-full object-cover"
               onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
             />
@@ -205,6 +206,7 @@ export default function HallOfShamePage() {
                     <img
                       src={scammer.userAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                       alt={scammer.userName}
+                      referrerPolicy="no-referrer"
                       className="w-full h-full object-cover"
                       onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
                     />

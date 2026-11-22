@@ -186,6 +186,7 @@ export default function BypassPage() {
                           <img
                             src={u.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                             alt={u.username}
+                            referrerPolicy="no-referrer"
                             className="w-8 h-8 rounded-full border border-white/[0.1] object-cover bg-neutral-900 shrink-0"
                           />
                           <div className="leading-tight truncate max-w-[150px]">

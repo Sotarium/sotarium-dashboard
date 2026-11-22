@@ -1,31 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { getInterestRate, getInterest, getTotalDue } from '@/lib/interest';
-
-const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
-const avatarCache: Record<string, string> = {};
-
-async function resolveAvatar(userId: string, dbAvatar?: string): Promise<string> {
-  if (dbAvatar && !dbAvatar.includes('embed/avatars')) return dbAvatar;
-  if (avatarCache[userId]) return avatarCache[userId];
-  if (/^\d{17,20}$/.test(userId) && DISCORD_BOT_TOKEN) {
-    try {
-      const res = await fetch(`https://discord.com/api/v10/users/${userId}`, {
-        headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` },
-        next: { revalidate: 300 },
-      });
-      if (res.ok) {
-        const d = await res.json();
-        if (d.avatar) {
-          const url = `https://cdn.discordapp.com/avatars/${d.id}/${d.avatar}.png?size=128`;
-          avatarCache[userId] = url;
-          return url;
-        }
-      }
-    } catch {}
-  }
-  return dbAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png';
-}
+import { getLiveDiscordAvatar } from '@/lib/discord-avatar';
 
 export async function GET() {
   try {
@@ -48,7 +24,7 @@ export async function GET() {
     (dbUsers || []).forEach((u) => { if (u.avatar) dbAvatarMap[u.id] = u.avatar; });
 
     const avatars = await Promise.all(
-      userIds.map((uid) => resolveAvatar(uid, dbAvatarMap[uid]).then((url) => [uid, url] as [string, string]))
+      userIds.map((uid) => getLiveDiscordAvatar(uid, dbAvatarMap[uid]).then((url) => [uid, url] as [string, string]))
     );
     const avatarMap = Object.fromEntries(avatars);
 

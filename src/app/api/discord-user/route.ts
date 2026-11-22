@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
+import { getLiveDiscordAvatar } from '@/lib/discord-avatar';
 
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
-
-// In-memory cache for Discord avatars
-const avatarCache: Record<string, { avatarUrl: string; username: string; fetchedAt: number }> = {};
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -13,12 +11,6 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
   }
 
-  // Check cache (valid for 5 minutes)
-  const cached = avatarCache[userId];
-  if (cached && Date.now() - cached.fetchedAt < 300000) {
-    return NextResponse.json(cached);
-  }
-
   // Official Discord default avatar based on User ID
   let defaultAvatar = 'https://cdn.discordapp.com/embed/avatars/0.png';
   try {
@@ -26,14 +18,14 @@ export async function GET(req: Request) {
     defaultAvatar = `https://cdn.discordapp.com/embed/avatars/${idx}.png`;
   } catch {}
 
-  // Fetch directly from Discord API using the user ID
-  if (/^\d{17,20}$/.test(userId)) {
+  // Fetch directly from Discord API with no cache
+  if (/^\d{17,20}$/.test(userId) && DISCORD_BOT_TOKEN) {
     try {
       const res = await fetch(`https://discord.com/api/v10/users/${userId}`, {
         headers: {
           Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
         },
-        next: { revalidate: 300 },
+        cache: 'no-store',
       });
 
       if (res.ok) {
@@ -41,7 +33,7 @@ export async function GET(req: Request) {
         let avatarUrl = defaultAvatar;
 
         if (data.avatar) {
-          avatarUrl = `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png?size=128`;
+          avatarUrl = `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png?size=256`;
         }
 
         const result = {
@@ -51,8 +43,9 @@ export async function GET(req: Request) {
           fetchedAt: Date.now(),
         };
 
-        avatarCache[userId] = result;
-        return NextResponse.json(result);
+        return NextResponse.json(result, {
+          headers: { 'Cache-Control': 'no-store, max-age=0' },
+        });
       }
     } catch (err) {
       console.error('Failed to fetch Discord avatar for user ID:', userId, err);
@@ -64,5 +57,7 @@ export async function GET(req: Request) {
     username: 'User',
     avatarUrl: defaultAvatar,
     fetchedAt: Date.now(),
+  }, {
+    headers: { 'Cache-Control': 'no-store, max-age=0' },
   });
 }

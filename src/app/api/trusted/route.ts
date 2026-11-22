@@ -1,31 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { getLiveDiscordAvatar } from '@/lib/discord-avatar';
 
 const OWNER_DISCORD_ID = "1079074717799030824";
-const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
-const avatarCache: Record<string, string> = {};
-
-async function resolveAvatar(userId: string, dbAvatar?: string): Promise<string> {
-  if (dbAvatar && !dbAvatar.includes('embed/avatars')) return dbAvatar;
-  if (avatarCache[userId]) return avatarCache[userId];
-  if (/^\d{17,20}$/.test(userId) && DISCORD_BOT_TOKEN) {
-    try {
-      const res = await fetch(`https://discord.com/api/v10/users/${userId}`, {
-        headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` },
-        next: { revalidate: 300 },
-      });
-      if (res.ok) {
-        const d = await res.json();
-        if (d.avatar) {
-          const url = `https://cdn.discordapp.com/avatars/${d.id}/${d.avatar}.png?size=128`;
-          avatarCache[userId] = url;
-          return url;
-        }
-      }
-    } catch {}
-  }
-  return dbAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png';
-}
 
 async function verifyIsOwner(userId?: string): Promise<boolean> {
   if (!userId) return false;
@@ -106,7 +83,7 @@ export async function GET() {
 
     const enriched = await Promise.all(
       userList.map(async (u) => {
-        const avatar = await resolveAvatar(u.userId, dbAvatarMap[u.userId]);
+        const avatar = await getLiveDiscordAvatar(u.userId, dbAvatarMap[u.userId]);
         return {
           ...u,
           avatar,

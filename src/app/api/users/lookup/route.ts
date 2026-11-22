@@ -4,14 +4,7 @@ import { getTotalDue } from '@/lib/interest';
 
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
 
-// In-memory cache for Discord profiles
-const discordCache: Record<string, { id: string; username: string; displayName: string; avatarUrl: string; fetchedAt: number }> = {};
-
 async function fetchDiscordProfile(userId: string) {
-  if (discordCache[userId] && Date.now() - discordCache[userId].fetchedAt < 300000) {
-    return discordCache[userId];
-  }
-
   let defaultAvatar = 'https://cdn.discordapp.com/embed/avatars/0.png';
   try {
     const idx = Number((BigInt(userId) >> BigInt(22)) % BigInt(6));
@@ -22,7 +15,7 @@ async function fetchDiscordProfile(userId: string) {
     try {
       const res = await fetch(`https://discord.com/api/v10/users/${userId}`, {
         headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` },
-        next: { revalidate: 300 },
+        cache: 'no-store',
       });
 
       if (res.ok) {
@@ -31,15 +24,13 @@ async function fetchDiscordProfile(userId: string) {
         if (data.avatar) {
           avatarUrl = `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png?size=256`;
         }
-        const profile = {
+        return {
           id: data.id,
           username: data.username,
           displayName: data.global_name || data.username,
           avatarUrl,
           fetchedAt: Date.now(),
         };
-        discordCache[userId] = profile;
-        return profile;
       }
     } catch (e) {
       console.error('Error fetching Discord user:', e);
@@ -102,9 +93,9 @@ export async function GET(req: Request) {
 
       const userProfile = {
         id: q,
-        username: dbUser?.username || discordUser.username,
+        username: discordUser.username || dbUser?.username || 'Discord User',
         displayName: discordUser.displayName || dbUser?.username || 'Discord User',
-        avatarUrl: dbUser?.avatar || discordUser.avatarUrl,
+        avatarUrl: discordUser.avatarUrl || dbUser?.avatar,
         role: dbUser?.role || (q === '1079074717799030824' ? 'owner' : 'member'),
         hwid: dbUser?.hwid || null,
         created_at: dbUser?.created_at || null,
@@ -235,6 +226,19 @@ export async function GET(req: Request) {
         };
       }
     });
+
+    // Resolve real Discord avatars for all users in parallel
+    await Promise.all(
+      Object.values(userMap).map(async (u) => {
+        const disc = await fetchDiscordProfile(u.id);
+        if (disc && disc.avatarUrl) {
+          u.avatarUrl = disc.avatarUrl;
+        }
+        if (disc && disc.displayName && disc.displayName !== 'Discord Member') {
+          u.displayName = disc.displayName;
+        }
+      })
+    );
 
     let results = Object.values(userMap);
 

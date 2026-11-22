@@ -130,7 +130,7 @@ export default function AskLoanPage() {
       setAmount('1');
       setReason('');
       setSuccessMsg(true);
-      setTimeout(() => setSuccessMsg(false), 4000);
+      setTimeout(() => setSuccessMsg(false), 5000);
     } catch (e) {
       console.error(e);
       triggerError('Failed to submit loan request. Try again.');
@@ -156,13 +156,11 @@ export default function AskLoanPage() {
           <p className="text-xs text-neutral-400">Interest rate varies based on loan amount.</p>
         </div>
 
-        {successMsg && (
-          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
+        {successMsg ? (
+          <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2.5 animate-in fade-in duration-200">
             <span>Your loan request has been submitted successfully to the administrators.</span>
           </div>
-        )}
-
-        {errorMsg ? (
+        ) : errorMsg ? (
           <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2.5 animate-in fade-in duration-200">
             <span>{errorMsg}</span>
           </div>

@@ -148,6 +148,17 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
             >
               <span>Loans</span>
             </Link>
+            <Link
+              href="/paidback"
+              onClick={onClose}
+              className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+                pathname === '/paidback'
+                  ? 'bg-white text-black font-semibold shadow-sm'
+                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+              }`}
+            >
+              <span>Paid Back</span>
+            </Link>
           </div>
 
 

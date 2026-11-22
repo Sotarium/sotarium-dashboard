@@ -326,11 +326,16 @@ export default function LoansPage() {
     );
   }
 
-  const filteredLoans = loans.filter((l) =>
-    l.userName.toLowerCase().includes(search.toLowerCase()) ||
-    l.userId.includes(search) ||
-    (l.reason && l.reason.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filteredLoans = loans.filter((l) => {
+    // Only active (unpaid) loans belong on the Loans page
+    if (l.status === 'completed') return false;
+
+    return (
+      l.userName.toLowerCase().includes(search.toLowerCase()) ||
+      l.userId.includes(search) ||
+      (l.reason && l.reason.toLowerCase().includes(search.toLowerCase()))
+    );
+  });
 
   return (
     <>
@@ -354,7 +359,7 @@ export default function LoansPage() {
             <p className="text-sm text-neutral-500 mt-1"></p>
           </div>
           <div className="px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs font-semibold text-neutral-300">
-            {loans.length} loan{loans.length !== 1 ? 's' : ''}
+            {filteredLoans.length} active loan{filteredLoans.length !== 1 ? 's' : ''}
           </div>
         </div>
 

@@ -6,7 +6,7 @@ const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
 const avatarCache: Record<string, string> = {};
 
 async function resolveAvatar(userId: string, dbAvatar?: string): Promise<string> {
-  if (dbAvatar) return dbAvatar;
+  if (dbAvatar && !dbAvatar.includes('embed/avatars')) return dbAvatar;
   if (avatarCache[userId]) return avatarCache[userId];
   if (/^\d{17,20}$/.test(userId) && DISCORD_BOT_TOKEN) {
     try {
@@ -24,7 +24,7 @@ async function resolveAvatar(userId: string, dbAvatar?: string): Promise<string>
       }
     } catch {}
   }
-  return 'https://cdn.discordapp.com/embed/avatars/0.png';
+  return dbAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png';
 }
 
 export async function GET() {

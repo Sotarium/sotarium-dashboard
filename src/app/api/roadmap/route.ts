@@ -29,9 +29,31 @@ async function resolveAvatar(userId: string, dbAvatar?: string): Promise<string>
   return 'https://cdn.discordapp.com/embed/avatars/0.png';
 }
 
+const OWNER_DISCORD_ID = "1079074717799030824";
+
+async function verifyIsAdmin(userId?: string): Promise<boolean> {
+  if (!userId) return false;
+  if (userId === OWNER_DISCORD_ID) return true;
+
+  const { data: user } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', userId)
+    .single();
+
+  return user?.role === 'admin' || user?.role === 'owner';
+}
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
+    const requesterId = searchParams.get('requesterId');
+
+    const isAdmin = await verifyIsAdmin(requesterId || undefined);
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized: Admin privileges required' }, { status: 403 });
+    }
+
     const filterMode = searchParams.get('mode'); // 'completed' | 'all' | 'pending'
 
     let query = supabase.from('loan_requests').select('*').order('created_at', { ascending: false });

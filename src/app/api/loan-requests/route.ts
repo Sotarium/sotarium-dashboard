@@ -47,49 +47,68 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
     }
 
-    // Check if user has completed/repaid at least one loan before requesting more than $1, unless they are granted tier limit or owner
+    // Enforce tier progression & limit
     if (requestedAmount > 1) {
-      const isOwner = userId === OWNER_DISCORD_ID || userName?.toLowerCase() === 'sotarium';
-
-      // Check if user has explicit tier limit in database (e.g. member:limit:50)
+      // 1. Check if user has explicit tier limit in database (e.g. member:limit:50) from Bypass page
       const { data: dbUser } = await supabase
         .from('users')
         .select('role')
         .eq('id', userId)
         .single();
 
-      let userMaxLimit = 1;
-      if (isOwner || dbUser?.role === 'owner' || dbUser?.role === 'admin' || dbUser?.role?.includes('bypass')) {
-        userMaxLimit = Infinity;
-      } else if (dbUser?.role && dbUser.role.includes(':limit:')) {
+      let explicitLimit = 0;
+      if (dbUser?.role && dbUser.role.includes(':limit:')) {
         const match = dbUser.role.match(/:limit:(\d+)/);
         if (match) {
-          userMaxLimit = parseInt(match[1], 10);
+          explicitLimit = parseInt(match[1], 10);
+        }
+      } else if (dbUser?.role?.includes('bypass')) {
+        explicitLimit = 250;
+      }
+
+      // 2. Calculate tier limit earned from repaid loan milestones:
+      // [1 -> 5, 5 -> 10, 10 -> 25, 25 -> 50, 50 -> 75, 75 -> 100, 100 -> 125, 125 -> 150, 150 -> 175, 175 -> 200, 200 -> 225, 225 -> 250]
+      const { data: userLoans, error: userLoansError } = await supabase
+        .from('loan_requests')
+        .select('id, amount, status')
+        .eq('user_id', userId)
+        .in('status', ['completed', 'repaid']);
+
+      if (userLoansError) {
+        console.error('Error checking user loan history:', userLoansError);
+      }
+
+      const repaidLoans = userLoans || [];
+      let earnedMaxLimit = 1;
+
+      // Find highest repaid principal milestone
+      const highestRepaid = repaidLoans.reduce((max, loan) => {
+        const amt = parseFloat(loan.amount) || 0;
+        return amt > max ? amt : max;
+      }, 0);
+
+      const TIERS = [1, 5, 10, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250];
+
+      if (highestRepaid >= 1) {
+        // If highest repaid is at or above a tier, unlock the NEXT tier
+        for (let i = 0; i < TIERS.length; i++) {
+          if (highestRepaid >= TIERS[i]) {
+            earnedMaxLimit = TIERS[Math.min(i + 1, TIERS.length - 1)];
+          }
         }
       }
 
-      // If user has not been granted a limit that covers this amount:
-      if (requestedAmount > userMaxLimit) {
-        const { data: userLoans, error: userLoansError } = await supabase
-          .from('loan_requests')
-          .select('id, status')
-          .eq('user_id', userId)
-          .in('status', ['completed', 'repaid']);
+      // The active allowed limit is the higher of earned milestone limit or explicit manual bypass limit
+      const allowedMax = Math.max(earnedMaxLimit, explicitLimit);
 
-        if (userLoansError) {
-          console.error('Error checking user loan history:', userLoansError);
-        }
-
-        const hasRepaidLoan = (userLoans || []).length > 0;
-        if (!hasRepaidLoan) {
-          const limitMsg = userMaxLimit > 1
-            ? `Your approved limit is up to $${userMaxLimit}. You gotta make your proofs first before requesting more!`
-            : 'First-time borrowers can only request up to $1. You gotta make your proofs with a $1 loan first!';
-          return NextResponse.json(
-            { error: limitMsg },
-            { status: 400 }
-          );
-        }
+      if (requestedAmount > allowedMax) {
+        const limitMsg = allowedMax === 1
+          ? 'First-time borrowers can only request up to $1. You gotta make your proofs with a $1 loan first!'
+          : `Your current unlocked limit is $${allowedMax}.00. You gotta pay back your current tier to unlock larger amounts!`;
+        return NextResponse.json(
+          { error: limitMsg },
+          { status: 400 }
+        );
       }
     }
 

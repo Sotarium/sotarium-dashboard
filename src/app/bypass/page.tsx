@@ -223,9 +223,9 @@ export default function BypassPage() {
                         );
                       })}
 
-                      {/* Summary pill */}
+                      {/* Summary */}
                       <td className="py-3.5 px-4 text-right">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-mono font-bold bg-[#222226] border border-white/[0.08] text-white">
+                        <span className="text-xs font-semibold text-neutral-300 font-sans">
                           ${maxLimit}
                         </span>
                       </td>

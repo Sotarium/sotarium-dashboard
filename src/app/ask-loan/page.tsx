@@ -43,16 +43,38 @@ export default function AskLoanPage() {
   const [successMsg, setSuccessMsg] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const userMaxLimit = (() => {
-    if (isOwner || isAdmin || user?.role?.includes('bypass')) return Infinity;
+  const TIERS = [1, 5, 10, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250];
+
+  const earnedLimit = (() => {
+    const repaidLoans = requests.filter((r) => r.status === 'completed' || r.status === 'repaid');
+    const highestRepaid = repaidLoans.reduce((max, loan) => {
+      const amt = Number(loan.amount) || 0;
+      return amt > max ? amt : max;
+    }, 0);
+
+    let nextTier = 1;
+    if (highestRepaid >= 1) {
+      for (let i = 0; i < TIERS.length; i++) {
+        if (highestRepaid >= TIERS[i]) {
+          nextTier = TIERS[Math.min(i + 1, TIERS.length - 1)];
+        }
+      }
+    }
+    return nextTier;
+  })();
+
+  const manualLimit = (() => {
     if (user?.role && user.role.includes(':limit:')) {
       const match = user.role.match(/:limit:(\d+)/);
       if (match) return parseInt(match[1], 10);
+    } else if (user?.role?.includes('bypass')) {
+      return 250;
     }
     return 1;
   })();
 
-  const hasPaidLoan = isOwner || isAdmin || userMaxLimit > 1 || requests.some((r) => r.status === 'completed' || r.status === 'repaid');
+  const userMaxLimit = Math.max(earnedLimit, manualLimit);
+  const hasEverRepaid = requests.some((r) => r.status === 'completed' || r.status === 'repaid') || manualLimit > 1;
 
   useEffect(() => {
     if (user?.id) {
@@ -76,9 +98,9 @@ export default function AskLoanPage() {
 
     setErrorMsg('');
     const parsedAmount = parseFloat(amount);
-    if (!hasPaidLoan && parsedAmount > userMaxLimit) {
+    if (parsedAmount > userMaxLimit) {
       const errorText = userMaxLimit > 1
-        ? `Your approved limit is up to $${userMaxLimit}. You gotta make your proofs first before requesting more!`
+        ? `Your current unlocked limit is $${userMaxLimit}.00. You gotta pay back your current tier to unlock larger amounts!`
         : 'You gotta make your proofs with a $1 loan first before asking for more!';
       triggerError(errorText);
       return;
@@ -144,7 +166,7 @@ export default function AskLoanPage() {
           <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2.5 animate-in fade-in duration-200">
             <span>{errorMsg}</span>
           </div>
-        ) : !hasPaidLoan ? (
+        ) : !hasEverRepaid ? (
           <div className="p-3.5 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs flex items-center gap-2.5 animate-in fade-in duration-200">
             <span>First-time borrowers start with a <strong>$1.00</strong> loan to build proof of repayment before unlocking larger amounts.</span>
           </div>

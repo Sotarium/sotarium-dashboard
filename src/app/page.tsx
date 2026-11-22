@@ -27,7 +27,7 @@ interface ChartDay {
 }
 
 export default function OverviewPage() {
-  const { isAdmin, isLoaded } = useAuth();
+  const { user, isAdmin, isLoaded } = useAuth();
   const router = useRouter();
   const [loans, setLoans] = useState<LoanRecord[]>([]);
   const [metricMode, setMetricMode] = useState<'payback' | 'volume'>('payback');
@@ -53,8 +53,8 @@ export default function OverviewPage() {
   }, [isLoaded, isAdmin, router]);
 
   useEffect(() => {
-    if (isAdmin) {
-      fetch('/api/roadmap')
+    if (isAdmin && user?.id) {
+      fetch(`/api/roadmap?requesterId=${user.id}`)
         .then((res) => res.json())
         .then((data) => {
           if (Array.isArray(data)) {
@@ -63,7 +63,7 @@ export default function OverviewPage() {
         })
         .catch((err) => console.error(err));
     }
-  }, [isAdmin]);
+  }, [isAdmin, user?.id]);
 
   // Aggregate Metrics: Only consider accepted / approved / issued loans
   const issuedLoans = useMemo(() => {
@@ -228,38 +228,6 @@ export default function OverviewPage() {
       {/* Title Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-white font-sans">Overview</h1>
-      </div>
-
-      {/* 4 Summary Stat Box */}
-      <div className="soteria-card p-6 grid grid-cols-2 md:grid-cols-4 gap-6">
-        <div>
-          <div className="text-xs text-neutral-400 font-medium mb-1.5 flex items-center gap-1.5">
-            <span>Active loans</span>
-            <Activity className="w-3.5 h-3.5 text-neutral-500" />
-          </div>
-          <div className="text-3xl font-medium tracking-tight text-white font-sans">{activeLoans}</div>
-          <div className="text-[11px] text-neutral-500 mt-1">Pending repayment</div>
-        </div>
-
-        <div>
-          <div className="text-xs text-neutral-400 font-medium mb-1.5">Active borrowers</div>
-          <div className="text-3xl font-medium tracking-tight text-white font-sans">{uniqueBorrowers}</div>
-          <div className="text-[11px] text-neutral-500 mt-1">Unique Discord users</div>
-        </div>
-
-        <div>
-          <div className="text-xs text-neutral-400 font-medium mb-1.5">Total principal ($)</div>
-          <div className="text-3xl font-medium tracking-tight text-white font-sans">
-            ${totalPrincipal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </div>
-          <div className="text-[11px] text-neutral-500 mt-1">Total capital lent</div>
-        </div>
-
-        <div>
-          <div className="text-xs text-neutral-400 font-medium mb-1.5">Total loans issued</div>
-          <div className="text-3xl font-medium tracking-tight text-white font-sans">{totalLoansCount}</div>
-          <div className="text-[11px] text-neutral-500 mt-1">${totalRepaid.toFixed(2)} repaid</div>
-        </div>
       </div>
 
       {/* Interactive Payback & Lending Activity Graph Container */}

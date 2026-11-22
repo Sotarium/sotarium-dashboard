@@ -99,6 +99,17 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
               <CautionSign className="w-4 h-4 shrink-0" />
               <span>Scammers</span>
             </Link>
+            <Link
+              href="/trusted"
+              onClick={onClose}
+              className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+                pathname === '/trusted'
+                  ? 'bg-white text-black font-semibold shadow-sm'
+                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+              }`}
+            >
+              <span>Trusted</span>
+            </Link>
           </div>
 
           {/* LOAN category */}
@@ -136,18 +147,6 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
               }`}
             >
               <span>Loans</span>
-            </Link>
-            <Link
-              href="/trusted"
-              onClick={onClose}
-              className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
-                pathname === '/trusted'
-                  ? 'bg-white text-black font-semibold shadow-sm'
-                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
-              }`}
-            >
-              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>Trusted</span>
             </Link>
           </div>
 

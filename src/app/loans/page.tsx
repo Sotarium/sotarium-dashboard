@@ -445,11 +445,6 @@ export default function LoansPage() {
                         {/* Actions */}
                         {isAdmin && (
                         <div className="flex items-center justify-end gap-2 w-28">
-                          {isPaid ? (
-                            <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                              Paid
-                            </span>
-                          ) : null}
                           <button
                             onClick={() => setEditingLoan(loan)}
                             className="p-1.5 rounded-lg hover:bg-white/[0.08] text-neutral-500 hover:text-white transition-colors cursor-pointer"

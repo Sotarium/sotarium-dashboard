@@ -6,8 +6,12 @@ export const metadata: Metadata = {
   title: "Sotarium",
   description: "Cryptocurrency Loans Management",
   icons: {
-    icon: "/favicon.png",
-    apple: "/icon.png",
+    icon: [
+      { url: "/favicon.ico?v=2" },
+      { url: "/favicon.png?v=2", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico?v=2",
+    apple: "/icon.png?v=2",
   },
 };
 

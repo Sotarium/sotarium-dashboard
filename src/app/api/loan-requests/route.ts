@@ -1,6 +1,31 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 
+const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
+const avatarCache: Record<string, string> = {};
+
+async function resolveAvatar(userId: string, dbAvatar?: string): Promise<string> {
+  if (dbAvatar && !dbAvatar.includes('embed/avatars')) return dbAvatar;
+  if (avatarCache[userId]) return avatarCache[userId];
+  if (/^\d{17,20}$/.test(userId) && DISCORD_BOT_TOKEN) {
+    try {
+      const res = await fetch(`https://discord.com/api/v10/users/${userId}`, {
+        headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` },
+        next: { revalidate: 300 },
+      });
+      if (res.ok) {
+        const d = await res.json();
+        if (d.avatar) {
+          const url = `https://cdn.discordapp.com/avatars/${d.id}/${d.avatar}.png?size=128`;
+          avatarCache[userId] = url;
+          return url;
+        }
+      }
+    } catch {}
+  }
+  return dbAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png';
+}
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -16,14 +41,19 @@ export async function GET(req: Request) {
 
     const userIds = [...new Set((data || []).map((r) => r.user_id))];
     const { data: dbUsers } = await supabase.from('users').select('id, avatar').in('id', userIds);
-    const avatarMap: Record<string, string> = {};
+    const dbAvatarMap: Record<string, string> = {};
     (dbUsers || []).forEach((u) => {
-      if (u.avatar) avatarMap[u.id] = u.avatar;
+      if (u.avatar) dbAvatarMap[u.id] = u.avatar;
     });
+
+    const avatarEntries = await Promise.all(
+      userIds.map((uid) => resolveAvatar(uid, dbAvatarMap[uid]).then((url) => [uid, url] as [string, string]))
+    );
+    const avatarMap = Object.fromEntries(avatarEntries);
 
     const enriched = (data || []).map((r) => ({
       ...r,
-      user_avatar: avatarMap[r.user_id] || null,
+      user_avatar: avatarMap[r.user_id] || 'https://cdn.discordapp.com/embed/avatars/0.png',
     }));
 
     return NextResponse.json(enriched);
@@ -45,6 +75,22 @@ export async function POST(req: Request) {
     const requestedAmount = parseFloat(amount);
     if (isNaN(requestedAmount) || requestedAmount <= 0) {
       return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
+    }
+
+    // Check if user already has an active or pending loan request (one request at a time until accepted/refused/repaid)
+    const { data: existingPending, error: pendingErr } = await supabase
+      .from('loan_requests')
+      .select('id, status')
+      .eq('user_id', userId)
+      .in('status', ['pending', 'approved', 'active'])
+      .limit(1);
+
+    if (existingPending && existingPending.length > 0) {
+      const activeStatus = existingPending[0].status;
+      const msg = activeStatus === 'pending'
+        ? 'You already have a pending loan request awaiting review. Please wait until it is approved or rejected.'
+        : 'You already have an active loan. You must repay your existing loan before requesting another one.';
+      return NextResponse.json({ error: msg }, { status: 400 });
     }
 
     // Enforce tier progression & limit

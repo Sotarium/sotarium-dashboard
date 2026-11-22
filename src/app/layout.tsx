@@ -3,8 +3,12 @@ import "./globals.css";
 import Shell from "@/components/Shell";
 
 export const metadata: Metadata = {
-  title: "Dashboard",
-  description: "Dashboard Overview",
+  title: "Sotarium",
+  description: "Cryptocurrency Loans Management",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({

@@ -227,32 +227,28 @@ export default function RequestsPage() {
     );
   }
 
-  const filteredRequests = requests.filter((r) => {
-    if (!search.trim()) return true;
-    return (
-      r.user_name.toLowerCase().includes(search.toLowerCase()) ||
-      r.user_id.includes(search) ||
-      (r.reason && r.reason.toLowerCase().includes(search.toLowerCase()))
-    );
-  });
+  const filteredRequests = requests
+    .filter((r) => r.status === 'pending')
+    .filter((r) => {
+      if (!search.trim()) return true;
+      return (
+        r.user_name.toLowerCase().includes(search.toLowerCase()) ||
+        r.user_id.includes(search) ||
+        (r.reason && r.reason.toLowerCase().includes(search.toLowerCase()))
+      );
+    });
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300 max-w-6xl">
       {/* Title Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-white font-sans">Loan Applications</h1>
-        <p className="text-sm text-neutral-400 mt-1">
-          Review, approve, or refuse borrower cryptocurrency loan applications.
-        </p>
       </div>
 
       <div className="soteria-card p-6 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
+          <div>
             <h2 className="text-lg font-semibold text-white">Pending Requests</h2>
-            <p className="text-xs text-neutral-400">
-              Direct verification pipeline for borrowers.
-            </p>
           </div>
 
           {/* Search bar */}

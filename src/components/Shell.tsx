@@ -17,7 +17,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Check client IP on initial load across all pages
-    fetch('/api/check-vpn')
+    fetch('/api/check-vpn', { method: 'POST' })
       .then((r) => r.json())
       .then((data) => {
         if (data && data.isVpnOrProxy) {

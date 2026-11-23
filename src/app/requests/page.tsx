@@ -3,7 +3,8 @@ import { getTotalDue } from '@/lib/interest';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
-import { Clock, Search, ShieldAlert, MessageSquare, Trash2, X, Wallet, Copy, Check } from 'lucide-react';
+import { Search, ShieldAlert, MessageSquare, Trash2, X, Wallet, Copy, Check } from 'lucide-react';
+import RequestDetailOverlay from '@/components/RequestDetailOverlay';
 
 interface LoanRequest {
   id: string;
@@ -15,132 +16,6 @@ interface LoanRequest {
   reason: string;
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
-}
-
-function RequestDetailOverlay({
-  req,
-  avatarUrl,
-  onClose,
-}: {
-  req: LoanRequest;
-  avatarUrl?: string;
-  onClose: () => void;
-}) {
-  const [copied, setCopied] = useState(false);
-
-  // Extract address if formatted like "Addy: xyz" or "... | Addy: xyz"
-  let displayAddress = '';
-  let displayReason = req.reason || '';
-
-  if (displayReason.includes('Addy:')) {
-    const parts = displayReason.split('Addy:');
-    displayAddress = parts[1]?.trim() || '';
-    displayReason = parts[0]?.replace(/\|\s*$/, '').trim() || '';
-  }
-
-  const handleCopy = () => {
-    if (!displayAddress) return;
-    navigator.clipboard.writeText(displayAddress);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
-      <div
-        className="relative w-full max-w-sm bg-[#111113] border border-white/[0.08] rounded-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200 space-y-5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-3.5 right-3.5 p-1.5 rounded-lg hover:bg-white/[0.06] text-neutral-500 hover:text-white transition-colors cursor-pointer"
-        >
-          <X className="w-4 h-4" />
-        </button>
-
-        {/* User Avatar + Name */}
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-16 h-16 rounded-full border-2 border-white/10 overflow-hidden bg-neutral-900 shadow-md">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={avatarUrl || req.user_avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
-              alt={req.user_name}
-              referrerPolicy="no-referrer"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png';
-              }}
-            />
-          </div>
-          <div className="text-center">
-            <div className="text-base font-bold text-white">{req.user_name}</div>
-            <span className="text-[10px] font-mono text-neutral-500">ID: {req.user_id}</span>
-          </div>
-        </div>
-
-        {/* Amount & Total Due Stats Row */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 text-center">
-            <div className="text-[10px] text-neutral-500 uppercase tracking-widest mb-1 font-semibold">Principal</div>
-            <div className="text-base font-bold text-white font-sans">${req.amount.toFixed(2)}</div>
-            <div className="text-[11px] font-semibold text-neutral-400 mt-0.5">{req.crypto_currency}</div>
-          </div>
-          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 text-center">
-            <div className="text-[10px] text-neutral-500 uppercase tracking-widest mb-1 font-semibold">Total Repayment</div>
-            <div className="text-base font-bold text-emerald-400 font-sans">${getTotalDue(req.amount).toFixed(2)}</div>
-            <div className="text-[11px] font-semibold text-neutral-400 mt-0.5">With Interest</div>
-          </div>
-        </div>
-
-        {/* Receiving Crypto Address Card */}
-        {displayAddress ? (
-          <div className="bg-[#171717] border border-white/[0.08] rounded-xl p-3.5 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Wallet className="w-3.5 h-3.5 text-neutral-400" />
-                <span>Receiving {req.crypto_currency} Address</span>
-              </span>
-              <button
-                onClick={handleCopy}
-                className="flex items-center gap-1 text-[11px] text-neutral-400 hover:text-white transition-colors cursor-pointer"
-              >
-                {copied ? (
-                  <span className="flex items-center gap-1 text-emerald-400">
-                    <Check className="w-3 h-3" />
-                    <span>Copied</span>
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1">
-                    <Copy className="w-3 h-3" />
-                    <span>Copy</span>
-                  </span>
-                )}
-              </button>
-            </div>
-            <div className="p-2 rounded-lg bg-black/50 border border-white/[0.05] font-mono text-[11px] text-neutral-200 break-all select-all">
-              {displayAddress}
-            </div>
-          </div>
-        ) : (
-          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] text-center text-xs text-neutral-500">
-            No specific wallet address was provided.
-          </div>
-        )}
-
-        {/* Reason / Discord Ticket Link */}
-        {displayReason && (
-          <div className="space-y-1">
-            <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Purpose / Reason</div>
-            <p className="text-xs text-neutral-300 bg-white/[0.02] border border-white/[0.05] rounded-xl p-3 leading-relaxed">
-              {displayReason}
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
 }
 
 export default function RequestsPage() {
@@ -273,7 +148,6 @@ export default function RequestsPage() {
                 <th className="pb-3 px-3">Principal</th>
                 <th className="pb-3 px-3">Asset</th>
                 <th className="pb-3 px-3">Total Due</th>
-                <th className="pb-3 px-3">Reason / Ticket</th>
                 <th className="pb-3 px-3">Applied Date</th>
                 <th className="pb-3 px-3">Status</th>
                 <th className="pb-3 px-3 text-right">Actions</th>
@@ -282,7 +156,7 @@ export default function RequestsPage() {
             <tbody className="divide-y divide-white/[0.04]">
               {filteredRequests.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-xs text-neutral-500">
+                  <td colSpan={7} className="py-8 text-center text-xs text-neutral-500">
                     No loan requests found matching query.
                   </td>
                 </tr>
@@ -351,10 +225,6 @@ export default function RequestsPage() {
 
                     <td className="py-3.5 px-3 text-xs font-semibold text-white">
                       ${(getTotalDue(req.amount)).toFixed(2)}
-                    </td>
-
-                    <td className="py-3.5 px-3 text-xs font-semibold text-neutral-200 tracking-tight max-w-[200px] truncate" title={req.reason}>
-                      {req.reason || '—'}
                     </td>
 
                     <td className="py-3.5 px-3 text-xs font-semibold text-neutral-300 tracking-tight whitespace-nowrap">

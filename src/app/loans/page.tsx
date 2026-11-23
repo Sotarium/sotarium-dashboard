@@ -214,18 +214,6 @@ function EditLoanModal({
             />
           </div>
 
-          {/* Reason */}
-          <div>
-            <label className="text-[11px] text-neutral-400 font-medium block mb-1">Reason</label>
-            <input
-              type="text"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Loan reason..."
-              className="w-full bg-[#1a1a1e] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-white/30 transition-all"
-            />
-          </div>
-
           {/* Notes */}
           <div>
             <label className="text-[11px] text-neutral-400 font-medium block mb-1">Internal Notes</label>

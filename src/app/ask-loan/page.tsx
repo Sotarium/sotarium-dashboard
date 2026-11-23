@@ -157,7 +157,7 @@ export default function AskLoanPage() {
           cryptoCurrency: selectedCrypto.symbol,
           walletAddress: cleanAddy,
           fingerprint: clientSecurity.fingerprint,
-          reason,
+          gpuHwid: clientSecurity.gpuHwid,
         }),
       });
 
@@ -341,17 +341,6 @@ export default function AskLoanPage() {
                 <span>{addressValidation.error}</span>
               </p>
             )}
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-neutral-300">Reason / Discord Ticket Link (Optional)</label>
-            <textarea
-              rows={3}
-              placeholder="State the purpose of the loan or your Discord ticket link..."
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl bg-[#171717] border border-white/[0.06] text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-400 transition-colors resize-none"
-            />
           </div>
 
           <div className="flex items-center justify-between pt-2">

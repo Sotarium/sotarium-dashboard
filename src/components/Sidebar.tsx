@@ -266,7 +266,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                   {user.username}
                 </div>
                 <div className="text-[10px] text-neutral-400 font-mono capitalize">
-                  {user.role || (isOwner ? 'Owner' : isAdmin ? 'Admin' : 'Member')}
+                  {isOwner ? 'Owner' : isAdmin ? 'Admin' : 'Member'}
                 </div>
               </div>
             </div>

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import SupportWidget from '@/components/SupportWidget';
+import SecurityOverlay from '@/components/SecurityOverlay';
 import { AuthProvider } from '@/lib/auth';
 import { Menu } from 'lucide-react';
 
@@ -12,13 +13,32 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLoginPage = pathname === '/login';
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isVpnDetected, setIsVpnDetected] = useState(false);
+
+  useEffect(() => {
+    // Check client IP on initial load across all pages
+    fetch('/api/check-vpn')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && data.isVpnOrProxy) {
+          setIsVpnDetected(true);
+        }
+      })
+      .catch(() => {});
+  }, [pathname]);
 
   if (isLoginPage) {
-    return <AuthProvider>{children}</AuthProvider>;
+    return (
+      <AuthProvider>
+        {isVpnDetected && <SecurityOverlay type="vpn" />}
+        {children}
+      </AuthProvider>
+    );
   }
 
   return (
     <AuthProvider>
+      {isVpnDetected && <SecurityOverlay type="vpn" />}
       <div className="flex min-h-screen bg-black">
         {/* Sidebar */}
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />

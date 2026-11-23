@@ -312,31 +312,10 @@ export default function AskLoanPage() {
 
           {/* Receiving Crypto Wallet Address with Exodus-style chain detection & check */}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
-                <Wallet className="w-3.5 h-3.5 text-neutral-400" />
-                <span>Receiving {selectedCrypto.symbol} Wallet Address</span>
-              </label>
-
-              {/* Real-time Exodus-style detection badge */}
-              {addressValidation && (
-                <div className="flex items-center gap-1.5 text-[11px] font-mono">
-                  {addressValidation.isMatch ? (
-                    <span className="flex items-center gap-1 text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                      <CheckCircle2 className="w-3 h-3" />
-                      Valid {addressValidation.formatName || selectedCrypto.symbol} Address
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full border border-red-500/20">
-                      <AlertCircle className="w-3 h-3" />
-                      {addressValidation.detectedChains.length > 0
-                        ? `Detected: ${addressValidation.formatName || addressValidation.detectedChains.join(', ')}`
-                        : 'Invalid Address'}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
+            <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+              <Wallet className="w-3.5 h-3.5 text-neutral-400" />
+              <span>Receiving {selectedCrypto.symbol} Wallet Address</span>
+            </label>
 
             <div className="relative">
               <input

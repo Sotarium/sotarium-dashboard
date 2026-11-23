@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { LogOut } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
 export type SecurityOverlayType = 'scammer' | 'alt' | null;
@@ -40,22 +39,35 @@ export default function SecurityOverlay({ type, matchedAccountName, onClose }: S
             {isScammer ? 'You Scammed!' : 'You Alted!'}
           </h2>
           <p className="text-xs text-neutral-400 font-sans tracking-wide">
-            Please use your real acc
+            {isScammer
+              ? 'You have been permanently blacklisted for an unpaid loan.'
+              : 'Please use your real acc'}
           </p>
         </div>
 
-        {/* Clean pill button */}
+        {/* Action button */}
         <div className="w-full space-y-2">
-          <button
-            onClick={() => {
-              if (logout) logout();
-              else window.location.href = '/login';
-            }}
-            className="w-full py-3.5 px-6 rounded-full bg-white hover:bg-neutral-200 text-black font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] font-sans"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Switch to Real Account</span>
-          </button>
+          {!isScammer ? (
+            <button
+              onClick={() => {
+                if (logout) logout();
+                else window.location.href = '/login';
+              }}
+              className="w-full py-3.5 px-6 rounded-full bg-white hover:bg-neutral-200 text-black font-semibold text-xs transition-all flex items-center justify-center shadow-lg active:scale-[0.98] font-sans"
+            >
+              <span>Switch to Real Account</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                if (logout) logout();
+                else window.location.href = '/login';
+              }}
+              className="w-full py-3.5 px-6 rounded-full bg-red-600 hover:bg-red-500 text-white font-semibold text-xs transition-all flex items-center justify-center shadow-lg active:scale-[0.98] font-sans"
+            >
+              <span>Exit</span>
+            </button>
+          )}
 
           {onClose && (
             <button

@@ -21,6 +21,11 @@ const COINS = [
     color: 'from-neutral-500/20 to-neutral-600/5', border: 'border-neutral-500/30',
     ring: 'ring-neutral-500/30', text: 'text-neutral-300', dot: 'bg-neutral-400',
   },
+  {
+    symbol: 'BTC', name: 'Bitcoin', icon: '/assets/btc.svg',
+    color: 'from-amber-500/20 to-amber-600/5', border: 'border-amber-500/30',
+    ring: 'ring-amber-500/30', text: 'text-amber-300', dot: 'bg-amber-400',
+  },
 ];
 
 interface PaymentData {

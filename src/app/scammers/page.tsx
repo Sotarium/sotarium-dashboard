@@ -93,7 +93,7 @@ interface ScammerEntry {
 }
 
 export default function HallOfShamePage() {
-  const { user, isOwner } = useAuth();
+  const { user, isOwner, isAdmin } = useAuth();
   const [scammers, setScammers] = useState<ScammerEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -231,7 +231,7 @@ export default function HallOfShamePage() {
                   >
                     <Info className="w-4 h-4" />
                   </button>
-                  {isOwner && (
+                  {(isOwner || isAdmin) && (
                     <button
                       onClick={() => handleDelete(scammer)}
                       disabled={deletingId === scammer.id}

@@ -3,7 +3,7 @@ import { getTotalDue } from '@/lib/interest';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
-import { Clock, Search, ShieldAlert, MessageSquare, Trash2 } from 'lucide-react';
+import { Clock, Search, ShieldAlert, MessageSquare, Trash2, X, Wallet, Copy, Check } from 'lucide-react';
 
 interface LoanRequest {
   id: string;
@@ -17,12 +17,139 @@ interface LoanRequest {
   created_at: string;
 }
 
+function RequestDetailOverlay({
+  req,
+  avatarUrl,
+  onClose,
+}: {
+  req: LoanRequest;
+  avatarUrl?: string;
+  onClose: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  // Extract address if formatted like "Addy: xyz" or "... | Addy: xyz"
+  let displayAddress = '';
+  let displayReason = req.reason || '';
+
+  if (displayReason.includes('Addy:')) {
+    const parts = displayReason.split('Addy:');
+    displayAddress = parts[1]?.trim() || '';
+    displayReason = parts[0]?.replace(/\|\s*$/, '').trim() || '';
+  }
+
+  const handleCopy = () => {
+    if (!displayAddress) return;
+    navigator.clipboard.writeText(displayAddress);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+      <div
+        className="relative w-full max-w-sm bg-[#111113] border border-white/[0.08] rounded-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200 space-y-5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-3.5 right-3.5 p-1.5 rounded-lg hover:bg-white/[0.06] text-neutral-500 hover:text-white transition-colors cursor-pointer"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
+        {/* User Avatar + Name */}
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-16 h-16 rounded-full border-2 border-white/10 overflow-hidden bg-neutral-900 shadow-md">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={avatarUrl || req.user_avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+              alt={req.user_name}
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png';
+              }}
+            />
+          </div>
+          <div className="text-center">
+            <div className="text-base font-bold text-white">{req.user_name}</div>
+            <span className="text-[10px] font-mono text-neutral-500">ID: {req.user_id}</span>
+          </div>
+        </div>
+
+        {/* Amount & Total Due Stats Row */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 text-center">
+            <div className="text-[10px] text-neutral-500 uppercase tracking-widest mb-1 font-semibold">Principal</div>
+            <div className="text-base font-bold text-white font-sans">${req.amount.toFixed(2)}</div>
+            <div className="text-[11px] font-semibold text-neutral-400 mt-0.5">{req.crypto_currency}</div>
+          </div>
+          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 text-center">
+            <div className="text-[10px] text-neutral-500 uppercase tracking-widest mb-1 font-semibold">Total Repayment</div>
+            <div className="text-base font-bold text-emerald-400 font-sans">${getTotalDue(req.amount).toFixed(2)}</div>
+            <div className="text-[11px] font-semibold text-neutral-400 mt-0.5">With Interest</div>
+          </div>
+        </div>
+
+        {/* Receiving Crypto Address Card */}
+        {displayAddress ? (
+          <div className="bg-[#171717] border border-white/[0.08] rounded-xl p-3.5 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Wallet className="w-3.5 h-3.5 text-neutral-400" />
+                <span>Receiving {req.crypto_currency} Address</span>
+              </span>
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-1 text-[11px] text-neutral-400 hover:text-white transition-colors cursor-pointer"
+              >
+                {copied ? (
+                  <span className="flex items-center gap-1 text-emerald-400">
+                    <Check className="w-3 h-3" />
+                    <span>Copied</span>
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1">
+                    <Copy className="w-3 h-3" />
+                    <span>Copy</span>
+                  </span>
+                )}
+              </button>
+            </div>
+            <div className="p-2 rounded-lg bg-black/50 border border-white/[0.05] font-mono text-[11px] text-neutral-200 break-all select-all">
+              {displayAddress}
+            </div>
+          </div>
+        ) : (
+          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] text-center text-xs text-neutral-500">
+            No specific wallet address was provided.
+          </div>
+        )}
+
+        {/* Reason / Discord Ticket Link */}
+        {displayReason && (
+          <div className="space-y-1">
+            <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Purpose / Reason</div>
+            <p className="text-xs text-neutral-300 bg-white/[0.02] border border-white/[0.05] rounded-xl p-3 leading-relaxed">
+              {displayReason}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function RequestsPage() {
   const { user, isAdmin, isLoaded } = useAuth();
   const [requests, setRequests] = useState<LoanRequest[]>([]);
   const [discordAvatars, setDiscordAvatars] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<LoanRequest | null>(null);
 
   const fetchRequests = () => {
     fetch('/api/loan-requests')
@@ -30,7 +157,6 @@ export default function RequestsPage() {
       .then((data) => {
         if (Array.isArray(data)) {
           setRequests(data);
-          // Fetch Discord avatars for all unique users
           data.forEach((r: LoanRequest) => {
             if (r.user_id) {
               fetch(`/api/discord-user?userId=${r.user_id}`)
@@ -102,92 +228,105 @@ export default function RequestsPage() {
   }
 
   const filteredRequests = requests.filter((r) => {
-    const matchesSearch =
+    if (!search.trim()) return true;
+    return (
       r.user_name.toLowerCase().includes(search.toLowerCase()) ||
       r.user_id.includes(search) ||
-      (r.reason && r.reason.toLowerCase().includes(search.toLowerCase()));
-
-    return matchesSearch && r.status === 'pending';
+      (r.reason && r.reason.toLowerCase().includes(search.toLowerCase()))
+    );
   });
-
-  const pendingCount = requests.filter((r) => r.status === 'pending').length;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300 max-w-6xl">
       {/* Title Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white font-sans">Loan Requests</h1>
-        </div>
-
-        {pendingCount > 0 && (
-          <div className="px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-400 flex items-center gap-2">
-            <Clock className="w-3.5 h-3.5" />
-            <span>{pendingCount} Pending Approval</span>
-          </div>
-        )}
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-white font-sans">Loan Applications</h1>
+        <p className="text-sm text-neutral-400 mt-1">
+          Review, approve, or refuse borrower cryptocurrency loan applications.
+        </p>
       </div>
 
-      {/* Filter & Search Card */}
-      <div className="soteria-card p-6 space-y-4">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-          <div className="relative w-full md:w-80">
-            <Search className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+      <div className="soteria-card p-6 space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h2 className="text-lg font-semibold text-white">Pending Requests</h2>
+            <p className="text-xs text-neutral-400">
+              Direct verification pipeline for borrowers.
+            </p>
+          </div>
+
+          {/* Search bar */}
+          <div className="relative w-full md:w-64">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" />
             <input
               type="text"
               placeholder="Search user, ID, reason..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#171717] border border-white/[0.06] text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white/30 transition-all"
+              className="w-full pl-9 pr-4 py-2 rounded-2xl bg-[#171717] border border-white/[0.06] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-400 transition-colors"
             />
           </div>
         </div>
 
         {/* Requests Table */}
         <div className="overflow-x-auto">
-          {filteredRequests.length === 0 ? (
-            <div className="text-center py-12 text-neutral-500 text-xs">
-              No loan requests match the current filters.
-            </div>
-          ) : (
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-white/[0.06] text-xs font-medium text-neutral-400">
-                  <th className="pb-3 px-3">Borrower</th>
-                  <th className="pb-3 px-3">Amount</th>
-                  <th className="pb-3 px-3">Coin</th>
-                  <th className="pb-3 px-3">Total Due</th>
-                  <th className="pb-3 px-3">Reason / Ticket</th>
-                  <th className="pb-3 px-3">Date</th>
-                  <th className="pb-3 px-3">Status</th>
-                  <th className="pb-3 px-3 text-right">Actions</th>
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-white/[0.06] text-xs font-medium text-neutral-400">
+                <th className="pb-3 px-3">Borrower</th>
+                <th className="pb-3 px-3">Principal</th>
+                <th className="pb-3 px-3">Asset</th>
+                <th className="pb-3 px-3">Total Due</th>
+                <th className="pb-3 px-3">Reason / Ticket</th>
+                <th className="pb-3 px-3">Applied Date</th>
+                <th className="pb-3 px-3">Status</th>
+                <th className="pb-3 px-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.04]">
+              {filteredRequests.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-xs text-neutral-500">
+                    No loan requests found matching query.
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.04]">
-                {filteredRequests.map((req) => (
+              ) : (
+                filteredRequests.map((req) => (
                   <tr key={req.id} className="hover:bg-white/[0.02] transition-colors">
-                    {/* Borrower with Discord Avatar + Message button */}
+                    {/* Borrower avatar + name (Clickable to open details modal) */}
                     <td className="py-3.5 px-3">
                       <div className="flex items-center gap-2.5">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={discordAvatars[req.user_id] || req.user_avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
-                          alt={req.user_name}
-                          referrerPolicy="no-referrer"
-                          className="w-7 h-7 rounded-full border border-white/10 object-cover bg-neutral-800 shrink-0"
-                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
-                        />
-                        <span className="font-semibold text-white text-xs">{req.user_name}</span>
+                        <button
+                          onClick={() => setSelectedRequest(req)}
+                          className="flex items-center gap-2.5 text-left group hover:opacity-80 transition-opacity cursor-pointer"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={discordAvatars[req.user_id] || req.user_avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                            alt={req.user_name}
+                            referrerPolicy="no-referrer"
+                            className="w-7 h-7 rounded-full border border-white/10 group-hover:border-white/30 object-cover bg-neutral-800 shrink-0 transition-colors"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png';
+                            }}
+                          />
+                          <span className="font-semibold text-white text-xs group-hover:underline underline-offset-2">
+                            {req.user_name}
+                          </span>
+                        </button>
+
                         <button
                           onClick={() => {
-                            window.dispatchEvent(new CustomEvent('open-support-chat', {
-                              detail: {
-                                userId: req.user_id,
-                                userName: req.user_name,
-                                userAvatar: discordAvatars[req.user_id],
-                                subject: `Loan Request (${req.user_name} - $${req.amount.toFixed(2)} ${req.crypto_currency})`
-                              }
-                            }));
+                            window.dispatchEvent(
+                              new CustomEvent('open-support-chat', {
+                                detail: {
+                                  userId: req.user_id,
+                                  userName: req.user_name,
+                                  userAvatar: discordAvatars[req.user_id],
+                                  subject: `Loan Request (${req.user_name} - $${req.amount.toFixed(2)} ${req.crypto_currency})`,
+                                },
+                              })
+                            );
                           }}
                           className="p-1 rounded-lg hover:bg-white/[0.08] text-neutral-400 hover:text-white transition-colors"
                           title={`Message ${req.user_name} in Support`}
@@ -239,7 +378,7 @@ export default function RequestsPage() {
                       </span>
                     </td>
 
-                    {/* Approve / Refuse Clean Actions (No Fluo / No Glow) */}
+                    {/* Approve / Refuse Actions */}
                     <td className="py-3.5 px-3 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {req.status === 'pending' ? (
@@ -251,7 +390,6 @@ export default function RequestsPage() {
                             >
                               Approve
                             </button>
-
                             <button
                               onClick={() => handleUpdateStatus(req.id, 'rejected')}
                               disabled={isProcessing === req.id}
@@ -264,7 +402,7 @@ export default function RequestsPage() {
                           <button
                             onClick={() => handleUpdateStatus(req.id, 'pending')}
                             disabled={isProcessing === req.id}
-                            className="text-[11px] text-neutral-500 hover:text-neutral-300 transition-colors px-2 py-1"
+                            className="px-3 py-1 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-neutral-300 font-semibold text-xs border border-white/[0.08] transition-colors disabled:opacity-50"
                           >
                             Reset
                           </button>
@@ -272,23 +410,29 @@ export default function RequestsPage() {
 
                         <button
                           onClick={() => handleDeleteRequest(req.id)}
-                          className="p-1.5 rounded-lg hover:bg-white/[0.08] text-neutral-500 hover:text-red-400 transition-colors"
-                          title="Delete loan request"
+                          className="p-1.5 rounded-lg hover:bg-white/[0.06] text-neutral-400 hover:text-red-400 transition-colors"
+                          title="Delete Request"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
+
+      {/* Detail Overlay */}
+      {selectedRequest && (
+        <RequestDetailOverlay
+          req={selectedRequest}
+          avatarUrl={discordAvatars[selectedRequest.user_id]}
+          onClose={() => setSelectedRequest(null)}
+        />
+      )}
     </div>
   );
 }
-
-
-

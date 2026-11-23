@@ -82,8 +82,22 @@ export async function DELETE(req: Request) {
   try {
     const { id, requesterId } = await req.json();
     const OWNER_ID = '1079074717799030824';
-    if (requesterId !== OWNER_ID) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+
+    // Allow Owner OR any Admin
+    let isAuthorized = requesterId === OWNER_ID;
+    if (!isAuthorized && requesterId) {
+      const { data: user } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', requesterId)
+        .single();
+      if (user?.role === 'admin' || user?.role === 'owner') {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized) {
+      return NextResponse.json({ error: 'Unauthorized: Admin privileges required' }, { status: 403 });
     }
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 

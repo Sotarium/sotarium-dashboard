@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { getLiveDiscordAvatar } from '@/lib/discord-avatar';
+import { verifyUserSecurity } from '@/lib/anti-alt';
 
 export async function GET(req: Request) {
   try {
@@ -42,10 +43,31 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { userId, userName, amount, reason, cryptoCurrency } = body;
+    const { userId, userName, amount, reason, cryptoCurrency, walletAddress, fingerprint } = body;
 
     if (!userId || !amount) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Anti-Alt & Scammer Security Verification
+    const securityCheck = await verifyUserSecurity({
+      userId,
+      userName,
+      walletAddress,
+      fingerprint,
+    });
+
+    if (securityCheck.isBlocked) {
+      return NextResponse.json(
+        {
+          error: `[SECURITY SHIELD] Access Denied: ${securityCheck.reason}`,
+          securityAlert: true,
+          violation: securityCheck.violation, // 'SCAMMER' | 'ALT'
+          matchedAccountName: securityCheck.matchedAccountName,
+          detectionType: securityCheck.detectionType,
+        },
+        { status: 403 }
+      );
     }
 
     const requestedAmount = parseFloat(amount);
@@ -134,14 +156,29 @@ export async function POST(req: Request) {
       }
     }
 
-    const { data, error } = await supabase.from('loan_requests').insert({
-      user_id: userId,
-      user_name: userName || 'Borrower',
-      amount: requestedAmount,
-      reason: reason || '',
-      crypto_currency: cryptoCurrency || 'SOL',
-      status: 'pending',
-    }).select().single();
+      // Format reason to include wallet address clearly if provided
+      let finalReason = reason || '';
+      if (walletAddress) {
+        finalReason = finalReason ? `${finalReason} | Addy: ${walletAddress}` : `Addy: ${walletAddress}`;
+      }
+
+      // Tag hardware footprint into notes for audit trail
+      let securityNotes = '';
+      if (fingerprint && fingerprint !== 'server_env') {
+        securityNotes = `[HWID:${fingerprint}]`;
+      }
+
+      const insertPayload: Record<string, any> = {
+        user_id: userId,
+        user_name: userName || 'Borrower',
+        amount: requestedAmount,
+        reason: finalReason,
+        notes: securityNotes || null,
+        crypto_currency: cryptoCurrency || 'SOL',
+        status: 'pending',
+      };
+
+      const { data, error } = await supabase.from('loan_requests').insert(insertPayload).select().single();
 
     if (error) throw error;
 

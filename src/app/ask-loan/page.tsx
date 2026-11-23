@@ -1,9 +1,12 @@
 'use client';
 import { getTotalDue } from '@/lib/interest';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/lib/auth';
-import { Send, Clock, ChevronDown } from 'lucide-react';
+import { Send, Clock, ChevronDown, CheckCircle2, AlertCircle, Wallet, ShieldAlert } from 'lucide-react';
+import { validateCryptoAddress, detectCryptoChains } from '@/lib/crypto-validator';
+import { getDetailedClientFingerprint } from '@/lib/hwid';
+import SecurityOverlay, { SecurityOverlayType } from '@/components/SecurityOverlay';
 
 interface LoanRequest {
   id: string;
@@ -18,18 +21,27 @@ const CRYPTO_OPTIONS = [
   {
     symbol: 'SOL',
     name: 'Solana',
+    network: 'Solana',
     iconUrl: '/assets/sol.svg',
   },
   {
     symbol: 'ETH',
     name: 'Ethereum',
+    network: 'ERC-20 / EVM',
     iconUrl: '/assets/eth.svg',
   },
   {
     symbol: 'LTC',
     name: 'Litecoin',
+    network: 'Litecoin',
     iconUrl: '/assets/ltc.svg',
-  }
+  },
+  {
+    symbol: 'BTC',
+    name: 'Bitcoin',
+    network: 'Bitcoin',
+    iconUrl: '/assets/btc.svg',
+  },
 ];
 
 export default function AskLoanPage() {
@@ -37,11 +49,16 @@ export default function AskLoanPage() {
   const [amount, setAmount] = useState('1');
   const [selectedCrypto, setSelectedCrypto] = useState(CRYPTO_OPTIONS[0]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [walletAddress, setWalletAddress] = useState('');
   const [reason, setReason] = useState('');
   const [requests, setRequests] = useState<LoanRequest[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [securityOverlay, setSecurityOverlay] = useState<{
+    type: SecurityOverlayType;
+    matchedName?: string;
+  }>({ type: null });
 
   const TIERS = [1, 5, 10, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250];
 
@@ -87,6 +104,12 @@ export default function AskLoanPage() {
     }
   }, [user]);
 
+  // Real-time address check like Exodus
+  const addressValidation = useMemo(() => {
+    if (!walletAddress.trim()) return null;
+    return validateCryptoAddress(walletAddress, selectedCrypto.symbol);
+  }, [walletAddress, selectedCrypto]);
+
   const triggerError = (msg: string) => {
     setErrorMsg(msg);
     setTimeout(() => setErrorMsg(''), 5000);
@@ -97,6 +120,20 @@ export default function AskLoanPage() {
     if (!amount || parseFloat(amount) <= 0 || !user) return;
 
     setErrorMsg('');
+
+    // Check Wallet Address
+    const cleanAddy = walletAddress.trim();
+    if (!cleanAddy) {
+      triggerError('Please enter your receiving crypto wallet address.');
+      return;
+    }
+
+    const validation = validateCryptoAddress(cleanAddy, selectedCrypto.symbol);
+    if (!validation.isMatch) {
+      triggerError(validation.error || `Invalid wallet address for ${selectedCrypto.name}.`);
+      return;
+    }
+
     const parsedAmount = parseFloat(amount);
     if (parsedAmount > userMaxLimit) {
       const errorText = userMaxLimit > 1
@@ -108,6 +145,8 @@ export default function AskLoanPage() {
 
     setIsSubmitting(true);
     try {
+      const clientSecurity = await getDetailedClientFingerprint();
+
       const res = await fetch('/api/loan-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -116,18 +155,30 @@ export default function AskLoanPage() {
           userName: user.username,
           amount: parseFloat(amount),
           cryptoCurrency: selectedCrypto.symbol,
+          walletAddress: cleanAddy,
+          fingerprint: clientSecurity.fingerprint,
           reason,
         }),
       });
 
       const data = await res.json();
       if (!res.ok) {
+        if (data.securityAlert) {
+          const overlayType: SecurityOverlayType = data.violation === 'SCAMMER' ? 'scammer' : 'alt';
+          setSecurityOverlay({
+            type: overlayType,
+            matchedName: data.matchedAccountName,
+          });
+          return;
+        }
+
         triggerError(data.error || 'Failed to submit loan request');
         return;
       }
 
       setRequests((prev) => [data, ...prev]);
       setAmount('1');
+      setWalletAddress('');
       setReason('');
       setSuccessMsg(true);
       setTimeout(() => setSuccessMsg(false), 5000);
@@ -187,7 +238,7 @@ export default function AskLoanPage() {
                     setAmount(val);
                   }}
                   required
-                  className="w-full pl-8 pr-4 py-3 rounded-2xl bg-[#171717] border border-white/[0.08] text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white/30 transition-all shadow-inner"
+                  className="w-full pl-8 pr-4 py-3 rounded-2xl bg-[#171717] border border-white/[0.08] text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white/30 transition-all shadow-inner font-mono"
                 />
               </div>
             </div>
@@ -259,6 +310,60 @@ export default function AskLoanPage() {
             </div>
           </div>
 
+          {/* Receiving Crypto Wallet Address with Exodus-style chain detection & check */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                <Wallet className="w-3.5 h-3.5 text-neutral-400" />
+                <span>Receiving {selectedCrypto.symbol} Wallet Address</span>
+              </label>
+
+              {/* Real-time Exodus-style detection badge */}
+              {addressValidation && (
+                <div className="flex items-center gap-1.5 text-[11px] font-mono">
+                  {addressValidation.isMatch ? (
+                    <span className="flex items-center gap-1 text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Valid {addressValidation.formatName || selectedCrypto.symbol} Address
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full border border-red-500/20">
+                      <AlertCircle className="w-3 h-3" />
+                      {addressValidation.detectedChains.length > 0
+                        ? `Detected: ${addressValidation.formatName || addressValidation.detectedChains.join(', ')}`
+                        : 'Invalid Address'}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Paste address here!"
+                value={walletAddress}
+                onChange={(e) => setWalletAddress(e.target.value.trim())}
+                required
+                className={`w-full px-4 py-3 rounded-2xl bg-[#171717] border text-sm text-white placeholder-neutral-500 font-sans focus:outline-none transition-all shadow-inner ${
+                  !addressValidation
+                    ? 'border-white/[0.08] focus:border-white/30'
+                    : addressValidation.isMatch
+                    ? 'border-emerald-500/50 focus:border-emerald-500'
+                    : 'border-red-500/50 focus:border-red-500'
+                }`}
+              />
+            </div>
+
+            {/* Warning when coin mismatch happens */}
+            {addressValidation && !addressValidation.isMatch && (
+              <p className="text-[11px] text-red-400/90 flex items-center gap-1 pt-0.5 font-sans">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{addressValidation.error}</span>
+              </p>
+            )}
+          </div>
+
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-neutral-300">Reason / Discord Ticket Link (Optional)</label>
             <textarea
@@ -281,8 +386,8 @@ export default function AskLoanPage() {
 
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-full bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
+              disabled={isSubmitting || (addressValidation !== null && !addressValidation.isMatch)}
+              className="px-6 py-2.5 rounded-full bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{isSubmitting ? 'Submitting...' : 'Submit Request'}</span>
@@ -353,8 +458,15 @@ export default function AskLoanPage() {
           </div>
         )}
       </div>
+
+      {/* Security Overlay for Alts & Scammers */}
+      {securityOverlay.type && (
+        <SecurityOverlay
+          type={securityOverlay.type}
+          matchedAccountName={securityOverlay.matchedName}
+          onClose={() => setSecurityOverlay({ type: null })}
+        />
+      )}
     </div>
   );
 }
-
-

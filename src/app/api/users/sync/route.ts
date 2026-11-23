@@ -25,15 +25,13 @@ export async function POST(req: Request) {
       // Retain existing role if already set (or ensure owner ID stays owner)
       role = isOwner ? 'owner' : (existingUser.role || 'member');
 
-      // Update last_login, avatar, username, and HWID in Supabase
+      // Update avatar, username, and role in Supabase
       await supabase
         .from('users')
         .update({
           username,
           avatar: avatar || existingUser.avatar,
           role,
-          hwid: hwid || existingUser.hwid,
-          last_login: new Date().toISOString(),
         })
         .eq('id', id);
     } else {
@@ -43,8 +41,6 @@ export async function POST(req: Request) {
         username: username || 'Discord Member',
         avatar: avatar || 'https://cdn.discordapp.com/embed/avatars/0.png',
         role,
-        hwid: hwid || null,
-        last_login: new Date().toISOString(),
       });
     }
 

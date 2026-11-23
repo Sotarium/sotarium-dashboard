@@ -3,7 +3,7 @@
 import React from 'react';
 import { useAuth } from '@/lib/auth';
 
-export type SecurityOverlayType = 'scammer' | 'alt' | null;
+export type SecurityOverlayType = 'scammer' | 'alt' | 'vpn' | null;
 
 interface SecurityOverlayProps {
   type: SecurityOverlayType;
@@ -17,6 +17,7 @@ export default function SecurityOverlay({ type, matchedAccountName, onClose }: S
   if (!type) return null;
 
   const isScammer = type === 'scammer';
+  const isVpn = type === 'vpn';
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-in fade-in duration-300">
@@ -36,28 +37,20 @@ export default function SecurityOverlay({ type, matchedAccountName, onClose }: S
         {/* Minimal High-End Typography */}
         <div className="space-y-1.5 mb-7">
           <h2 className="text-2xl font-bold tracking-tight text-white font-sans">
-            {isScammer ? 'You Scammed!' : 'You Alted!'}
+            {isScammer ? 'You Scammed!' : isVpn ? 'VPN Detected!' : 'You Alted!'}
           </h2>
           <p className="text-xs text-neutral-400 font-sans tracking-wide">
             {isScammer
               ? 'You have been permanently blacklisted for an unpaid loan.'
+              : isVpn
+              ? 'Please turn off your VPN or proxy to continue.'
               : 'Please use your real acc'}
           </p>
         </div>
 
         {/* Action button */}
         <div className="w-full space-y-2">
-          {!isScammer ? (
-            <button
-              onClick={() => {
-                if (logout) logout();
-                else window.location.href = '/login';
-              }}
-              className="w-full py-3.5 px-6 rounded-full bg-white hover:bg-neutral-200 text-black font-semibold text-xs transition-all flex items-center justify-center shadow-lg active:scale-[0.98] font-sans"
-            >
-              <span>Switch to Real Account</span>
-            </button>
-          ) : (
+          {isScammer ? (
             <button
               onClick={() => {
                 if (logout) logout();
@@ -66,6 +59,25 @@ export default function SecurityOverlay({ type, matchedAccountName, onClose }: S
               className="w-full py-3.5 px-6 rounded-full bg-red-600 hover:bg-red-500 text-white font-semibold text-xs transition-all flex items-center justify-center shadow-lg active:scale-[0.98] font-sans"
             >
               <span>Exit</span>
+            </button>
+          ) : isVpn ? (
+            <button
+              onClick={() => {
+                window.location.reload();
+              }}
+              className="w-full py-3.5 px-6 rounded-full bg-white hover:bg-neutral-200 text-black font-semibold text-xs transition-all flex items-center justify-center shadow-lg active:scale-[0.98] font-sans"
+            >
+              <span>Retry Connection</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                if (logout) logout();
+                else window.location.href = '/login';
+              }}
+              className="w-full py-3.5 px-6 rounded-full bg-white hover:bg-neutral-200 text-black font-semibold text-xs transition-all flex items-center justify-center shadow-lg active:scale-[0.98] font-sans"
+            >
+              <span>Switch to Real Account</span>
             </button>
           )}
 

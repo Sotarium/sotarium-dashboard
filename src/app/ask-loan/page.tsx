@@ -164,7 +164,7 @@ export default function AskLoanPage() {
       const data = await res.json();
       if (!res.ok) {
         if (data.securityAlert) {
-          const overlayType: SecurityOverlayType = data.violation === 'SCAMMER' ? 'scammer' : 'alt';
+          const overlayType: SecurityOverlayType = data.violation === 'SCAMMER' ? 'scammer' : data.violation === 'VPN' ? 'vpn' : 'alt';
           setSecurityOverlay({
             type: overlayType,
             matchedName: data.matchedAccountName,

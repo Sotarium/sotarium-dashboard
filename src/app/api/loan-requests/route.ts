@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { getLiveDiscordAvatar } from '@/lib/discord-avatar';
 import { verifyUserSecurity } from '@/lib/anti-alt';
+import { checkIpReputation } from '@/lib/vpn-detector';
 
 export async function GET(req: Request) {
   try {
@@ -47,6 +48,25 @@ export async function POST(req: Request) {
 
     if (!userId || !amount) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // 0. VPN & Proxy Firewall Check (Detects Opera VPN, Mullvad, Nord, Datacenters)
+    const forwardedHeader = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip');
+    const clientIp = forwardedHeader ? forwardedHeader.split(',')[0].trim() : '';
+
+    if (clientIp) {
+      const vpnCheck = await checkIpReputation(clientIp);
+      if (vpnCheck.isVpnOrProxy) {
+        return NextResponse.json(
+          {
+            error: 'Access Denied: VPN or Proxy detected. Please turn off your VPN/Proxy to continue.',
+            securityAlert: true,
+            violation: 'VPN',
+            detectionType: 'VPN_PROXY',
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // Anti-Alt & Scammer Security Verification

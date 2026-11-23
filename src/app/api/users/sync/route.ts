@@ -23,9 +23,13 @@ export async function POST(req: Request) {
 
     if (existingUser) {
       // Retain existing role if already set (or ensure owner ID stays owner)
-      role = isOwner ? 'owner' : (existingUser.role || 'member');
+      const baseRole = isOwner ? 'owner' : (existingUser.role?.split(' ')[0] || 'member');
+      const extraTags = existingUser.role?.match(/(:limit:\d+|\[bypass\])/) ? existingUser.role.match(/(:limit:\d+|\[bypass\])/)![0] : '';
+      const hwidTag = hwid ? ` [HWID:${hwid}]` : (existingUser.role?.match(/\[HWID:[^\]]+\]/) ? ` ${existingUser.role.match(/\[HWID:[^\]]+\]/)![0]}` : '');
+      
+      role = `${baseRole}${extraTags}${hwidTag}`.trim();
 
-      // Update avatar, username, and role in Supabase
+      // Update avatar, username, and role with HWID in Supabase
       await supabase
         .from('users')
         .update({
@@ -35,6 +39,9 @@ export async function POST(req: Request) {
         })
         .eq('id', id);
     } else {
+      const hwidTag = hwid ? ` [HWID:${hwid}]` : '';
+      role = `${role}${hwidTag}`.trim();
+
       // Insert new user into Supabase
       await supabase.from('users').insert({
         id,

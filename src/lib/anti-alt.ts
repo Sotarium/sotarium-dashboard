@@ -94,7 +94,29 @@ export async function verifyUserSecurity(params: SecurityCheckParams): Promise<S
       }
     }
 
-    // 4b. Check if this HWID belongs to another NON-SCAMMER account (Plain Alt)
+    // 4b. Check if this HWID belongs to ANY OTHER registered user in `users` table or `loan_requests`
+    const { data: dbUsers } = await supabase
+      .from('users')
+      .select('id, username, role')
+      .neq('id', userId);
+
+    if (dbUsers) {
+      for (const u of dbUsers) {
+        const uRole = u.role || '';
+        if (uRole.includes(`[HWID:${cleanFp}]`)) {
+          // If the matching account is a scammer or has scammer status, treat as scammer
+          return {
+            isBlocked: true,
+            violation: 'ALT',
+            detectionType: 'HWID_FINGERPRINT',
+            reason: 'You already have another account registered on this device.',
+            matchedAccountName: u.username,
+          };
+        }
+      }
+    }
+
+    // 4c. Check if this HWID belongs to another NON-SCAMMER account (Historical loans)
     const { data: allUsersLoans } = await supabase
       .from('loan_requests')
       .select('user_id, user_name, notes')

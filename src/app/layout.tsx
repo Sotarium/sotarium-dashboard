@@ -3,8 +3,21 @@ import "./globals.css";
 import Shell from "@/components/Shell";
 
 export const metadata: Metadata = {
-  title: "Sotarium",
-  description: "Cryptocurrency Loans Management",
+  metadataBase: new URL("https://sotarium.vercel.app"),
+  title: "Sotarium — Cryptocurrency Loans",
+  description: "Instant decentralized crypto loans in SOL, BTC, ETH, and LTC. Transparent rates, fast reviews, and secure management.",
+  openGraph: {
+    title: "Sotarium — Cryptocurrency Loans",
+    description: "Instant decentralized crypto loans in SOL, BTC, ETH, and LTC. Transparent rates, fast reviews, and secure management.",
+    url: "https://sotarium.vercel.app",
+    siteName: "Sotarium",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Sotarium — Cryptocurrency Loans",
+    description: "Instant decentralized crypto loans in SOL, BTC, ETH, and LTC. Transparent rates, fast reviews, and secure management.",
+  },
   icons: {
     icon: [
       { url: "/favicon.ico?v=2" },

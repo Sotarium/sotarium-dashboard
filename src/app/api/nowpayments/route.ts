@@ -8,6 +8,7 @@ const COIN_MAP: Record<string, string> = {
   SOL: 'sol',
   ETH: 'eth',
   LTC: 'ltc',
+  BTC: 'btc',
 };
 
 export async function POST(req: Request) {

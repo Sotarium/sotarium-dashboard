@@ -8,28 +8,6 @@ export const metadata: Metadata = {
     default: "Sotarium",
     template: "%s | Sotarium",
   },
-  description: "Instant decentralized crypto loans in SOL, BTC, ETH, and LTC. Transparent rates, fast reviews, and secure management.",
-  openGraph: {
-    title: "Sotarium",
-    description: "Instant decentralized crypto loans in SOL, BTC, ETH, and LTC. Transparent rates, fast reviews, and secure management.",
-    url: "https://sotarium.vercel.app",
-    siteName: "Sotarium",
-    type: "website",
-    images: [
-      {
-        url: "/banner.png",
-        width: 1200,
-        height: 630,
-        alt: "Sotarium",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Sotarium",
-    description: "Instant decentralized crypto loans in SOL, BTC, ETH, and LTC. Transparent rates, fast reviews, and secure management.",
-    images: ["/banner.png"],
-  },
   icons: {
     icon: [
       { url: "/favicon.ico?v=2" },

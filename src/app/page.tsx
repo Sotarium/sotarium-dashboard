@@ -241,6 +241,11 @@ export default function OverviewPage() {
             <h3 className="text-base font-semibold text-white">
               Payback activity
             </h3>
+            {monthTotal > 0 && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#00E823]/15 border border-[#00E823]/30 text-[#00E823] text-xs font-bold font-mono shadow-[0_0_12px_rgba(0,232,35,0.25)]">
+                ▲ +{((monthTotal / 1) * 100).toFixed(1)}%
+              </span>
+            )}
           </div>
 
           {/* Right: Total Value + Month Calendar Selector */}
@@ -312,17 +317,26 @@ export default function OverviewPage() {
           >
             <defs>
               <linearGradient id="paybackAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.16" />
-                <stop offset="50%" stopColor="#ffffff" stopOpacity="0.04" />
-                <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                <stop offset="0%" stopColor="#00E823" stopOpacity="0.30" />
+                <stop offset="40%" stopColor="#00E823" stopOpacity="0.12" />
+                <stop offset="85%" stopColor="#00E823" stopOpacity="0.02" />
+                <stop offset="100%" stopColor="#00E823" stopOpacity="0.0" />
               </linearGradient>
 
               <linearGradient id="paybackStrokeGrad" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#888888" />
-                <stop offset="50%" stopColor="#ffffff" />
-                <stop offset="100%" stopColor="#ffffff" />
+                <stop offset="0%" stopColor="#00E823" />
+                <stop offset="50%" stopColor="#22c55e" />
+                <stop offset="100%" stopColor="#4ade80" />
               </linearGradient>
+
+              {/* Grid pattern background */}
+              <pattern id="chartGrid" width="40" height="28" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 28" fill="none" stroke="rgba(255,255,255,0.035)" strokeWidth="1" />
+              </pattern>
             </defs>
+
+            {/* Grid Pattern Background */}
+            <rect x={paddingX} y={paddingTop} width={svgWidth - paddingX * 2} height={svgHeight - paddingTop - paddingBottom} fill="url(#chartGrid)" />
 
             {/* Horizontal Gridlines */}
             <line

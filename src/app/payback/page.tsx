@@ -84,8 +84,9 @@ function formatDueCountdown(ms: number): string {
 
 
 export default function PaybackPage() {
-  const { user } = useAuth();
+  const { user, isLoaded } = useAuth();
   const [myLoan, setMyLoan] = useState<LoanSummary | null>(null);
+  const [loadingLoan, setLoadingLoan] = useState(true);
   const [selectedCoin, setSelectedCoin] = useState<typeof COINS[0] | null>(null);
   const [amount, setAmount] = useState('');
   const [payment, setPayment] = useState<PaymentData | null>(null);
@@ -105,16 +106,26 @@ export default function PaybackPage() {
   }, []);
 
   const fetchMyLoan = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      if (isLoaded) setLoadingLoan(false);
+      return;
+    }
+    setLoadingLoan(true);
     try {
       const res = await fetch('/api/loans');
       if (res.ok) {
         const data: LoanSummary[] = await res.json();
-        const mine = data.find((l) => l.userId === user.id && l.status !== 'completed');
+        // Match user's active loan (by user.id or if owner by username 'Sotarium')
+        const mine = data.find((l) => 
+          (l.userId === user.id || (user.username?.toLowerCase() === 'sotarium' && l.userName?.toLowerCase() === 'sotarium')) && 
+          l.status !== 'completed'
+        );
         setMyLoan(mine || null);
       }
-    } catch { /* silent */ }
-  }, [user?.id]);
+    } catch { /* silent */ } finally {
+      setLoadingLoan(false);
+    }
+  }, [user?.id, user?.username, isLoaded]);
 
   useEffect(() => { fetchMyLoan(); }, [fetchMyLoan]);
 
@@ -186,7 +197,9 @@ export default function PaybackPage() {
               <div className="text-xs text-neutral-400 mb-0.5">Amount Due</div>
               <div className="text-2xl font-bold text-white font-sans">
                 ${myLoan.totalDue.toFixed(2)}
-                <span className="text-sm text-neutral-400 font-normal ml-1.5">+15% interest</span>
+                <span className="text-sm text-neutral-400 font-normal ml-1.5">
+                  (${myLoan.repaidAmount.toFixed(2)} / ${myLoan.totalDue.toFixed(2)} paid)
+                </span>
               </div>
             </div>
             <div className="px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-400 shrink-0">

@@ -195,11 +195,11 @@ export default function PaybackPage() {
           {/* Amount + Active badge */}
           <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="text-xs text-neutral-400 mb-0.5">Amount Due</div>
+              <div className="text-xs text-neutral-400 mb-0.5">Remaining Due</div>
               <div className="text-2xl font-bold text-white font-sans">
-                ${myLoan.totalDue.toFixed(2)}
-                <span className="text-sm text-neutral-400 font-normal ml-1.5">
-                  (${myLoan.repaidAmount.toFixed(2)} / ${myLoan.totalDue.toFixed(2)} paid)
+                ${Math.max(0, myLoan.totalDue - myLoan.repaidAmount).toFixed(2)}
+                <span className="text-sm text-neutral-400 font-normal ml-2">
+                  (${myLoan.repaidAmount.toFixed(2)} paid of ${myLoan.totalDue.toFixed(2)} total)
                 </span>
               </div>
             </div>

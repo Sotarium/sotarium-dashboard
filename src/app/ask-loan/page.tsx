@@ -225,7 +225,7 @@ export default function AskLoanPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Amount Input with clean styling & no default spinners */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-neutral-300">Principal Amount ($ USD)</label>
+              <label className="text-xs font-semibold text-neutral-300">Request Amount</label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 font-semibold text-sm">$</span>
                 <input

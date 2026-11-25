@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Copy, Check, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
+import { Copy, Loader2, AlertCircle } from 'lucide-react';
 import { CheckmarkAnim } from '@/components/CopyButton';
 import { useAuth } from '@/lib/auth';
 
@@ -31,9 +31,8 @@ const COINS = [
 interface PaymentData {
   paymentId: string;
   address: string;
-  amount: number;
   coin: string;
-  expiresAt?: string;
+  validUntil?: string;
 }
 
 interface LoanSummary {
@@ -46,27 +45,6 @@ interface LoanSummary {
   dueDate: string;
   loanDate: string;
   status: string;
-}
-
-function CautionIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 361.117 361.117" fill="currentColor" className={className} xmlns="http://www.w3.org/2000/svg">
-      <path d="M359.568,327.246L191.511,21.818c-2.197-3.993-6.395-6.474-10.952-6.474c-4.558,0-8.754,2.481-10.952,6.474L1.549,327.246c-2.131,3.872-2.058,8.582,0.191,12.388c2.249,3.805,6.34,6.139,10.76,6.139h336.117c4.421,0,8.512-2.334,10.761-6.139C361.627,335.828,361.699,331.118,359.568,327.246z M33.646,320.772L180.559,53.773l146.913,266.999H33.646z"/>
-      <path d="M164.894,143.085v90.351c0,8.65,7.014,15.665,15.665,15.665c8.65,0,15.665-7.015,15.665-15.665v-90.351c0-8.651-7.015-15.665-15.665-15.665C171.908,127.42,164.894,134.435,164.894,143.085z"/>
-      <path d="M180.559,265.364c-9.097,0-16.5,7.399-16.5,16.5c0,9.098,7.403,16.5,16.5,16.5c9.097,0,16.5-7.402,16.5-16.5C197.059,272.764,189.655,265.364,180.559,265.364z"/>
-    </svg>
-  );
-}
-
-function formatCountdown(ms: number): string {
-  if (ms <= 0) return 'Expired';
-  const totalSec = Math.floor(ms / 1000);
-  const h = Math.floor(totalSec / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
-  if (h > 0) return `${h}h ${m}m ${s}s`;
-  if (m > 0) return `${m}m ${s}s`;
-  return `${s}s`;
 }
 
 function formatDueCountdown(ms: number): string {
@@ -82,22 +60,16 @@ function formatDueCountdown(ms: number): string {
   return `${s}s`;
 }
 
-
-
 export default function PaybackPage() {
   const { user, isLoaded } = useAuth();
   const [myLoan, setMyLoan] = useState<LoanSummary | null>(null);
   const [loadingLoan, setLoadingLoan] = useState(true);
-  const [selectedCoin, setSelectedCoin] = useState<typeof COINS[0] | null>(null);
-  const [amount, setAmount] = useState('');
+  const [selectedCoin, setSelectedCoin] = useState<typeof COINS[0] | null>(COINS[2]); // Default to LTC
   const [payment, setPayment] = useState<PaymentData | null>(null);
-  const [generating, setGenerating] = useState(false);
-  const [genError, setGenError] = useState('');
+  const [loadingAddress, setLoadingAddress] = useState(false);
+  const [addressError, setAddressError] = useState('');
   const [copiedAddr, setCopiedAddr] = useState(false);
-  const [copiedAmt, setCopiedAmt] = useState(false);
   const [animAddr, setAnimAddr] = useState(false);
-  const [animAmt, setAnimAmt] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [now, setNow] = useState(0);
 
   useEffect(() => {
@@ -116,7 +88,6 @@ export default function PaybackPage() {
       const res = await fetch('/api/loans');
       if (res.ok) {
         const data: LoanSummary[] = await res.json();
-        // Match user's active loan (by user.id or if owner by username 'Sotarium')
         const mine = data.find((l) => 
           (l.userId === user.id || (user.username?.toLowerCase() === 'sotarium' && l.userName?.toLowerCase() === 'sotarium')) && 
           l.status !== 'completed'
@@ -128,40 +99,51 @@ export default function PaybackPage() {
     }
   }, [user?.id, user?.username, isLoaded]);
 
-  useEffect(() => { fetchMyLoan(); }, [fetchMyLoan]);
+  useEffect(() => { 
+    fetchMyLoan();
+    // Poll loan progress every 4 seconds so any received payment automatically reflects live
+    const interval = setInterval(fetchMyLoan, 4000);
+    return () => clearInterval(interval);
+  }, [fetchMyLoan]);
 
-  const handleCopy = (text: string, type: 'addr' | 'amt') => {
+  const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
-    if (type === 'addr') {
-      setCopiedAddr(true); setAnimAddr(true);
-      setTimeout(() => { setCopiedAddr(false); setAnimAddr(false); }, 2000);
-    } else {
-      setCopiedAmt(true); setAnimAmt(true);
-      setTimeout(() => { setCopiedAmt(false); setAnimAmt(false); }, 2000);
-    }
+    setCopiedAddr(true);
+    setAnimAddr(true);
+    setTimeout(() => { setCopiedAddr(false); setAnimAddr(false); }, 2000);
   };
 
-  const generateAddress = async () => {
-    if (!selectedCoin || !amount || parseFloat(amount) <= 0) return;
-    setGenerating(true);
-    setGenError('');
-    setPayment(null);
+  // Fetch or retrieve permanent deposit address whenever user selects a coin
+  const loadDepositAddress = useCallback(async (coin: typeof COINS[0]) => {
+    if (!user?.id) return;
+    setLoadingAddress(true);
+    setAddressError('');
     try {
       const res = await fetch('/api/nowpayments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ coin: selectedCoin.symbol, amount, userId: user?.id || 'anonymous', userName: user?.username || 'User', loanId: myLoan?.id }),
+        body: JSON.stringify({
+          coin: coin.symbol,
+          userId: user.id,
+          userName: user.username || 'User',
+          loanId: myLoan?.id,
+        }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to generate address');
+      if (!res.ok) throw new Error(data.error || 'Failed to get deposit address');
       setPayment(data);
     } catch (err: unknown) {
-      setGenError(err instanceof Error ? err.message : 'Could not generate payment address. Try again.');
+      setAddressError(err instanceof Error ? err.message : 'Could not retrieve deposit address.');
     } finally {
-      setGenerating(false);
+      setLoadingAddress(false);
     }
-  };
+  }, [user?.id, user?.username, myLoan?.id]);
 
+  useEffect(() => {
+    if (selectedCoin && user?.id) {
+      loadDepositAddress(selectedCoin);
+    }
+  }, [selectedCoin, user?.id, loadDepositAddress]);
 
   const loanProgress = (() => {
     if (!myLoan) return null;
@@ -171,7 +153,6 @@ export default function PaybackPage() {
     const dueMs = myLoan.dueDate ? new Date(myLoan.dueDate).getTime() - now : null;
     return { pct, dueMs };
   })();
-
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300 max-w-2xl">
@@ -226,28 +207,28 @@ export default function PaybackPage() {
         </div>
       )}
 
-      {/* Step 1 — Choose coin */}
+      {/* Choose coin */}
       <div className="space-y-3">
         <div className="text-xs font-semibold text-neutral-400 uppercase tracking-widest px-1">
-          1 · Choose your coin
+          Select Deposit Coin
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 gap-2.5">
           {COINS.map((coin) => {
             const active = selectedCoin?.symbol === coin.symbol;
             return (
               <button
                 key={coin.symbol}
-                onClick={() => { setSelectedCoin(coin); setPayment(null); setGenError(''); }}
-                className={`flex flex-col items-center gap-2.5 p-5 rounded-2xl border transition-all cursor-pointer bg-gradient-to-b ${coin.color} ${
+                onClick={() => { setSelectedCoin(coin); }}
+                className={`flex flex-col items-center gap-2 p-3.5 rounded-2xl border transition-all cursor-pointer bg-gradient-to-b ${coin.color} ${
                   active ? `${coin.border} ring-1 ring-inset ${coin.ring}` : 'border-white/[0.06] hover:border-white/20'
                 }`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={coin.icon} alt={coin.name} className="w-9 h-9 rounded-full"
+                <img src={coin.icon} alt={coin.name} className="w-8 h-8 rounded-full"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                 <div className="text-center">
-                  <div className={`text-sm font-bold ${active ? coin.text : 'text-white'}`}>{coin.symbol}</div>
-                  <div className="text-[10px] text-neutral-500">{coin.name}</div>
+                  <div className={`text-xs font-bold ${active ? coin.text : 'text-white'}`}>{coin.symbol}</div>
+                  <div className="text-[9px] text-neutral-500">{coin.name}</div>
                 </div>
               </button>
             );
@@ -255,107 +236,50 @@ export default function PaybackPage() {
         </div>
       </div>
 
-      {/* Step 2 — Amount */}
-      <div className="space-y-3">
-        <div className="text-xs font-semibold text-neutral-400 uppercase tracking-widest px-1">
-          2 · How much are you sending? (USD)
-        </div>
-        <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 font-semibold text-sm">$</span>
-          <input
-            type="number" min={0.01} step={0.01} placeholder="0.00" value={amount}
-            onChange={(e) => { setAmount(e.target.value); setPayment(null); setGenError(''); }}
-            className="w-full pl-8 pr-4 py-3.5 rounded-2xl bg-[#171717] border border-white/[0.06] text-white text-lg font-bold focus:outline-none focus:border-white/30 transition-all placeholder-neutral-600"
-          />
-        </div>
-      </div>
-
-      {/* Step 3 — Generate unique address */}
-      {selectedCoin && amount && parseFloat(amount) > 0 && (
+      {/* Permanent Deposit Address Card */}
+      {selectedCoin && (
         <div className="space-y-3 animate-in fade-in duration-200">
           <div className="text-xs font-semibold text-neutral-400 uppercase tracking-widest px-1">
-            3 · Get your unique {selectedCoin.symbol} address
+            Deposit Address ({selectedCoin.name})
           </div>
 
-          {!payment ? (
-            <>
-              <button
-                onClick={generateAddress}
-                disabled={generating}
-                className={`w-full py-3 rounded-2xl border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-60 ${selectedCoin.border}`}
-              >
-                {generating
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating address...</>
-                  : <><RefreshCw className="w-4 h-4" /> Generate My {selectedCoin.symbol} Address</>}
-              </button>
-              {genError && (
-                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {genError}
-                </div>
-              )}
-            </>
-          ) : (
-            <div className={`soteria-card p-4 border ${selectedCoin.border} bg-gradient-to-b ${selectedCoin.color} space-y-3`}>
-              {/* Expiry countdown badge */}
-              {payment.expiresAt && (() => {
-                const msLeft = new Date(payment.expiresAt).getTime() - now;
-                const expired = msLeft <= 0;
-                return (
-                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full w-fit border ${
-                    expired ? 'bg-red-500/10 border-red-500/20' : 'bg-amber-500/10 border-amber-500/20'
-                  }`}>
-                    <CautionIcon className={`w-3.5 h-3.5 shrink-0 ${expired ? 'text-red-400' : 'text-amber-400'}`} />
-                    <span className={`text-base font-semibold tracking-tight ${expired ? 'text-red-400' : 'text-white'}`}>
-                      {expired ? 'Address Expired — Regenerate' : `Expires in ${formatCountdown(msLeft)}`}
-                    </span>
-                  </div>
-                );
-              })()}
-
+          {loadingAddress ? (
+            <div className="soteria-card p-8 flex flex-col items-center justify-center gap-3 text-neutral-400">
+              <Loader2 className="w-6 h-6 animate-spin text-white" />
+              <span className="text-xs font-medium">Getting your {selectedCoin.symbol} deposit address...</span>
+            </div>
+          ) : addressError ? (
+            <div className="flex items-center gap-2 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{addressError}</span>
+            </div>
+          ) : payment ? (
+            <div className={`soteria-card p-5 border ${selectedCoin.border} bg-gradient-to-b ${selectedCoin.color} space-y-4`}>
               <div>
-                <div className="text-[11px] text-white font-semibold uppercase tracking-widest mb-1.5">
-                  Your Unique {selectedCoin.name} Address
+                <div className="text-[11px] text-neutral-300 font-semibold uppercase tracking-wider mb-2">
+                  Send Any Amount of {selectedCoin.symbol} to:
                 </div>
-                <div className="flex items-center justify-between gap-3">
-                  <div className={`text-xs font-mono font-semibold ${selectedCoin.text} break-all leading-relaxed`}>
+                <div className="flex items-center justify-between gap-3 bg-black/40 p-3.5 rounded-xl border border-white/[0.08]">
+                  <div className={`text-xs sm:text-sm font-mono font-semibold ${selectedCoin.text} break-all select-all leading-relaxed`}>
                     {payment.address}
                   </div>
                   <button
-                    onClick={() => handleCopy(payment.address, 'addr')}
-                    className="relative p-2.5 rounded-xl bg-white/[0.06] hover:bg-white/10 border border-white/[0.08] text-neutral-400 hover:text-white transition-all shrink-0 cursor-pointer"
+                    onClick={() => handleCopy(payment.address)}
+                    className="relative p-2.5 rounded-xl bg-white/[0.08] hover:bg-white/15 border border-white/[0.1] text-neutral-300 hover:text-white transition-all shrink-0 cursor-pointer"
+                    title="Copy Address"
                   >
                     {animAddr ? <CheckmarkAnim size="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
-              <div className="border-t border-white/[0.06] pt-3">
-                <div className="text-[11px] text-white font-semibold uppercase tracking-widest mb-1.5">
-                  Exact Amount to Send
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <div className={`text-sm font-bold ${selectedCoin.text}`}>
-                    {payment.amount} {selectedCoin.symbol}
-                    <span className="text-neutral-500 font-normal text-xs ml-1.5">(≈ ${amount} USD)</span>
-                  </div>
-                  <button
-                    onClick={() => handleCopy(payment.amount.toString(), 'amt')}
-                    className="relative p-2.5 rounded-xl bg-white/[0.06] hover:bg-white/10 border border-white/[0.08] text-neutral-400 hover:text-white transition-all shrink-0 cursor-pointer"
-                  >
-                    {animAmt ? <CheckmarkAnim size="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  </button>
-                </div>
+
+              <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.05] text-xs text-neutral-400 leading-relaxed">
+                Send whatever you want in <strong className="text-white">{selectedCoin.symbol}</strong>. Your loan balance automatically updates as soon as the transaction is confirmed on the blockchain.
               </div>
-              <button onClick={() => { setPayment(null); setGenError(''); }}
-                className="text-[11px] text-neutral-500 hover:text-neutral-300 transition-colors cursor-pointer underline underline-offset-2">
-                Regenerate address
-              </button>
             </div>
-          )}
+          ) : null}
         </div>
       )}
-
-      {/* Step 4 — Notify */}
     </div>
   );
 }

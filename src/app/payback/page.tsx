@@ -64,7 +64,7 @@ export default function PaybackPage() {
   const { user, isLoaded } = useAuth();
   const [myLoan, setMyLoan] = useState<LoanSummary | null>(null);
   const [loadingLoan, setLoadingLoan] = useState(true);
-  const [selectedCoin, setSelectedCoin] = useState<typeof COINS[0] | null>(COINS[2]); // Default to LTC
+  const [selectedCoin, setSelectedCoin] = useState<typeof COINS[0] | null>(null);
   const [payment, setPayment] = useState<PaymentData | null>(null);
   const [loadingAddress, setLoadingAddress] = useState(false);
   const [addressError, setAddressError] = useState('');

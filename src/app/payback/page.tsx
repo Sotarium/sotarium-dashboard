@@ -254,6 +254,17 @@ export default function PaybackPage() {
             className="w-full pl-8 pr-4 py-3.5 rounded-2xl bg-[#171717] border border-white/[0.06] text-white text-lg font-bold focus:outline-none focus:border-white/30 transition-all placeholder-neutral-600"
           />
         </div>
+
+        {/* Important Warning Notice Card */}
+        <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-amber-500/[0.06] border border-amber-500/20 text-neutral-300">
+          <CautionIcon className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <div className="text-xs space-y-1">
+            <div className="font-semibold text-amber-300">Important: Exact Amount Required</div>
+            <div className="text-neutral-400 leading-relaxed">
+              Always send the <strong className="text-white">exact crypto amount</strong> shown on your invoice. If you send less (e.g. sending 98¢ on a $1 invoice), the transaction will be flagged as <span className="text-amber-400 font-medium">partially paid</span> and your loan will not automatically clear until the remaining balance is paid.
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Step 3 — Generate unique address */}

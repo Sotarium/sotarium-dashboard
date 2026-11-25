@@ -35,7 +35,7 @@ export async function GET() {
         if (isPaid) return false;
         const dueTs = item.due_date
           ? new Date(item.due_date).getTime()
-          : new Date(item.created_at).getTime() + 48 * 3600000;
+          : new Date(item.created_at).getTime() + 7 * 24 * 3600000;
         return dueTs > 0 && dueTs < now;
       })
       .map((item) => item.id);
@@ -59,7 +59,7 @@ export async function GET() {
 
         let dueDate = item.due_date || null;
         if (!dueDate) {
-          dueDate = new Date(new Date(item.created_at).getTime() + 48 * 3600000).toISOString();
+          dueDate = new Date(new Date(item.created_at).getTime() + 7 * 24 * 3600000).toISOString();
         }
 
         return {

@@ -48,7 +48,7 @@ function TimeLeftCell({ dueDate, loanDate, status }: { dueDate: string; loanDate
   }
   if (!dueTimestamp) {
     const loanTs = loanDate ? new Date(loanDate).getTime() : 0;
-    dueTimestamp = loanTs ? loanTs + 48 * 60 * 60 * 1000 : now + 48 * 60 * 60 * 1000;
+    dueTimestamp = loanTs ? loanTs + 7 * 24 * 60 * 60 * 1000 : now + 7 * 24 * 60 * 60 * 1000;
   }
 
   const diff = dueTimestamp - now;
@@ -97,7 +97,7 @@ function EditLoanModal({
 }) {
   // Parse remaining time from existing due date into spinners
   const getInitial = () => {
-    const base = loan.dueDate ? new Date(loan.dueDate).getTime() : Date.now() + 48 * 3600000;
+    const base = loan.dueDate ? new Date(loan.dueDate).getTime() : Date.now() + 7 * 24 * 3600000;
     const diff = Math.max(0, base - Date.now());
     const totalMins = Math.round(diff / 60000);
     return {

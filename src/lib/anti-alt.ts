@@ -1,5 +1,7 @@
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 
+export const OWNER_DISCORD_ID = "1079074717799030824";
+
 export interface SecurityCheckParams {
   userId: string;
   userName?: string;
@@ -26,7 +28,13 @@ export interface SecurityCheckResult {
  * 3. Non-scammer HWID alt match (user has another legitimate account) -> violation: 'ALT'
  */
 export async function verifyUserSecurity(params: SecurityCheckParams): Promise<SecurityCheckResult> {
-  const { userId, fingerprint, walletAddress } = params;
+  const { userId, userName, fingerprint, walletAddress } = params;
+
+  // 0. OWNER IMMUNITY: The owner (and test accounts run by the owner) is immune to alt checks
+  const isOwner = userId === OWNER_DISCORD_ID || userName?.toLowerCase() === 'sotarium';
+  if (isOwner) {
+    return { isBlocked: false };
+  }
 
   // 1. Direct Scammer Check: Is this user ID already marked as scammer?
   const { data: directScammer } = await supabase
@@ -95,13 +103,16 @@ export async function verifyUserSecurity(params: SecurityCheckParams): Promise<S
     }
 
     // 4b. Check if this HWID belongs to ANY OTHER registered user in `users` table or `loan_requests`
+    // (Ignore owner account so testing or using owner device doesn't trigger alt detection)
     const { data: dbUsers } = await supabase
       .from('users')
       .select('id, username, role')
-      .neq('id', userId);
+      .neq('id', userId)
+      .neq('id', OWNER_DISCORD_ID);
 
     if (dbUsers) {
       for (const u of dbUsers) {
+        if (u.username?.toLowerCase() === 'sotarium') continue;
         const uRole = u.role || '';
         if (uRole.includes(`[HWID:${cleanFp}]`)) {
           // If the matching account is a scammer or has scammer status, treat as scammer
@@ -121,10 +132,12 @@ export async function verifyUserSecurity(params: SecurityCheckParams): Promise<S
       .from('loan_requests')
       .select('user_id, user_name, notes')
       .neq('user_id', userId)
+      .neq('user_id', OWNER_DISCORD_ID)
       .neq('status', 'scammer');
 
     if (allUsersLoans) {
       for (const loan of allUsersLoans) {
+        if (loan.user_name?.toLowerCase() === 'sotarium') continue;
         const notes = loan.notes || '';
         if (notes.includes(`[HWID:${cleanFp}]`)) {
           return {

@@ -53,3 +53,27 @@ input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
+
+@keyframes progress-stripes {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 28px 0;
+  }
+}
+
+.animate-progress-stripes {
+  background-image: linear-gradient(
+    -45deg,
+    rgba(0, 35, 80, 0.42) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(0, 35, 80, 0.42) 50%,
+    rgba(0, 35, 80, 0.42) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 28px 28px;
+  animation: progress-stripes 1s linear infinite;
+}

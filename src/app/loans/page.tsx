@@ -422,11 +422,11 @@ export default function LoansPage() {
                             const pct = totalDueCalc > 0
                               ? Math.min(100, Math.max(0, (loan.repaidAmount / totalDueCalc) * 100))
                               : 0;
-                            const color = pct >= 100 ? '#00E823' : '#00AAE8';
+                            const color = pct >= 100 ? '#00E823' : '#0284C7';
                             return (
                               <div className="relative w-full h-5 rounded-full bg-white/[0.06] overflow-hidden">
                                 <div
-                                  className="h-full rounded-full transition-all duration-700"
+                                  className="h-full rounded-full transition-all duration-700 animate-progress-stripes"
                                   style={{ width: `${pct}%`, backgroundColor: color }}
                                 />
                                 <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-white drop-shadow">

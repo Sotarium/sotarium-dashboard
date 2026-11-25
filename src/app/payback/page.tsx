@@ -193,10 +193,10 @@ export default function PaybackPage() {
           {loanProgress && (
             <div className="relative w-full h-5 rounded-full bg-white/[0.06] overflow-hidden">
               <div
-                className="h-full rounded-full transition-all duration-700"
+                className="h-full rounded-full transition-all duration-700 animate-progress-stripes"
                 style={{
                   width: `${loanProgress.pct}%`,
-                  backgroundColor: loanProgress.pct >= 100 ? '#00E823' : '#00AAE8',
+                  backgroundColor: loanProgress.pct >= 100 ? '#00E823' : '#0284C7',
                 }}
               />
               <span className="absolute inset-0 flex items-center justify-center text-xs font-black text-white drop-shadow">

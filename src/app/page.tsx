@@ -154,11 +154,13 @@ export default function OverviewPage() {
   const paddingTop = 30;
   const paddingBottom = 40;
 
-  const maxVal = Math.max(...chartData.map((d) => d.volume), 100);
+  // Calculate dynamic max value for scaling: if peak volume is low, scale up so peaks rise clearly
+  const peakVolume = Math.max(...chartData.map((d) => d.volume), 0);
+  const maxVal = peakVolume > 0 ? peakVolume : 10;
 
   const points = chartData.map((d, idx) => {
     const x = paddingX + (idx / Math.max(chartData.length - 1, 1)) * (svgWidth - paddingX * 2);
-    const y = paddingTop + (1 - d.volume / (maxVal * 1.15)) * (svgHeight - paddingTop - paddingBottom);
+    const y = paddingTop + (1 - d.volume / (maxVal * 1.25)) * (svgHeight - paddingTop - paddingBottom);
     return { x, y, data: d };
   });
 

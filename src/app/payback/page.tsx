@@ -38,13 +38,14 @@ interface PaymentData {
 
 interface LoanSummary {
   id: string;
+  userId: string;
+  userName?: string;
   principal: number;
   totalDue: number;
   repaidAmount: number;
   dueDate: string;
   loanDate: string;
   status: string;
-  userId: string;
 }
 
 function CautionIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {

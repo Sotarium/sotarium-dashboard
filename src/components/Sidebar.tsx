@@ -257,9 +257,12 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
             <div className="flex items-center gap-2.5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={user.avatar || 'https://cdn.discordapp.com/avatars/1079074717799030824/64db63e7b0bcbe6b841ba40535473949.png?size=128'}
+                src={user.avatar || 'https://cdn.discordapp.com/avatars/1079074717799030824/eff29387fdcf2ccdb9308cdd404bbed9.png?size=256'}
                 alt={user.username}
                 className="w-7 h-7 rounded-full border border-white/[0.08] object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png';
+                }}
               />
               <div className="leading-tight">
                 <div className="text-xs font-medium text-white truncate max-w-[120px]">

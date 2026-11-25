@@ -268,14 +268,6 @@ export default function PaybackPage() {
             className="w-full pl-8 pr-4 py-3.5 rounded-2xl bg-[#171717] border border-white/[0.06] text-white text-lg font-bold focus:outline-none focus:border-white/30 transition-all placeholder-neutral-600"
           />
         </div>
-
-        {/* Important Warning Notice Card */}
-        <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-amber-500/[0.06] border border-amber-500/20 text-neutral-300">
-          <CautionIcon className="w-4 h-4 text-amber-400 shrink-0" />
-          <div className="text-xs text-neutral-300">
-            Send the <strong className="text-white">exact crypto amount</strong> shown. Underpaying marks your loan as <span className="text-amber-400 font-medium">partially paid</span> and won&apos;t clear it.
-          </div>
-        </div>
       </div>
 
       {/* Step 3 — Generate unique address */}

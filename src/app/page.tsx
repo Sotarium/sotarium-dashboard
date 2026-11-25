@@ -248,11 +248,6 @@ export default function OverviewPage() {
             <h3 className="text-base font-semibold text-white">
               Payback activity
             </h3>
-            {monthTotal > 0 && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#00E823]/15 border border-[#00E823]/30 text-[#00E823] text-xs font-bold font-mono shadow-[0_0_12px_rgba(0,232,35,0.25)]">
-                ▲ +{((monthTotal / 1) * 100).toFixed(1)}%
-              </span>
-            )}
           </div>
 
           {/* Right: Total Value + Month Calendar Selector */}

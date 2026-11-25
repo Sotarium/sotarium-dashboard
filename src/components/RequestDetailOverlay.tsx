@@ -86,12 +86,6 @@ export default function RequestDetailOverlay({
         className="relative w-full max-w-[400px] bg-[#0c0c0e] border border-white/[0.08] rounded-[32px] p-7 shadow-2xl animate-in zoom-in-95 duration-200 space-y-6"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Subtle top ambient glow matching crypto color */}
-        <div
-          className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-24 rounded-full blur-3xl pointer-events-none opacity-25"
-          style={{ backgroundColor: coinMeta.color }}
-        />
-
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -134,9 +128,6 @@ export default function RequestDetailOverlay({
           </div>
 
           <h3 className="text-lg font-bold text-white tracking-tight">{req.user_name}</h3>
-          <div className="flex items-center gap-1.5 mt-1">
-            <span className="text-[11px] font-mono text-neutral-500">ID: {req.user_id}</span>
-          </div>
         </div>
 
         {/* Two-Column Clean Spec Cards: Principal vs Total Repayment */}
@@ -172,9 +163,6 @@ export default function RequestDetailOverlay({
             <div>
               <div className="text-xl font-extrabold text-emerald-400 tracking-tight">
                 ${totalRepayment.toFixed(2)}
-              </div>
-              <div className="text-[10px] text-emerald-500/70 font-medium mt-0.5">
-                With Interest
               </div>
             </div>
           </div>

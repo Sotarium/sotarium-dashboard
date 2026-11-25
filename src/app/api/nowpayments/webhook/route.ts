@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createHmac } from 'crypto';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { getTotalDue } from '@/lib/interest';
 
 const NP_IPN_SECRET = process.env.NOWPAYMENTS_IPN_SECRET || '';
 
@@ -58,9 +59,11 @@ export async function POST(req: Request) {
 
       const currentPaid = parseFloat(loan.amount_paid) || 0;
       const principal = parseFloat(loan.amount) || 0;
-      const totalDue = principal * 1.15; // fallback; ideally use getTotalDue
+      const totalDue = getTotalDue(principal);
       const newPaid = currentPaid + paidUsd;
-      const isFullyPaid = newPaid >= totalDue;
+      // 5% or 5¢ tolerance buffer: if within 5% or 5 cents of total due, consider fully settled!
+      const tolerance = Math.max(0.05, totalDue * 0.05);
+      const isFullyPaid = newPaid >= (totalDue - tolerance);
 
       await supabase
         .from('loan_requests')
@@ -70,7 +73,7 @@ export async function POST(req: Request) {
         })
         .eq('id', loanId);
 
-      console.log(`[webhook] Updated loan ${loanId}: paid $${newPaid} / $${totalDue}${isFullyPaid ? ' — FULLY PAID' : ''}`);
+      console.log(`[webhook] Updated loan ${loanId}: paid $${newPaid} / $${totalDue}${isFullyPaid ? ' — FULLY PAID (tolerance applied)' : ''}`);
     } else {
       // Legacy: find the most recent active loan for this userId
       const { data: loans } = await supabase
@@ -89,9 +92,10 @@ export async function POST(req: Request) {
       const loan = loans[0];
       const currentPaid = parseFloat(loan.amount_paid) || 0;
       const principal = parseFloat(loan.amount) || 0;
-      const totalDue = principal * 1.15;
+      const totalDue = getTotalDue(principal);
       const newPaid = currentPaid + paidUsd;
-      const isFullyPaid = newPaid >= totalDue;
+      const tolerance = Math.max(0.05, totalDue * 0.05);
+      const isFullyPaid = newPaid >= (totalDue - tolerance);
 
       await supabase
         .from('loan_requests')

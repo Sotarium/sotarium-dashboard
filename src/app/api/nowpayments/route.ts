@@ -34,6 +34,7 @@ export async function POST(req: Request) {
       price_amount: parseFloat(amount),
       price_currency: 'usd',
       pay_currency: currency,
+      ipn_callback_url: 'https://sotarium.vercel.app/api/nowpayments/webhook',
       order_id: orderId,
       order_description: `Loan payback from ${userName || userId}`,
       is_fixed_rate: false,

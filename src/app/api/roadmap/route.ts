@@ -54,12 +54,14 @@ export async function GET(req: Request) {
       (data || []).map(async (item) => {
         const avatar = await getLiveDiscordAvatar(item.user_id, dbAvatarMap[item.user_id]);
         const isPaid = item.status === 'completed' || item.status === 'repaid';
+        const amountPaid = parseFloat(item.amount_paid) || 0;
         return {
           id: item.id,
           user_id: item.user_id,
           user_name: item.user_name || 'Borrower',
           user_avatar: avatar,
           amount: parseFloat(item.amount) || 0,
+          amount_paid: amountPaid,
           total_due: Math.round(getTotalDue(parseFloat(item.amount) || 0) * 100) / 100,
           crypto_currency: item.crypto_currency || 'SOL',
           reason: item.reason || '',

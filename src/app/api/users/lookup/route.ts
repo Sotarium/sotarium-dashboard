@@ -1,15 +1,18 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { getTotalDue } from '@/lib/interest';
+import { getLiveDiscordAvatar } from '@/lib/discord-avatar';
 
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
 
-async function fetchDiscordProfile(userId: string) {
+async function fetchDiscordProfile(userId: string, dbAvatar?: string) {
   let defaultAvatar = 'https://cdn.discordapp.com/embed/avatars/0.png';
   try {
     const idx = Number((BigInt(userId) >> BigInt(22)) % BigInt(6));
     defaultAvatar = `https://cdn.discordapp.com/embed/avatars/${idx}.png`;
   } catch {}
+
+  const avatarUrl = await getLiveDiscordAvatar(userId, dbAvatar);
 
   if (/^\d{17,20}$/.test(userId) && DISCORD_BOT_TOKEN) {
     try {
@@ -20,15 +23,11 @@ async function fetchDiscordProfile(userId: string) {
 
       if (res.ok) {
         const data = await res.json();
-        let avatarUrl = defaultAvatar;
-        if (data.avatar) {
-          avatarUrl = `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png?size=256`;
-        }
         return {
           id: data.id,
           username: data.username,
           displayName: data.global_name || data.username,
-          avatarUrl,
+          avatarUrl: avatarUrl || (data.avatar ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png?size=256` : defaultAvatar),
           fetchedAt: Date.now(),
         };
       }
@@ -41,7 +40,7 @@ async function fetchDiscordProfile(userId: string) {
     id: userId,
     username: 'Discord Member',
     displayName: 'Discord Member',
-    avatarUrl: defaultAvatar,
+    avatarUrl: avatarUrl || defaultAvatar,
     fetchedAt: Date.now(),
   };
 }
@@ -230,7 +229,7 @@ export async function GET(req: Request) {
     // Resolve real Discord avatars for all users in parallel
     await Promise.all(
       Object.values(userMap).map(async (u) => {
-        const disc = await fetchDiscordProfile(u.id);
+        const disc = await fetchDiscordProfile(u.id, u.avatarUrl);
         if (disc && disc.avatarUrl) {
           u.avatarUrl = disc.avatarUrl;
         }

@@ -10,6 +10,7 @@ interface LoanRecord {
   user_id: string;
   user_name: string;
   amount: number;
+  amount_paid?: number;
   total_due: number;
   crypto_currency: string;
   status: string;
@@ -54,14 +55,19 @@ export default function OverviewPage() {
 
   useEffect(() => {
     if (isAdmin && user?.id) {
-      fetch(`/api/roadmap?requesterId=${user.id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (Array.isArray(data)) {
-            setLoans(data);
-          }
-        })
-        .catch((err) => console.error(err));
+      const loadData = () => {
+        fetch(`/api/roadmap?requesterId=${user.id}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (Array.isArray(data)) {
+              setLoans(data);
+            }
+          })
+          .catch((err) => console.error(err));
+      };
+      loadData();
+      const interval = setInterval(loadData, 5000);
+      return () => clearInterval(interval);
     }
   }, [isAdmin, user?.id]);
 
@@ -115,8 +121,9 @@ export default function OverviewPage() {
         const loanDate = new Date(loan.created_at);
         if (loanDate >= d && loanDate < nextD) {
           if (metricMode === 'payback') {
-            if (loan.is_paid || loan.status === 'completed' || loan.status === 'repaid') {
-              daySum += loan.total_due || loan.amount;
+            const paid = loan.amount_paid || (loan.is_paid || loan.status === 'completed' || loan.status === 'repaid' ? (loan.total_due || loan.amount) : 0);
+            if (paid > 0) {
+              daySum += paid;
               dayCount++;
             }
           } else {

@@ -71,11 +71,15 @@ export default function UserSearchPage() {
     }
   }, []);
 
+  // Polling every 5 seconds for real-time user and avatar freshness
   useEffect(() => {
-    if (isOwner) {
-      fetchUsers();
-    }
-  }, [isOwner, fetchUsers]);
+    if (!isOwner) return;
+    fetchUsers(query.trim());
+    const interval = setInterval(() => {
+      fetchUsers(query.trim());
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isOwner, query, fetchUsers]);
 
   const handleSearchSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();

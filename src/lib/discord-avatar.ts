@@ -6,12 +6,6 @@ const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
 const avatarMemCache: Record<string, { url: string; expiresAt: number }> = {};
 
 export async function getLiveDiscordAvatar(userId: string, fallbackDbAvatar?: string): Promise<string> {
-  let defaultAvatar = 'https://cdn.discordapp.com/embed/avatars/0.png';
-  try {
-    const idx = Number((BigInt(userId) >> BigInt(22)) % BigInt(6));
-    defaultAvatar = `https://cdn.discordapp.com/embed/avatars/${idx}.png`;
-  } catch {}
-
   const now = Date.now();
 
   // 1. Check in-memory cache (valid for 60 seconds)
@@ -19,12 +13,31 @@ export async function getLiveDiscordAvatar(userId: string, fallbackDbAvatar?: st
     return avatarMemCache[userId].url;
   }
 
-  // 2. Try fetching from Discord Bot API
+  // 2. Fallback to valid Supabase database avatar if available
+  if (fallbackDbAvatar && !fallbackDbAvatar.includes('embed/avatars')) {
+    avatarMemCache[userId] = { url: fallbackDbAvatar, expiresAt: now + 60000 };
+    return fallbackDbAvatar;
+  }
+
+  // If fallbackDbAvatar wasn't provided, try fetching from Supabase users table
+  try {
+    const { data: userRow } = await supabase
+      .from('users')
+      .select('avatar')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (userRow?.avatar && !userRow.avatar.includes('embed/avatars')) {
+      avatarMemCache[userId] = { url: userRow.avatar, expiresAt: now + 60000 };
+      return userRow.avatar;
+    }
+  } catch {}
+
+  // 3. Try fetching from Discord Bot API if token is valid
   if (/^\d{17,20}$/.test(userId) && DISCORD_BOT_TOKEN) {
     try {
       const res = await fetch(`https://discord.com/api/v10/users/${userId}`, {
         headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` },
-        // Do not spam when rate-limited
       });
 
       if (res.ok) {
@@ -33,7 +46,6 @@ export async function getLiveDiscordAvatar(userId: string, fallbackDbAvatar?: st
           const freshAvatar = `https://cdn.discordapp.com/avatars/${d.id}/${d.avatar}.png?size=256`;
           avatarMemCache[userId] = { url: freshAvatar, expiresAt: now + 60000 };
 
-          // Persist the real avatar in the database silently so we always have a bulletproof backup
           Promise.resolve(
             supabase
               .from('users')
@@ -43,23 +55,17 @@ export async function getLiveDiscordAvatar(userId: string, fallbackDbAvatar?: st
 
           return freshAvatar;
         }
-      } else if (res.status === 429) {
-        // Discord rate limit hit (too many fast requests)
-        // If we hit rate limit, cache whatever we have for 15s to allow rate limit to expire
-        if (avatarMemCache[userId]) {
-          return avatarMemCache[userId].url;
-        }
       }
     } catch (e) {
       console.error('Failed to fetch Discord avatar for user:', userId, e);
     }
   }
 
-  // 3. Fallback to valid Supabase database avatar if available
-  if (fallbackDbAvatar && !fallbackDbAvatar.includes('embed/avatars')) {
-    avatarMemCache[userId] = { url: fallbackDbAvatar, expiresAt: now + 30000 };
-    return fallbackDbAvatar;
-  }
+  let defaultAvatar = 'https://cdn.discordapp.com/embed/avatars/0.png';
+  try {
+    const idx = Number((BigInt(userId) >> BigInt(22)) % BigInt(6));
+    defaultAvatar = `https://cdn.discordapp.com/embed/avatars/${idx}.png`;
+  } catch {}
 
   return defaultAvatar;
 }

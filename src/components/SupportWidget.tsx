@@ -457,63 +457,59 @@ export default function SupportWidget() {
     <>
       {/* Support Window Card */}
       {isOpen && (
-        <div className="fixed bottom-22 right-6 z-50 w-[360px] max-w-[calc(100vw-2rem)] h-[510px] max-h-[calc(100vh-7rem)] bg-[#0d0d0d] border border-white/[0.08] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.85)] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed bottom-22 right-6 z-50 w-[370px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-7rem)] bg-[#0c0c0e] border border-white/[0.06] rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
           
           {/* Header */}
-          <div className="p-4 border-b border-white/[0.06] flex items-center justify-between bg-[#121212]/80 backdrop-blur-md">
-            <div className="flex items-center gap-2">
+          <div className="px-5 py-4 flex items-center justify-between bg-[#0c0c0e]">
+            <div className="flex items-center gap-2.5">
               <span className="font-bold text-white text-base tracking-tight font-sans">Support</span>
               {isOwner ? (
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold tracking-wide">
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400">
                   Owner
                 </span>
               ) : isStaff ? (
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.06] text-neutral-300 font-semibold">
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/[0.06] text-neutral-300">
                   Staff
                 </span>
               ) : null}
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-neutral-400 hover:text-white transition-colors p-1"
+              className="text-neutral-500 hover:text-white transition-colors p-1.5 rounded-full hover:bg-white/[0.06] cursor-pointer"
               title="Minimize Support"
             >
               <ChevronDown className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Tab Subheader: Received Tickets vs Your Conversations for Staff */}
-          {isStaff ? (
-            <div className="flex border-b border-white/[0.06] bg-[#0f0f0f]">
-              <button
-                onClick={() => { setStaffTab('received'); setView('list'); }}
-                className={`flex-1 py-2.5 text-center text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
-                  staffTab === 'received'
-                    ? 'text-white border-b-2 border-white'
-                    : 'text-neutral-400 hover:text-white'
-                }`}
-              >
-                <span>Received Tickets</span>
-                {receivedTickets.length > 0 && <span>({receivedTickets.length})</span>}
-                {hasUnread && (
-                  <span className="w-2 h-2 rounded-full bg-red-500 inline-block animate-pulse shrink-0" />
-                )}
-              </button>
-              <button
-                onClick={() => { setStaffTab('conversations'); setView('list'); }}
-                className={`flex-1 py-2.5 text-center text-xs font-semibold transition-colors ${
-                  staffTab === 'conversations'
-                    ? 'text-white border-b-2 border-white'
-                    : 'text-neutral-400 hover:text-white'
-                }`}
-              >
-                Your Conversations
-              </button>
-            </div>
-          ) : (
-            <div className="border-b border-white/[0.06] bg-[#0f0f0f]">
-              <div className="px-4 py-2.5 text-center text-xs font-semibold text-white border-b-2 border-white relative inline-block w-full">
-                Your Conversations
+          {/* Tab Subheader: Pill Switcher */}
+          {isStaff && (
+            <div className="px-4 pb-3">
+              <div className="flex p-1 rounded-2xl bg-[#141416] border border-white/[0.04]">
+                <button
+                  onClick={() => { setStaffTab('received'); setView('list'); }}
+                  className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    staffTab === 'received'
+                      ? 'bg-[#222226] text-white shadow-sm'
+                      : 'text-neutral-500 hover:text-neutral-300'
+                  }`}
+                >
+                  <span>Received</span>
+                  {receivedTickets.length > 0 && <span className="text-neutral-400">({receivedTickets.length})</span>}
+                  {hasUnread && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block shrink-0" />
+                  )}
+                </button>
+                <button
+                  onClick={() => { setStaffTab('conversations'); setView('list'); }}
+                  className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    staffTab === 'conversations'
+                      ? 'bg-[#222226] text-white shadow-sm'
+                      : 'text-neutral-500 hover:text-neutral-300'
+                  }`}
+                >
+                  Yours
+                </button>
               </div>
             </div>
           )}

@@ -181,7 +181,6 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                   : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
               }`}
             >
-              <Inbox className="w-4 h-4" />
               <span>Requests</span>
             </Link>
 
@@ -195,19 +194,6 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                   : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
               }`}
             >
-              <span
-                className="w-4 h-4 inline-block bg-current shrink-0 transition-colors"
-                style={{
-                  maskImage: 'url(/icons/loan.png)',
-                  WebkitMaskImage: 'url(/icons/loan.png)',
-                  maskSize: 'contain',
-                  WebkitMaskSize: 'contain',
-                  maskRepeat: 'no-repeat',
-                  WebkitMaskRepeat: 'no-repeat',
-                  maskPosition: 'center',
-                  WebkitMaskPosition: 'center',
-                }}
-              />
               <span>Loans</span>
             </Link>  
 
@@ -223,7 +209,6 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                       : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
                   }`}
                 >
-                  <Search className="w-4 h-4" />
                   <span>Search</span>
                 </Link>
 
@@ -236,7 +221,6 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                       : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
                   }`}
                 >
-                  <Unlock className="w-4 h-4" />
                   <span>Bypass</span>
                 </Link>
               </>

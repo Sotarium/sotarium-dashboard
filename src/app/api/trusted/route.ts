@@ -67,19 +67,42 @@ export async function GET() {
       }
     });
 
-    const userList = Object.values(userLoansMap);
-
-    // Resolve avatars
-    const userIds = userList.map((u) => u.userId);
-    const { data: dbUsers } = await supabase
+    // 2. Also include users who have bypass / tier limits set in `users.role`
+    const { data: allDbUsers } = await supabase
       .from('users')
-      .select('id, avatar')
-      .in('id', userIds);
+      .select('id, username, avatar, role');
 
     const dbAvatarMap: Record<string, string> = {};
-    (dbUsers || []).forEach((u) => {
+    (allDbUsers || []).forEach((u) => {
       if (u.avatar) dbAvatarMap[u.id] = u.avatar;
+      const role = u.role || '';
+      if (role.startsWith('scammer')) return;
+
+      let bypassTier = 0;
+      if (role.includes('bypass')) {
+        bypassTier = 250;
+      } else {
+        const match = role.match(/:limit:(\d+)/);
+        if (match) bypassTier = parseInt(match[1], 10);
+      }
+
+      if (bypassTier > 1) {
+        if (!userLoansMap[u.id]) {
+          userLoansMap[u.id] = {
+            userId: u.id,
+            userName: u.username || 'Member',
+            highestRepaidTier: bypassTier,
+            totalRepaidAmount: 0,
+            completedLoansCount: 0,
+            hasActiveLoan: false,
+          };
+        } else if (bypassTier > userLoansMap[u.id].highestRepaidTier) {
+          userLoansMap[u.id].highestRepaidTier = bypassTier;
+        }
+      }
     });
+
+    const userList = Object.values(userLoansMap);
 
     const enriched = await Promise.all(
       userList.map(async (u) => {

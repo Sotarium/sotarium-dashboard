@@ -147,3 +147,23 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: 'Failed to update ticket' }, { status: 500 });
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Missing ticket ID' }, { status: 400 });
+    }
+
+    await supabase.from('support_messages').delete().eq('ticket_id', id);
+    const { error } = await supabase.from('support_tickets').delete().eq('id', id);
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('Failed to delete ticket:', err);
+    return NextResponse.json({ error: 'Failed to delete ticket' }, { status: 500 });
+  }
+}

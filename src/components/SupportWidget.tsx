@@ -11,7 +11,8 @@ import {
   ArrowLeft, 
   Plus, 
   UserCheck,
-  Users
+  Users,
+  Trash2
 } from 'lucide-react';
 
 interface Ticket {
@@ -429,6 +430,22 @@ export default function SupportWidget() {
     }
   };
 
+  const handleDeleteTicket = async (e: React.MouseEvent, ticketId: string) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch(`/api/support/tickets?id=${ticketId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setTickets((prev) => prev.filter((t) => t.id !== ticketId));
+        if (activeTicket?.id === ticketId) {
+          setActiveTicket(null);
+          setView('list');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to delete ticket:', err);
+    }
+  };
+
   // Filter tickets depending on staff tab
   const receivedTickets = tickets.filter((t) => t.user_id !== user?.id);
   const myConversations = tickets.filter((t) => t.user_id === user?.id);
@@ -571,33 +588,40 @@ export default function SupportWidget() {
                         <div
                           key={t.id}
                           onClick={() => handleOpenTicket(t)}
-                          className="p-3 rounded-xl hover:bg-white/[0.03] transition-colors cursor-pointer space-y-1.5 group"
+                          className="p-3 rounded-xl bg-[#121214]/60 hover:bg-[#18181b] border border-white/[0.04] hover:border-white/[0.08] transition-all cursor-pointer space-y-1.5 group"
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2.5 min-w-0">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={t.user_avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                                 alt={t.user_name}
-                                className="w-5 h-5 rounded-full object-cover bg-neutral-800"
+                                className="w-6 h-6 rounded-full object-cover bg-neutral-800 shrink-0"
                                 onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
                               />
-                              <div className="truncate max-w-[170px]">
+                              <div className="truncate">
                                 <div className="flex items-center gap-1.5">
                                   <span className="font-semibold text-xs text-white truncate block">
                                     {t.subject || 'Loan Support'}
                                   </span>
                                   {isTicketUnread && (
-                                    <span className="w-2 h-2 rounded-full bg-red-500 shadow-sm shadow-red-500/50 shrink-0" />
+                                    <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
                                   )}
                                 </div>
                                 {isStaff && (
                                   <span className="text-[10px] text-neutral-500 block truncate">
-                                    Client: {t.user_name}
+                                    {t.user_name}
                                   </span>
                                 )}
                               </div>
                             </div>
+                            <button
+                              onClick={(e) => handleDeleteTicket(e, t.id)}
+                              className="p-1.5 rounded-lg text-neutral-500 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all shrink-0 cursor-pointer"
+                              title="Delete conversation"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                             t.status === 'open'
                               ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'

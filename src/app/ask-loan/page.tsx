@@ -83,7 +83,16 @@ export default function AskLoanPage() {
   const manualLimit = (() => {
     if (user?.role && user.role.includes(':limit:')) {
       const match = user.role.match(/:limit:(\d+)/);
-      if (match) return parseInt(match[1], 10);
+      if (match) {
+        const checkmarkedTier = parseInt(match[1], 10);
+        let nextTier = 1;
+        for (let i = 0; i < TIERS.length; i++) {
+          if (checkmarkedTier >= TIERS[i]) {
+            nextTier = TIERS[Math.min(i + 1, TIERS.length - 1)];
+          }
+        }
+        return nextTier;
+      }
     } else if (user?.role?.includes('bypass')) {
       return 250;
     }

@@ -124,7 +124,15 @@ export async function POST(req: Request) {
       if (dbUser?.role && dbUser.role.includes(':limit:')) {
         const match = dbUser.role.match(/:limit:(\d+)/);
         if (match) {
-          explicitLimit = parseInt(match[1], 10);
+          const checkmarkedTier = parseInt(match[1], 10);
+          const TIERS_LIST = [1, 5, 10, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250];
+          let nextTier = 1;
+          for (let i = 0; i < TIERS_LIST.length; i++) {
+            if (checkmarkedTier >= TIERS_LIST[i]) {
+              nextTier = TIERS_LIST[Math.min(i + 1, TIERS_LIST.length - 1)];
+            }
+          }
+          explicitLimit = nextTier;
         }
       } else if (dbUser?.role?.includes('bypass')) {
         explicitLimit = 250;

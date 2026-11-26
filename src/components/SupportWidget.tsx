@@ -609,7 +609,7 @@ export default function SupportWidget() {
                             </div>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <span className="text-[10px] text-neutral-600 font-mono">
+                            <span className="text-[10px] text-neutral-500 font-sans tabular-nums">
                               {new Date(t.lastMessageTime || t.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                             <button
@@ -859,7 +859,7 @@ export default function SupportWidget() {
                             {m.message}
                           </div>
 
-                          <span className="text-[9px] text-neutral-600 px-1 font-mono">
+                          <span className="text-[9px] text-neutral-500 px-1 font-sans tabular-nums">
                             {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>

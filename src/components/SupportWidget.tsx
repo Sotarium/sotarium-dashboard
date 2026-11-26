@@ -584,76 +584,46 @@ export default function SupportWidget() {
                         <div
                           key={t.id}
                           onClick={() => handleOpenTicket(t)}
-                          className="p-3 rounded-xl bg-[#121214]/60 hover:bg-[#18181b] border border-white/[0.04] hover:border-white/[0.08] transition-all cursor-pointer space-y-1.5 group"
+                          className="px-3 py-2.5 rounded-2xl hover:bg-white/[0.04] transition-all cursor-pointer flex items-center justify-between gap-3 group"
                         >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={t.user_avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
-                                alt={t.user_name}
-                                className="w-6 h-6 rounded-full object-cover bg-neutral-800 shrink-0"
-                                onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
-                              />
-                              <div className="truncate">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-semibold text-xs text-white truncate block">
-                                    {t.subject || 'Loan Support'}
-                                  </span>
-                                  {isTicketUnread && (
-                                    <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
-                                  )}
-                                </div>
-                                {isStaff && (
-                                  <span className="text-[10px] text-neutral-500 block truncate">
-                                    {t.user_name}
-                                  </span>
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={t.user_avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                              alt={t.user_name}
+                              className="w-8 h-8 rounded-full object-cover bg-neutral-800 shrink-0"
+                              onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-semibold text-xs text-white truncate">
+                                  {t.subject || 'Loan Support'}
+                                </span>
+                                {isTicketUnread && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
                                 )}
                               </div>
+                              <div className="text-[11px] text-neutral-500 truncate mt-0.5">
+                                {t.lastMessage ? `${t.lastMessageSender || 'Msg'}: ${t.lastMessage}` : t.user_name}
+                              </div>
                             </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[10px] text-neutral-600 font-mono">
+                              {new Date(t.lastMessageTime || t.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
                             <button
                               onClick={(e) => handleDeleteTicket(e, t.id)}
-                              className="p-1.5 rounded-lg text-neutral-500 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all shrink-0 cursor-pointer"
+                              className="p-1.5 rounded-lg text-neutral-600 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                               title="Delete conversation"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
-                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                            t.status === 'open'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                              : 'bg-neutral-800 text-neutral-400'
-                          }`}>
-                            {t.status}
-                          </span>
+                          </div>
                         </div>
-
-                        {/* Last message preview */}
-                        <div className="flex items-center justify-between text-[11px] text-neutral-400">
-                          <span className="truncate max-w-[210px] text-neutral-400 group-hover:text-neutral-300">
-                            {t.lastMessage ? `${t.lastMessageSender || 'Msg'}: ${t.lastMessage}` : 'Conversation started'}
-                          </span>
-                          <span className="text-[10px] text-neutral-500 shrink-0 font-mono">
-                            {new Date(t.lastMessageTime || t.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })
+                      );
+                    })
                   )}
-                </div>
-
-                {/* Bottom Bar in List */}
-                <div className="p-3 border-t border-white/[0.06] bg-[#0c0c0c]">
-                  <button
-                    onClick={() => {
-                      fetchLoanApplicants();
-                      setView('create');
-                    }}
-                    className="w-full py-2.5 rounded-xl bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition-colors shadow-sm flex items-center justify-center gap-2"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>{isStaff ? 'New Ticket / Message Applicant' : 'New Ticket'}</span>
-                  </button>
                 </div>
               </div>
             )}
@@ -847,23 +817,19 @@ export default function SupportWidget() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1 shrink-0">
                     <button
-                      onClick={handleToggleStatus}
-                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors ${
-                        activeTicket.status === 'open'
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20'
-                          : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'
-                      }`}
-                      title="Click to toggle status"
+                      onClick={(e) => handleDeleteTicket(e, activeTicket.id)}
+                      className="p-1.5 rounded-lg text-neutral-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                      title="Delete conversation"
                     >
-                      {activeTicket.status}
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
 
                 {/* Messages Container */}
-                <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5">
                   {messages.length === 0 ? (
                     <div className="text-center py-10 text-neutral-500 text-xs">
                       No messages yet. Send a message to start!
@@ -871,43 +837,29 @@ export default function SupportWidget() {
                   ) : (
                     messages.map((m) => {
                       const isMe = m.sender_id === user?.id;
-                      const isOwnerMsg =
-                        m.sender_role === 'owner' ||
-                        m.sender_id === OWNER_DISCORD_ID ||
-                        m.sender_name?.toLowerCase() === 'sotarium';
-                      const isStaffMsg =
-                        !isOwnerMsg &&
-                        (m.sender_role === 'admin' || m.sender_role === 'staff');
 
                       return (
                         <div
                           key={m.id}
                           className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}
                         >
-                          <div className="flex items-center gap-1.5 text-[10px] text-neutral-400 px-1">
-                            <span className="font-medium text-neutral-300">{m.sender_name}</span>
-                            {isOwnerMsg ? (
-                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold">
-                                Owner
-                              </span>
-                            ) : isStaffMsg ? (
-                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 font-semibold">
-                                Staff
-                              </span>
-                            ) : null}
-                          </div>
+                          {!isMe && (
+                            <span className="text-[10px] font-medium text-neutral-500 px-1">
+                              {m.sender_name}
+                            </span>
+                          )}
 
                           <div
-                            className={`p-3 rounded-2xl text-xs max-w-[85%] break-words leading-relaxed ${
+                            className={`px-3.5 py-2 rounded-2xl text-xs max-w-[82%] break-words leading-relaxed ${
                               isMe
-                                ? 'bg-white text-black font-medium rounded-tr-sm shadow-sm'
-                                : 'bg-[#181818] border border-white/[0.08] text-white rounded-tl-sm'
+                                ? 'bg-white text-black font-medium rounded-br-sm'
+                                : 'bg-[#1a1a1e] text-neutral-100 rounded-bl-sm'
                             }`}
                           >
                             {m.message}
                           </div>
 
-                          <span className="text-[9px] text-neutral-500 px-1 font-mono">
+                          <span className="text-[9px] text-neutral-600 px-1 font-mono">
                             {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>

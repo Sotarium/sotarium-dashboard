@@ -11,6 +11,8 @@ export async function GET(req: Request) {
     let query = supabase
       .from('support_tickets')
       .select('*')
+      .neq('status', 'system')
+      .neq('subject', '__system_deposit_addresses__')
       .order('updated_at', { ascending: false });
 
     // If regular user and not admin/owner, only see their own tickets

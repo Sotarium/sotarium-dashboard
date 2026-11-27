@@ -60,7 +60,8 @@ export async function POST(req: Request) {
       try {
         const saved = JSON.parse(existingMsgs[0].message);
         const validUntilMs = saved.validUntil ? new Date(saved.validUntil).getTime() : 0;
-        if (saved.address && validUntilMs > Date.now() + 3600_000) {
+        const sameLoan = !loanId || !saved.loanId || saved.loanId === loanId;
+        if (saved.address && sameLoan && validUntilMs > Date.now() + 3600_000) {
           return NextResponse.json({
             paymentId: saved.paymentId,
             address: saved.address,
@@ -111,6 +112,7 @@ export async function POST(req: Request) {
       message: JSON.stringify({
         address: data.pay_address,
         paymentId: data.payment_id,
+        loanId: loanId || null,
         validUntil: data.valid_until || data.expiration_estimate_date,
         creditedUsd: 0,
       }),

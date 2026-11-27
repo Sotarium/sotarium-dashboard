@@ -106,7 +106,9 @@ export async function POST(req: Request) {
         .select('id, amount, amount_paid, status, user_id')
         .eq('id', loanId)
         .maybeSingle();
-      targetLoan = loan;
+      if (loan && loan.status !== 'completed' && loan.status !== 'repaid') {
+        targetLoan = loan;
+      }
     }
 
     if (!targetLoan && userId) {

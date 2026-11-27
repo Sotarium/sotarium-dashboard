@@ -262,7 +262,13 @@ export async function PATCH(req: Request) {
     }
     if (due_date !== undefined) updatePayload.due_date = due_date;
     if (notes !== undefined) updatePayload.notes = notes;
-    if (amount !== undefined) updatePayload.amount = parseFloat(amount);
+    if (amount !== undefined) {
+      const parsedAmount = parseFloat(amount);
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
+      }
+      updatePayload.amount = parsedAmount;
+    }
     if (reason !== undefined) updatePayload.reason = reason;
 
     const { data, error } = await supabase

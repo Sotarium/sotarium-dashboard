@@ -39,7 +39,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
       {isVpnDetected && <SecurityOverlay type="vpn" />}
-      <div className="flex min-h-screen bg-[#08080a]">
+      <div className="flex min-h-screen bg-black">
         {/* Sidebar */}
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 

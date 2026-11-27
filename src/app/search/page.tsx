@@ -112,14 +112,14 @@ export default function UserSearchPage() {
 
   if (!isLoaded || !isOwner) {
     return (
-      <div className="flex h-screen items-center justify-center text-neutral-400">
+      <div className="flex h-screen items-center justify-center bg-black text-neutral-400">
         <Loader2 className="w-6 h-6 animate-spin text-neutral-500" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen text-white p-8 max-w-7xl mx-auto space-y-8 select-none">
+    <div className="min-h-screen bg-black text-white p-8 max-w-7xl mx-auto space-y-8 select-none">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.06] pb-6">
         <div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LogOut, X } from 'lucide-react';
@@ -28,37 +29,66 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
   const pathname = usePathname();
   const { user, isAdmin, isOwner, isLoaded, logout } = useAuth();
 
+  const navRef = useRef<HTMLElement>(null);
+  const linkRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
+  const [indicator, setIndicator] = useState<{ top: number; height: number; visible: boolean }>({
+    top: 0,
+    height: 36,
+    visible: false,
+  });
+
+  const updateIndicator = useCallback(() => {
+    const navEl = navRef.current;
+    const activeEl = linkRefs.current[pathname];
+    if (!navEl || !activeEl) {
+      setIndicator((prev) => (prev.visible ? { ...prev, visible: false } : prev));
+      return;
+    }
+
+    const navRect = navEl.getBoundingClientRect();
+    const activeRect = activeEl.getBoundingClientRect();
+    const top = activeRect.top - navRect.top + navEl.scrollTop;
+    const height = activeRect.height;
+
+    setIndicator({ top, height, visible: true });
+  }, [pathname]);
+
+  useEffect(() => {
+    updateIndicator();
+    const frame = requestAnimationFrame(updateIndicator);
+    window.addEventListener('resize', updateIndicator);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('resize', updateIndicator);
+    };
+  }, [updateIndicator, isAdmin, isOwner, isLoaded]);
+
+  const setLinkRef = (href: string) => (el: HTMLAnchorElement | null) => {
+    linkRefs.current[href] = el;
+  };
+
   const navLinkClass = (href: string, activeVariant: 'default' | 'warning' = 'default') => {
     const isActive = pathname === href;
     if (activeVariant === 'warning') {
-      return `relative w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[13px] font-medium transition-all ${
+      return `relative z-10 w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-colors duration-200 ${
         isActive
-          ? 'bg-yellow-400/15 text-yellow-300 font-semibold border border-yellow-400/25'
-          : 'text-neutral-400 hover:text-yellow-300 hover:bg-white/[0.04] border border-transparent'
+          ? 'text-yellow-300 font-semibold'
+          : 'text-neutral-400 hover:text-yellow-300 hover:bg-white/[0.03]'
       }`;
     }
-    return `relative w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[13px] font-medium transition-all ${
+    return `relative z-10 w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-colors duration-200 ${
       isActive
-        ? 'bg-[#1a1a1f] text-white font-semibold border border-white/[0.08] shadow-sm'
-        : 'text-neutral-400 hover:text-white hover:bg-white/[0.04] border border-transparent'
+        ? 'text-white font-semibold'
+        : 'text-neutral-400 hover:text-white hover:bg-white/[0.03]'
     }`;
   };
 
-  const renderAccentDot = (href: string, warning = false) => {
-    if (pathname !== href) return null;
-    return (
-      <span
-        className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-          warning ? 'bg-yellow-400' : 'bg-white'
-        }`}
-      />
-    );
-  };
+  const isScammersActive = pathname === '/scammers';
 
   return (
     <aside className={`
       w-[260px] h-screen fixed left-0 top-0 flex flex-col justify-between p-4
-      bg-[#0e0e11] select-none z-40 border-r border-white/[0.06]
+      bg-black select-none z-40 border-r border-white/[0.05]
       transition-transform duration-300 ease-in-out font-sans
       ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       md:translate-x-0
@@ -84,80 +114,86 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
           </button>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="flex-1 overflow-y-auto space-y-5 pr-0.5">
-          {isAdmin && (
-            <div className="space-y-1">
-              <Link href="/" onClick={onClose} className={navLinkClass('/')}>
-                {renderAccentDot('/')}
-                <span>Home</span>
-              </Link>
-            </div>
-          )}
+        {/* Navigation Links with Sliding Highlighter */}
+        <nav ref={navRef} className="relative flex-1 overflow-y-auto pr-0.5">
+          {/* Sliding Active Highlighter Pill */}
+          <div
+            aria-hidden="true"
+            className={`pointer-events-none absolute top-0 left-0 right-0.5 rounded-xl transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              isScammersActive
+                ? 'bg-yellow-400/15 border border-yellow-400/25'
+                : 'bg-[#1a1a1f] border border-white/[0.08]'
+            } ${indicator.visible ? 'opacity-100' : 'opacity-0'}`}
+            style={{
+              transform: `translateY(${indicator.top}px)`,
+              height: `${indicator.height}px`,
+            }}
+          />
 
-          {/* Important */}
-          <div className="space-y-1">
-            <div className="px-3.5 text-[11px] font-semibold text-neutral-500 uppercase tracking-wider mb-1.5">
-              Important
-            </div>
-            <Link href="/scammers" onClick={onClose} className={navLinkClass('/scammers', 'warning')}>
-              <CautionSign className="w-3.5 h-3.5 shrink-0" />
-              <span className="flex-1">Scammers</span>
-              {renderAccentDot('/scammers', true)}
-            </Link>
-            <Link href="/trusted" onClick={onClose} className={navLinkClass('/trusted')}>
-              {renderAccentDot('/trusted')}
-              <span>Trusted</span>
-            </Link>
-          </div>
-
-          {/* Loan */}
-          <div className="space-y-1">
-            <div className="px-3.5 text-[11px] font-semibold text-neutral-500 uppercase tracking-wider mb-1.5">
-              Loan
-            </div>
-            <Link href="/ask-loan" onClick={onClose} className={navLinkClass('/ask-loan')}>
-              {renderAccentDot('/ask-loan')}
-              <span>Ask Loan</span>
-            </Link>
-            <Link href="/payback" onClick={onClose} className={navLinkClass('/payback')}>
-              {renderAccentDot('/payback')}
-              <span>Payback</span>
-            </Link>
-            <Link href="/loans" onClick={onClose} className={navLinkClass('/loans')}>
-              {renderAccentDot('/loans')}
-              <span>Loans</span>
-            </Link>
-            <Link href="/paidback" onClick={onClose} className={navLinkClass('/paidback')}>
-              {renderAccentDot('/paidback')}
-              <span>Paid Back</span>
-            </Link>
-          </div>
-
-          {/* Manage */}
-          {isAdmin && (
-            <div className="space-y-1">
-              <div className="px-3.5 text-[11px] font-semibold text-neutral-500 uppercase tracking-wider mb-1.5">
-                Manage
+          <div className="space-y-5">
+            {isAdmin && (
+              <div className="space-y-1">
+                <Link ref={setLinkRef('/')} href="/" onClick={onClose} className={navLinkClass('/')}>
+                  <span>Home</span>
+                </Link>
               </div>
-              <Link href="/requests" onClick={onClose} className={navLinkClass('/requests')}>
-                {renderAccentDot('/requests')}
-                <span>Requests</span>
+            )}
+
+            {/* Important */}
+            <div className="space-y-1">
+              <div className="relative z-10 px-3.5 text-[11px] font-semibold text-neutral-500 uppercase tracking-wider mb-1.5">
+                Important
+              </div>
+              <Link ref={setLinkRef('/scammers')} href="/scammers" onClick={onClose} className={navLinkClass('/scammers', 'warning')}>
+                <CautionSign className="w-3.5 h-3.5 shrink-0" />
+                <span>Scammers</span>
               </Link>
-              {isOwner && (
-                <>
-                  <Link href="/search" onClick={onClose} className={navLinkClass('/search')}>
-                    {renderAccentDot('/search')}
-                    <span>Search</span>
-                  </Link>
-                  <Link href="/bypass" onClick={onClose} className={navLinkClass('/bypass')}>
-                    {renderAccentDot('/bypass')}
-                    <span>Bypass</span>
-                  </Link>
-                </>
-              )}
+              <Link ref={setLinkRef('/trusted')} href="/trusted" onClick={onClose} className={navLinkClass('/trusted')}>
+                <span>Trusted</span>
+              </Link>
             </div>
-          )}
+
+            {/* Loan */}
+            <div className="space-y-1">
+              <div className="relative z-10 px-3.5 text-[11px] font-semibold text-neutral-500 uppercase tracking-wider mb-1.5">
+                Loan
+              </div>
+              <Link ref={setLinkRef('/ask-loan')} href="/ask-loan" onClick={onClose} className={navLinkClass('/ask-loan')}>
+                <span>Ask Loan</span>
+              </Link>
+              <Link ref={setLinkRef('/payback')} href="/payback" onClick={onClose} className={navLinkClass('/payback')}>
+                <span>Payback</span>
+              </Link>
+              <Link ref={setLinkRef('/loans')} href="/loans" onClick={onClose} className={navLinkClass('/loans')}>
+                <span>Loans</span>
+              </Link>
+              <Link ref={setLinkRef('/paidback')} href="/paidback" onClick={onClose} className={navLinkClass('/paidback')}>
+                <span>Paid Back</span>
+              </Link>
+            </div>
+
+            {/* Manage */}
+            {isAdmin && (
+              <div className="space-y-1">
+                <div className="relative z-10 px-3.5 text-[11px] font-semibold text-neutral-500 uppercase tracking-wider mb-1.5">
+                  Manage
+                </div>
+                <Link ref={setLinkRef('/requests')} href="/requests" onClick={onClose} className={navLinkClass('/requests')}>
+                  <span>Requests</span>
+                </Link>
+                {isOwner && (
+                  <>
+                    <Link ref={setLinkRef('/search')} href="/search" onClick={onClose} className={navLinkClass('/search')}>
+                      <span>Search</span>
+                    </Link>
+                    <Link ref={setLinkRef('/bypass')} href="/bypass" onClick={onClose} className={navLinkClass('/bypass')}>
+                      <span>Bypass</span>
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </nav>
       </div>
 
@@ -167,7 +203,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
           <div
             onClick={logout}
             title="Click to log out"
-            className="p-2.5 rounded-2xl bg-[#16161a] hover:bg-[#1e1e24] border border-white/[0.06] flex items-center justify-between cursor-pointer transition-colors group"
+            className="p-2.5 rounded-2xl bg-[#121212] hover:bg-[#181818] border border-white/[0.06] flex items-center justify-between cursor-pointer transition-colors group"
           >
             <div className="flex items-center gap-2.5 min-w-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}

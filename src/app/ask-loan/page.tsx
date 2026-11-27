@@ -81,8 +81,8 @@ export default function AskLoanPage() {
   })();
 
   const manualLimit = (() => {
-    let checkmarkedTier = user?.limitTier || 1;
-    if (checkmarkedTier <= 1 && user?.role) {
+    let checkmarkedTier = user?.limitTier ?? 0;
+    if (checkmarkedTier <= 0 && user?.role) {
       if (user.role.includes(':limit:')) {
         const match = user.role.match(/:limit:(\d+)/);
         if (match) checkmarkedTier = parseInt(match[1], 10);

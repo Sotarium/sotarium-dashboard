@@ -3,7 +3,7 @@ import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { getLiveDiscordAvatar } from '@/lib/discord-avatar';
 import { getAuthenticatedSession } from '@/lib/session';
 
-const ALLOWED_TIERS = new Set([1, 5, 10, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250]);
+const ALLOWED_TIERS = new Set([0, 1, 5, 10, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250]);
 
 // GET: list all registered users & borrowers with resolved Discord avatars and tier limits
 export async function GET() {
@@ -99,7 +99,7 @@ export async function POST(req: Request) {
     }
 
     const existingHwid = existingUser?.role?.match(/\[HWID:[a-zA-Z0-9_-]+\]/)?.[0] || '';
-    const limitTag = parsedLimit >= 1 ? `:limit:${parsedLimit}` : '';
+    const limitTag = parsedLimit > 0 ? `:limit:${parsedLimit}` : '';
     const newRole = `${baseRole}${limitTag}${existingHwid ? ` ${existingHwid}` : ''}`.trim();
 
     const { data, error } = await supabase

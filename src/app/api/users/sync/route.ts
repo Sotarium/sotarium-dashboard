@@ -130,7 +130,7 @@ export async function POST(req: Request) {
       ? 250
       : limitNumMatch
       ? parseInt(limitNumMatch[1], 10)
-      : 1;
+      : 0;
 
     const response = NextResponse.json({
       id: verifiedId,

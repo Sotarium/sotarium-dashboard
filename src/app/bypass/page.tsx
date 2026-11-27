@@ -57,14 +57,13 @@ export default function BypassPage() {
   }, [isOwner, fetchUsers]);
 
   // Extract user's max limit from role string:
-  // e.g. "member:limit:250" -> 250, "owner" -> 250, default -> 1
   const getUserMaxLimit = (role: string): number => {
     if (role.startsWith('owner') || role.startsWith('admin') || role.includes('bypass')) {
       return 250;
     }
     const match = role.match(/:limit:(\d+)/);
     if (match) return parseInt(match[1], 10);
-    return 1;
+    return 0;
   };
 
   const handleToggleTier = async (targetUser: BypassUser, tier: number) => {
@@ -72,17 +71,17 @@ export default function BypassPage() {
     setUpdatingId(targetUser.id);
 
     const currentMax = getUserMaxLimit(targetUser.role);
-    // If clicking current max limit, step back to $1
-    const newLimit = currentMax === tier ? 1 : tier;
+    const tierIdx = TIERS.indexOf(tier);
+    const newLimit = currentMax === tier ? (tierIdx > 0 ? TIERS[tierIdx - 1] : 0) : tier;
 
     // Optimistic UI update
     setUsers((prev) =>
       prev.map((u) => {
         if (u.id === targetUser.id) {
-          const baseRole = u.role.split(':')[0] || 'member';
+          const baseRole = (u.role.split(/[\s:]/)[0]) || 'member';
           return {
             ...u,
-            role: newLimit > 1 ? `${baseRole}:limit:${newLimit}` : baseRole,
+            role: newLimit > 0 ? `${baseRole}:limit:${newLimit}` : baseRole,
           };
         }
         return u;

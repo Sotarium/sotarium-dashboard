@@ -31,23 +31,34 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
   const navLinkClass = (href: string, activeVariant: 'default' | 'warning' = 'default') => {
     const isActive = pathname === href;
     if (activeVariant === 'warning') {
-      return `w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-all ${
+      return `relative w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[13px] font-medium transition-all ${
         isActive
-          ? 'bg-yellow-400 text-black font-semibold'
-          : 'text-neutral-400 hover:text-yellow-400 hover:bg-white/[0.04]'
+          ? 'bg-yellow-400/15 text-yellow-300 font-semibold border border-yellow-400/25'
+          : 'text-neutral-400 hover:text-yellow-300 hover:bg-white/[0.04] border border-transparent'
       }`;
     }
-    return `w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-all ${
+    return `relative w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[13px] font-medium transition-all ${
       isActive
-        ? 'bg-white text-black font-semibold'
-        : 'text-neutral-400 hover:text-white hover:bg-white/[0.04]'
+        ? 'bg-[#1a1a1f] text-white font-semibold border border-white/[0.08] shadow-sm'
+        : 'text-neutral-400 hover:text-white hover:bg-white/[0.04] border border-transparent'
     }`;
+  };
+
+  const renderAccentDot = (href: string, warning = false) => {
+    if (pathname !== href) return null;
+    return (
+      <span
+        className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+          warning ? 'bg-yellow-400' : 'bg-white'
+        }`}
+      />
+    );
   };
 
   return (
     <aside className={`
-      w-[260px] h-screen fixed left-0 top-0 flex flex-col justify-between px-4 py-5
-      bg-black select-none z-40 border-r border-white/[0.05]
+      w-[260px] h-screen fixed left-0 top-0 flex flex-col justify-between p-4
+      bg-[#0e0e11] select-none z-40 border-r border-white/[0.06]
       transition-transform duration-300 ease-in-out font-sans
       ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       md:translate-x-0
@@ -55,7 +66,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
       {/* Top & Nav Scrollable Container */}
       <div className="flex-1 flex flex-col min-h-0">
         {/* Brand Watermark / Logo */}
-        <div className="px-2 pb-5 flex items-center justify-between shrink-0">
+        <div className="px-2 pt-1 pb-5 flex items-center justify-between border-b border-white/[0.05] mb-4 shrink-0">
           <Link href="/" className="inline-block transition-opacity hover:opacity-80" onClick={onClose}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -64,7 +75,6 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
               className="h-9 w-auto object-contain select-none"
             />
           </Link>
-          {/* Close button — mobile only */}
           <button
             onClick={onClose}
             className="md:hidden p-1.5 rounded-xl text-neutral-500 hover:text-white hover:bg-white/[0.06] transition-colors"
@@ -76,10 +86,10 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
 
         {/* Navigation Links */}
         <nav className="flex-1 overflow-y-auto space-y-5 pr-0.5">
-          {/* Overview — Admin & Owner only */}
           {isAdmin && (
             <div className="space-y-1">
               <Link href="/" onClick={onClose} className={navLinkClass('/')}>
+                {renderAccentDot('/')}
                 <span>Home</span>
               </Link>
             </div>
@@ -92,9 +102,11 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
             </div>
             <Link href="/scammers" onClick={onClose} className={navLinkClass('/scammers', 'warning')}>
               <CautionSign className="w-3.5 h-3.5 shrink-0" />
-              <span>Scammers</span>
+              <span className="flex-1">Scammers</span>
+              {renderAccentDot('/scammers', true)}
             </Link>
             <Link href="/trusted" onClick={onClose} className={navLinkClass('/trusted')}>
+              {renderAccentDot('/trusted')}
               <span>Trusted</span>
             </Link>
           </div>
@@ -105,34 +117,41 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
               Loan
             </div>
             <Link href="/ask-loan" onClick={onClose} className={navLinkClass('/ask-loan')}>
+              {renderAccentDot('/ask-loan')}
               <span>Ask Loan</span>
             </Link>
             <Link href="/payback" onClick={onClose} className={navLinkClass('/payback')}>
+              {renderAccentDot('/payback')}
               <span>Payback</span>
             </Link>
             <Link href="/loans" onClick={onClose} className={navLinkClass('/loans')}>
+              {renderAccentDot('/loans')}
               <span>Loans</span>
             </Link>
             <Link href="/paidback" onClick={onClose} className={navLinkClass('/paidback')}>
+              {renderAccentDot('/paidback')}
               <span>Paid Back</span>
             </Link>
           </div>
 
-          {/* Manage — Admin & Owner only */}
+          {/* Manage */}
           {isAdmin && (
             <div className="space-y-1">
               <div className="px-3.5 text-[11px] font-semibold text-neutral-500 uppercase tracking-wider mb-1.5">
                 Manage
               </div>
               <Link href="/requests" onClick={onClose} className={navLinkClass('/requests')}>
+                {renderAccentDot('/requests')}
                 <span>Requests</span>
               </Link>
               {isOwner && (
                 <>
                   <Link href="/search" onClick={onClose} className={navLinkClass('/search')}>
+                    {renderAccentDot('/search')}
                     <span>Search</span>
                   </Link>
                   <Link href="/bypass" onClick={onClose} className={navLinkClass('/bypass')}>
+                    {renderAccentDot('/bypass')}
                     <span>Bypass</span>
                   </Link>
                 </>
@@ -148,7 +167,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
           <div
             onClick={logout}
             title="Click to log out"
-            className="p-2.5 rounded-2xl bg-[#121212] hover:bg-[#181818] border border-white/[0.05] flex items-center justify-between cursor-pointer transition-colors group"
+            className="p-2.5 rounded-2xl bg-[#16161a] hover:bg-[#1e1e24] border border-white/[0.06] flex items-center justify-between cursor-pointer transition-colors group"
           >
             <div className="flex items-center gap-2.5 min-w-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -164,7 +183,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                 <div className="text-[13px] font-semibold text-white truncate">
                   {user.username}
                 </div>
-                <div className="text-[11px] text-neutral-500">
+                <div className="text-[11px] text-neutral-400">
                   {isOwner ? 'Owner' : isAdmin ? 'Admin' : 'Member'}
                 </div>
               </div>

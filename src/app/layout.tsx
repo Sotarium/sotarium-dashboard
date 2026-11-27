@@ -28,7 +28,7 @@ export default function RootLayout({
       <head>
         <meta name="referrer" content="no-referrer" />
       </head>
-      <body className="bg-black text-white min-h-screen antialiased select-text">
+      <body className="bg-[#08080a] text-white min-h-screen antialiased select-text">
         <Shell>{children}</Shell>
       </body>
     </html>

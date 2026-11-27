@@ -6,12 +6,9 @@ import {
   MessageSquare, 
   X, 
   ChevronDown, 
-  RefreshCw, 
   Send, 
   ArrowLeft, 
   Plus, 
-  UserCheck,
-  Users,
   Trash2
 } from 'lucide-react';
 
@@ -457,205 +454,183 @@ export default function SupportWidget() {
     <>
       {/* Support Window Card */}
       {isOpen && (
-        <div className="fixed bottom-22 right-6 z-50 w-[370px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-7rem)] bg-[#0c0c0e] border border-white/[0.06] rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
-          
-          {/* Header */}
-          <div className="px-5 py-4 flex items-center justify-between bg-[#0c0c0e]">
-            <div className="flex items-center gap-2.5">
-              <span className="font-bold text-white text-base tracking-tight font-sans">Support</span>
-              {isOwner ? (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400">
-                  Owner
-                </span>
-              ) : isStaff ? (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/[0.06] text-neutral-300">
-                  Staff
-                </span>
-              ) : null}
-            </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="text-neutral-500 hover:text-white transition-colors p-1.5 rounded-full hover:bg-white/[0.06] cursor-pointer"
-              title="Minimize Support"
-            >
-              <ChevronDown className="w-4 h-4" />
-            </button>
-          </div>
+        <div className="fixed bottom-22 right-6 z-50 w-[370px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-7rem)] bg-[#121212] border border-white/[0.06] rounded-[22px] shadow-[0_24px_80px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200 font-sans">
 
-          {/* Tab Subheader: Pill Switcher */}
-          {isStaff && (
-            <div className="px-4 pb-3">
-              <div className="flex p-1 rounded-2xl bg-[#141416] border border-white/[0.04]">
-                <button
-                  onClick={() => { setStaffTab('received'); setView('list'); }}
-                  className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                    staffTab === 'received'
-                      ? 'bg-[#222226] text-white shadow-sm'
-                      : 'text-neutral-500 hover:text-neutral-300'
-                  }`}
-                >
-                  <span>Received</span>
-                  {receivedTickets.length > 0 && <span className="text-neutral-400">({receivedTickets.length})</span>}
-                  {hasUnread && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block shrink-0" />
-                  )}
-                </button>
-                <button
-                  onClick={() => { setStaffTab('conversations'); setView('list'); }}
-                  className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    staffTab === 'conversations'
-                      ? 'bg-[#222226] text-white shadow-sm'
-                      : 'text-neutral-500 hover:text-neutral-300'
-                  }`}
-                >
-                  Yours
-                </button>
+          {/* VIEW 1: TICKETS LIST */}
+          {view === 'list' && (
+            <>
+              {/* Single Clean Header */}
+              <div className="px-5 pt-4 pb-3 flex items-center justify-between">
+                <span className="font-bold text-white text-[15px] tracking-tight">Support</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => {
+                      fetchLoanApplicants();
+                      setView('create');
+                    }}
+                    className="p-1.5 rounded-full text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+                    title="New ticket"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className="p-1.5 rounded-full text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+                    title="Close"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
 
-          {/* Main Body */}
-          <div className="flex-1 overflow-hidden flex flex-col bg-[#0a0a0a]">
-            {/* VIEW 1: TICKETS LIST */}
-            {view === 'list' && (
-              <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Tickets Subheader */}
-                <div className="px-4 py-3 flex items-center justify-between border-b border-white/[0.04]">
-                  <span className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
-                    {isStaff && staffTab === 'received' ? 'RECEIVED TICKETS' : 'YOUR TICKETS'}{' '}
-                    {displayTickets.length > 0 && `(${displayTickets.length})`}
-                  </span>
-                  <div className="flex items-center gap-2">
+              {/* Segmented Tab Switcher (Staff only) */}
+              {isStaff && (
+                <div className="px-4 pb-3">
+                  <div className="flex p-1 rounded-full bg-[#181818]">
                     <button
-                      onClick={() => fetchTickets()}
-                      disabled={isRefreshing}
-                      className="text-neutral-500 hover:text-white transition-colors"
-                      title="Refresh tickets"
+                      onClick={() => setStaffTab('received')}
+                      className={`flex-1 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                        staffTab === 'received'
+                          ? 'bg-white text-black shadow-sm'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
                     >
-                      <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-white' : ''}`} />
+                      <span>Received</span>
+                      {receivedTickets.length > 0 && (
+                        <span className={staffTab === 'received' ? 'text-black/60' : 'text-neutral-500'}>
+                          {receivedTickets.length}
+                        </span>
+                      )}
+                      {hasUnread && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block shrink-0" />
+                      )}
                     </button>
+                    <button
+                      onClick={() => setStaffTab('conversations')}
+                      className={`flex-1 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                        staffTab === 'conversations'
+                          ? 'bg-white text-black shadow-sm'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      Yours
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Tickets Scrollable List */}
+              <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-1.5">
+                {displayTickets.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center p-6 text-center space-y-3">
+                    <span className="text-neutral-500 text-xs">
+                      {isStaff && staffTab === 'received' ? 'No received tickets yet' : 'No tickets yet'}
+                    </span>
                     <button
                       onClick={() => {
                         fetchLoanApplicants();
                         setView('create');
                       }}
-                      className="p-1 rounded-md bg-white/[0.06] hover:bg-white/[0.12] text-white text-xs transition-colors"
-                      title="New Ticket"
+                      className="px-4 py-2 rounded-full bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition-colors cursor-pointer"
                     >
-                      <Plus className="w-3.5 h-3.5" />
+                      {isStaff ? 'New Message' : 'Start Conversation'}
                     </button>
                   </div>
-                </div>
+                ) : (
+                  displayTickets.map((t) => {
+                    const storageKey = getStorageKey();
+                    let isTicketUnread = false;
+                    try {
+                      const readMap = JSON.parse(localStorage.getItem(storageKey) || '{}');
+                      const isFromOther = t.lastMessageSenderId
+                        ? t.lastMessageSenderId !== user?.id
+                        : t.lastMessageSender?.toLowerCase() !== user?.username?.toLowerCase();
+                      if (isFromOther && t.lastMessageId) {
+                        isTicketUnread = readMap[t.id] !== t.lastMessageId;
+                      }
+                    } catch {}
 
-                {/* Tickets Scrollable List */}
-                <div className="flex-1 overflow-y-auto divide-y divide-white/[0.04] p-2 space-y-1">
-                  {displayTickets.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center p-6 text-center space-y-3">
-                      <span className="text-neutral-500 text-xs">
-                        {isStaff && staffTab === 'received' 
-                          ? 'No received client tickets yet' 
-                          : 'No tickets yet'}
-                      </span>
-                      <button
-                        onClick={() => {
-                          fetchLoanApplicants();
-                          setView('create');
-                        }}
-                        className="px-4 py-1.5 rounded-full bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition-colors shadow-sm"
+                    return (
+                      <div
+                        key={t.id}
+                        onClick={() => handleOpenTicket(t)}
+                        className="p-3 rounded-2xl bg-[#181818]/70 hover:bg-[#1e1e20] transition-colors cursor-pointer flex items-center justify-between gap-3 group"
                       >
-                        {isStaff ? 'Message a loan applicant' : 'Start conversation'}
-                      </button>
-                    </div>
-                  ) : (
-                    displayTickets.map((t) => {
-                      const storageKey = getStorageKey();
-                      let isTicketUnread = false;
-                      try {
-                        const readMap = JSON.parse(localStorage.getItem(storageKey) || '{}');
-                        const isFromOther = t.lastMessageSenderId
-                          ? t.lastMessageSenderId !== user?.id
-                          : t.lastMessageSender?.toLowerCase() !== user?.username?.toLowerCase();
-                        if (isFromOther && t.lastMessageId) {
-                          isTicketUnread = readMap[t.id] !== t.lastMessageId;
-                        }
-                      } catch {}
-
-                      return (
-                        <div
-                          key={t.id}
-                          onClick={() => handleOpenTicket(t)}
-                          className="px-3 py-2.5 rounded-2xl hover:bg-white/[0.04] transition-all cursor-pointer flex items-center justify-between gap-3 group"
-                        >
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={t.user_avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
-                              alt={t.user_name}
-                              className="w-8 h-8 rounded-full object-cover bg-neutral-800 shrink-0"
-                              onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
-                            />
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-semibold text-xs text-white truncate">
-                                  {t.subject || 'Loan Support'}
-                                </span>
-                                {isTicketUnread && (
-                                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-                                )}
-                              </div>
-                              <div className="text-[11px] text-neutral-500 truncate mt-0.5">
-                                {t.lastMessage ? `${t.lastMessageSender || 'Msg'}: ${t.lastMessage}` : t.user_name}
-                              </div>
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={t.user_avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                            alt={t.user_name}
+                            className="w-9 h-9 rounded-full object-cover bg-neutral-800 shrink-0"
+                            onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-semibold text-[13px] text-white truncate">
+                                {t.subject || 'Loan Support'}
+                              </span>
+                              {isTicketUnread && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                              )}
+                            </div>
+                            <div className="text-xs text-neutral-400 truncate mt-0.5">
+                              {t.lastMessage ? `${t.lastMessageSender || 'Msg'}: ${t.lastMessage}` : t.user_name}
                             </div>
                           </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <span className="text-[10px] text-neutral-500 font-sans tabular-nums">
-                              {new Date(t.lastMessageTime || t.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                            <button
-                              onClick={(e) => handleDeleteTicket(e, t.id)}
-                              className="p-1.5 rounded-lg text-neutral-600 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-                              title="Delete conversation"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
                         </div>
-                      );
-                    })
-                  )}
-                </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="text-[11px] text-neutral-500">
+                            {new Date(t.lastMessageTime || t.updated_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                          </span>
+                          <button
+                            onClick={(e) => handleDeleteTicket(e, t.id)}
+                            className="p-1.5 rounded-full text-neutral-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                            title="Delete conversation"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
-            )}
+            </>
+          )}
 
-            {/* VIEW 2: CREATE NEW TICKET */}
-            {view === 'create' && (
-              <form onSubmit={handleCreateTicket} className="flex-1 flex flex-col p-4 space-y-3 overflow-y-auto">
-                <div className="flex items-center gap-2 pb-2 border-b border-white/[0.06]">
+          {/* VIEW 2: CREATE NEW TICKET */}
+          {view === 'create' && (
+            <form onSubmit={handleCreateTicket} className="flex-1 flex flex-col overflow-hidden">
+              <div className="px-4 py-3.5 border-b border-white/[0.05] flex items-center justify-between">
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setView('list')}
-                    className="p-1 rounded-lg hover:bg-white/[0.08] text-neutral-400 hover:text-white transition-colors"
+                    className="p-1.5 rounded-full hover:bg-white/[0.06] text-neutral-400 hover:text-white transition-colors cursor-pointer"
                   >
                     <ArrowLeft className="w-4 h-4" />
                   </button>
-                  <span className="text-xs font-semibold text-white">
-                    {isStaff ? 'Open Ticket with Client' : 'Create New Support Ticket'}
+                  <span className="text-sm font-semibold text-white">
+                    {isStaff ? 'New Message' : 'New Ticket'}
                   </span>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="p-1.5 rounded-full text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+              </div>
 
-                {/* Staff: Custom High-End Borrower Selector */}
+              <div className="flex-1 flex flex-col p-4 space-y-3.5 overflow-y-auto">
+                {/* Staff: Borrower Selector */}
                 {isStaff && (
                   <div className="space-y-1.5 relative">
-                    <label className="text-[11px] font-semibold text-neutral-300 flex items-center gap-1.5">
-                      <Users className="w-3 h-3 text-neutral-400" />
-                      <span>Select Loan Applicant / Client</span>
-                    </label>
-
-                    {/* Custom Dropdown Trigger */}
+                    <label className="text-xs font-medium text-neutral-400">Borrower</label>
                     <div
                       onClick={() => setIsBorrowerDropdownOpen((prev) => !prev)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/[0.08] hover:border-white/20 text-xs text-white flex items-center justify-between cursor-pointer transition-all select-none shadow-sm"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/[0.06] hover:border-white/15 text-xs text-white flex items-center justify-between cursor-pointer transition-all select-none"
                     >
                       {selectedBorrowerId ? (
                         <div className="flex items-center gap-2 min-w-0">
@@ -663,7 +638,7 @@ export default function SupportWidget() {
                           <img
                             src={targetUserAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                             alt={targetUserName}
-                            className="w-5 h-5 rounded-full object-cover border border-white/10 shrink-0 bg-neutral-800"
+                            className="w-5 h-5 rounded-full object-cover shrink-0 bg-neutral-800"
                             onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
                           />
                           <span className="font-semibold text-xs text-white truncate">
@@ -671,9 +646,7 @@ export default function SupportWidget() {
                           </span>
                         </div>
                       ) : (
-                        <span className="text-neutral-400 text-xs">
-                          Choose a borrower who requested a loan...
-                        </span>
+                        <span className="text-neutral-500 text-xs">Choose a borrower...</span>
                       )}
 
                       <ChevronDown
@@ -683,17 +656,16 @@ export default function SupportWidget() {
                       />
                     </div>
 
-                    {/* Custom Dropdown Menu */}
                     {isBorrowerDropdownOpen && (
                       <>
                         <div
                           className="fixed inset-0 z-40"
                           onClick={() => setIsBorrowerDropdownOpen(false)}
                         />
-                        <div className="absolute left-0 right-0 top-full mt-1.5 bg-[#141414] border border-white/[0.1] rounded-xl p-1.5 shadow-2xl z-50 space-y-1 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 max-h-52 overflow-y-auto">
+                        <div className="absolute left-0 right-0 top-full mt-1.5 bg-[#181818] border border-white/[0.08] rounded-xl p-1.5 shadow-2xl z-50 space-y-1 max-h-52 overflow-y-auto">
                           {loanApplicants.length === 0 ? (
                             <div className="p-3 text-center text-xs text-neutral-500">
-                              No loan applicants found
+                              No borrowers found
                             </div>
                           ) : (
                             loanApplicants.map((applicant) => (
@@ -714,26 +686,17 @@ export default function SupportWidget() {
                                   <img
                                     src={applicant.user_avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                                     alt={applicant.user_name}
-                                    className="w-6 h-6 rounded-full object-cover border border-white/10 bg-neutral-800 shrink-0"
+                                    className="w-6 h-6 rounded-full object-cover bg-neutral-800 shrink-0"
                                     onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
                                   />
                                   <div className="text-left min-w-0">
                                     <div className="text-xs font-semibold text-white truncate">
                                       {applicant.user_name}
                                     </div>
-                                    <div className="text-[10px] text-neutral-400 font-mono">
-                                      ID: {applicant.user_id.slice(-6)}
+                                    <div className="text-[11px] text-neutral-500">
+                                      ${applicant.amount.toFixed(2)} {applicant.crypto_currency}
                                     </div>
                                   </div>
-                                </div>
-
-                                <div className="text-right shrink-0">
-                                  <span className="text-[11px] font-semibold text-emerald-400">
-                                    ${applicant.amount.toFixed(2)}
-                                  </span>
-                                  <span className="text-[10px] text-neutral-400 ml-1 font-mono">
-                                    {applicant.crypto_currency}
-                                  </span>
                                 </div>
                               </div>
                             ))
@@ -741,159 +704,163 @@ export default function SupportWidget() {
                         </div>
                       </>
                     )}
-
-                    {selectedBorrowerId && (
-                      <div className="text-[10px] text-emerald-400 flex items-center gap-1 px-1 pt-0.5">
-                        <UserCheck className="w-3 h-3" />
-                        <span>Connected to borrower: <strong>{targetUserName}</strong></span>
-                      </div>
-                    )}
                   </div>
                 )}
 
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold text-neutral-300">Subject / Topic</label>
+                  <label className="text-xs font-medium text-neutral-400">Subject</label>
                   <input
                     type="text"
-                    placeholder="e.g. Question about loan repayment..."
+                    placeholder="What is this about?"
                     value={newSubject}
                     onChange={(e) => setNewSubject(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#141414] border border-white/[0.08] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white/30"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/[0.06] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white/25"
                   />
                 </div>
 
                 <div className="space-y-1.5 flex-1 flex flex-col">
-                  <label className="text-[11px] font-semibold text-neutral-300">Message</label>
+                  <label className="text-xs font-medium text-neutral-400">Message</label>
                   <textarea
                     rows={4}
                     required
-                    placeholder={isStaff ? 'Type your message to this borrower...' : 'Describe how we can assist you...'}
+                    placeholder="Type your message..."
                     value={newInitialMsg}
                     onChange={(e) => setNewInitialMsg(e.target.value)}
-                    className="w-full flex-1 px-3 py-2.5 rounded-xl bg-[#141414] border border-white/[0.08] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white/30 resize-none"
+                    className="w-full flex-1 px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/[0.06] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white/25 resize-none"
                   />
                 </div>
 
-                <div className="flex items-center gap-2 pt-2">
+                <div className="flex items-center gap-2 pt-1">
                   <button
                     type="button"
                     onClick={() => setView('list')}
-                    className="flex-1 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-xs font-semibold transition-colors"
+                    className="flex-1 py-2.5 rounded-full bg-[#181818] hover:bg-[#222224] text-neutral-300 text-xs font-semibold transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmittingTicket || !newInitialMsg.trim()}
-                    className="flex-1 py-2.5 rounded-xl bg-white text-black text-xs font-semibold hover:bg-neutral-200 transition-colors disabled:opacity-50 shadow-sm flex items-center justify-center gap-1.5"
+                    className="flex-1 py-2.5 rounded-full bg-white text-black text-xs font-semibold hover:bg-neutral-200 transition-colors disabled:opacity-40 flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Send className="w-3.5 h-3.5" />
-                    <span>{isSubmittingTicket ? 'Submitting...' : 'Send Ticket'}</span>
+                    <span>{isSubmittingTicket ? 'Sending...' : 'Send'}</span>
                   </button>
                 </div>
-              </form>
-            )}
+              </div>
+            </form>
+          )}
 
-            {/* VIEW 3: CHAT THREAD */}
-            {view === 'chat' && activeTicket && (
-              <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Chat Top Header */}
-                <div className="px-3 py-2.5 border-b border-white/[0.06] flex items-center justify-between bg-[#111111]">
-                  <div className="flex items-center gap-2 truncate">
-                    <button
-                      type="button"
-                      onClick={() => setView('list')}
-                      className="p-1 rounded-lg hover:bg-white/[0.08] text-neutral-400 hover:text-white transition-colors shrink-0"
-                    >
-                      <ArrowLeft className="w-4 h-4" />
-                    </button>
-                    <div className="truncate">
-                      <div className="text-xs font-bold text-white truncate max-w-[180px]">
-                        {activeTicket.subject}
-                      </div>
-                      <div className="text-[10px] text-neutral-400 truncate">
-                        {activeTicket.user_name}
-                      </div>
+          {/* VIEW 3: CHAT THREAD */}
+          {view === 'chat' && activeTicket && (
+            <div className="flex-1 flex flex-col overflow-hidden">
+              {/* Chat Top Header */}
+              <div className="px-4 py-3 border-b border-white/[0.05] flex items-center justify-between bg-[#121212]">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => setView('list')}
+                    className="p-1.5 -ml-1 rounded-full hover:bg-white/[0.06] text-neutral-400 hover:text-white transition-colors shrink-0 cursor-pointer"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={activeTicket.user_avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                    alt={activeTicket.user_name}
+                    className="w-7 h-7 rounded-full object-cover bg-neutral-800 shrink-0"
+                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png'; }}
+                  />
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-semibold text-white truncate">
+                      {activeTicket.user_name}
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      onClick={(e) => handleDeleteTicket(e, activeTicket.id)}
-                      className="p-1.5 rounded-lg text-neutral-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-                      title="Delete conversation"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="text-[11px] text-neutral-500 truncate">
+                      {activeTicket.subject}
+                    </div>
                   </div>
                 </div>
 
-                {/* Messages Container */}
-                <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5">
-                  {messages.length === 0 ? (
-                    <div className="text-center py-10 text-neutral-500 text-xs">
-                      No messages yet. Send a message to start!
-                    </div>
-                  ) : (
-                    messages.map((m) => {
-                      const isMe = m.sender_id === user?.id;
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={(e) => handleDeleteTicket(e, activeTicket.id)}
+                    className="p-1.5 rounded-full text-neutral-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                    title="Delete conversation"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className="p-1.5 rounded-full text-neutral-500 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+                    title="Close"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
 
-                      return (
+              {/* Messages Container */}
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-[#0e0e10]">
+                {messages.length === 0 ? (
+                  <div className="h-full flex items-center justify-center text-neutral-500 text-xs">
+                    No messages yet
+                  </div>
+                ) : (
+                  messages.map((m) => {
+                    const isMe = m.sender_id === user?.id;
+
+                    return (
+                      <div
+                        key={m.id}
+                        className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} gap-1`}
+                      >
                         <div
-                          key={m.id}
-                          className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`}
+                          className={`px-3.5 py-2 rounded-2xl text-[13px] max-w-[82%] break-words leading-snug ${
+                            isMe
+                              ? 'bg-white text-black font-medium'
+                              : 'bg-[#1c1c1f] text-neutral-100'
+                          }`}
                         >
-                          {!isMe && (
-                            <span className="text-[10px] font-medium text-neutral-500 px-1">
-                              {m.sender_name}
-                            </span>
-                          )}
-
-                          <div
-                            className={`px-3.5 py-2 rounded-2xl text-xs max-w-[82%] break-words leading-relaxed ${
-                              isMe
-                                ? 'bg-white text-black font-medium rounded-br-sm'
-                                : 'bg-[#1a1a1e] text-neutral-100 rounded-bl-sm'
-                            }`}
-                          >
-                            {m.message}
-                          </div>
-
-                          <span className="text-[9px] text-neutral-500 px-1 font-sans tabular-nums">
-                            {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
+                          {m.message}
                         </div>
-                      );
-                    })
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
 
-                {/* Chat Input Bar */}
-                <form
-                  onSubmit={handleSendMessage}
-                  className="p-2.5 border-t border-white/[0.06] bg-[#0d0d0d] flex items-center gap-2"
-                >
+                        <span className="text-[10px] text-neutral-500 px-1">
+                          {isMe ? '' : `${m.sender_name} · `}
+                          {new Date(m.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Chat Input Bar */}
+              <form
+                onSubmit={handleSendMessage}
+                className="p-3 bg-[#121212] border-t border-white/[0.05]"
+              >
+                <div className="flex items-center gap-2 bg-[#181818] border border-white/[0.06] focus-within:border-white/20 rounded-full pl-4 pr-1.5 py-1.5 transition-colors">
                   <input
                     type="text"
-                    placeholder="Type your message..."
+                    placeholder="Message..."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     disabled={activeTicket.status === 'closed'}
-                    className="flex-1 px-3 py-2 rounded-xl bg-[#171717] border border-white/[0.08] text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white/30 transition-all disabled:opacity-50"
+                    className="flex-1 bg-transparent text-[13px] text-white placeholder-neutral-500 focus:outline-none disabled:opacity-50"
                   />
                   <button
                     type="submit"
                     disabled={isSendingMsg || !chatInput.trim() || activeTicket.status === 'closed'}
-                    className="p-2 rounded-xl bg-white text-black hover:bg-neutral-200 transition-colors disabled:opacity-40 shadow-sm shrink-0"
+                    className="w-7 h-7 rounded-full bg-white text-black hover:bg-neutral-200 transition-colors disabled:opacity-30 flex items-center justify-center shrink-0 cursor-pointer"
                     title="Send"
                   >
-                    <Send className="w-4 h-4" />
+                    <Send className="w-3.5 h-3.5" />
                   </button>
-                </form>
-              </div>
-            )}
-          </div>
+                </div>
+              </form>
+            </div>
+          )}
         </div>
       )}
 

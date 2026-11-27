@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { getAuthenticatedSession } from '@/lib/session';
 
 const NP_API = 'https://api.nowpayments.io/v1';
 const NP_KEY = process.env.NOWPAYMENTS_API_KEY || '';
@@ -15,16 +16,34 @@ const COIN_MAP: Record<string, string> = {
 
 export async function POST(req: Request) {
   try {
-    const { coin, userId, userName, loanId } = await req.json();
-
-    if (!coin || !userId) {
-      return NextResponse.json({ error: 'coin and userId are required' }, { status: 400 });
+    const session = await getAuthenticatedSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized: Sign in required' }, { status: 401 });
     }
 
-    const coinUpper = coin.toUpperCase();
+    const { coin, loanId } = await req.json();
+    const userId = session.userId;
+    const userName = session.username;
+
+    if (!coin) {
+      return NextResponse.json({ error: 'coin is required' }, { status: 400 });
+    }
+
+    const coinUpper = String(coin).toUpperCase();
     const currency = COIN_MAP[coinUpper];
     if (!currency) {
       return NextResponse.json({ error: `Unsupported coin: ${coin}` }, { status: 400 });
+    }
+
+    if (loanId) {
+      const { data: loan } = await supabase
+        .from('loan_requests')
+        .select('user_id')
+        .eq('id', loanId)
+        .maybeSingle();
+      if (!loan || (loan.user_id !== userId && !session.isAdmin)) {
+        return NextResponse.json({ error: 'Forbidden loan access' }, { status: 403 });
+      }
     }
 
     // Check if user already has a valid, non-expired deposit address for this coin
@@ -41,7 +60,6 @@ export async function POST(req: Request) {
       try {
         const saved = JSON.parse(existingMsgs[0].message);
         const validUntilMs = saved.validUntil ? new Date(saved.validUntil).getTime() : 0;
-        // Reuse if still valid for at least 1 hour
         if (saved.address && validUntilMs > Date.now() + 3600_000) {
           return NextResponse.json({
             paymentId: saved.paymentId,
@@ -54,12 +72,10 @@ export async function POST(req: Request) {
       } catch {}
     }
 
-    // Encode loanId in order_id so webhook can find the right loan
     const orderId = loanId
       ? `${loanId}:${userId}:${Date.now()}`
       : `${userId}:${Date.now()}`;
 
-    // Create an open-ended deposit address on NOWPayments (users can send any amount)
     const body = {
       price_amount: 100,
       price_currency: 'usd',
@@ -87,7 +103,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: data?.message || 'NOWPayments API error' }, { status: res.status });
     }
 
-    // Persist the deposit address in Supabase for reuse
     await supabase.from('support_messages').insert({
       ticket_id: SYSTEM_TICKET_ID,
       sender_id: userId,

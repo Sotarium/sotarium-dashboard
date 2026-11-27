@@ -11,17 +11,27 @@ export interface DiscordUser {
   username: string;
   avatar?: string;
   role: UserRole;
+  limitTier?: number;
   hwid?: string;
 }
 
 export const OWNER_DISCORD_ID = "1079074717799030824";
+
+export interface LoginTokenPayload {
+  id: string;
+  username: string;
+  avatar?: string;
+  accessToken?: string;
+  tokenType?: string;
+  supabaseAccessToken?: string;
+}
 
 interface AuthContextType {
   user: DiscordUser | null;
   isOwner: boolean;
   isAdmin: boolean;
   isLoaded: boolean;
-  login: (userData: Omit<DiscordUser, 'role'> & { role?: UserRole }) => Promise<void>;
+  login: (userData: LoginTokenPayload) => Promise<void>;
   logout: () => void;
 }
 
@@ -41,16 +51,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // 1. INSTANT SYNCHRONOUS LOCAL RESTORATION (0ms delay)
+    // 1. INSTANT SYNCHRONOUS LOCAL RESTORATION for smooth render
     let sessionUser: DiscordUser | null = null;
     try {
       const stored = localStorage.getItem('sotarium_discord_session') || localStorage.getItem('soteria_discord_session');
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (parsed && (parsed.id || parsed.username)) {
-          if (parsed.id === OWNER_DISCORD_ID || parsed.username?.toLowerCase() === 'sotarium') {
-            parsed.role = 'owner';
-          }
+        if (parsed && parsed.id) {
+          parsed.role = parsed.id === OWNER_DISCORD_ID ? 'owner' : (parsed.role === 'admin' ? 'admin' : 'member');
           sessionUser = parsed;
           setUser(parsed);
         }
@@ -61,36 +69,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoaded(true);
     }
 
-    // 2. BACKGROUND NON-BLOCKING SYNC (verifies HWID and Supabase role without blocking the UI)
-    if (sessionUser) {
-      const u = sessionUser;
-      (async () => {
-        try {
-          const hwid = await getClientHWID();
-          const res = await fetch('/api/users/sync', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: u.id,
-              username: u.username,
-              avatar: u.avatar,
-              hwid,
-            }),
-          });
+    // 2. VERIFY SIGNED SERVER COOKIE & SYNC HWID/ROLE
+    (async () => {
+      try {
+        const hwid = await getClientHWID();
+        const res = await fetch('/api/users/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hwid }),
+        });
 
-          if (res.ok) {
-            const synced = await res.json();
-            if (u.id === OWNER_DISCORD_ID || u.username?.toLowerCase() === 'sotarium') {
-              synced.role = 'owner';
-            }
-            setUser(synced);
-            localStorage.setItem('sotarium_discord_session', JSON.stringify(synced));
-          }
-        } catch {
-          // Maintain cached session on failure
+        if (res.ok) {
+          const synced: DiscordUser = await res.json();
+          setUser(synced);
+          localStorage.setItem('sotarium_discord_session', JSON.stringify(synced));
+        } else if (res.status === 401 && sessionUser) {
+          // Unsigned or expired session — require clean Discord re-auth
+          setUser(null);
+          localStorage.removeItem('sotarium_discord_session');
+          localStorage.removeItem('soteria_discord_session');
         }
-      })();
-    }
+      } catch {
+        // Keep cached view if offline
+      }
+    })();
   }, []);
 
   // Route protection
@@ -102,64 +104,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // If logged in as regular member, redirect away from Home (/) to /ask-loan
     if (user && user.role === 'member' && pathname === '/') {
       router.push('/ask-loan');
     }
   }, [isLoaded, user, pathname, router]);
 
-  const login = async (userData: Omit<DiscordUser, 'role'> & { role?: UserRole }) => {
+  const login = async (userData: LoginTokenPayload) => {
     try {
       const hwid = await getClientHWID();
       const res = await fetch('/api/users/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: userData.id,
-          username: userData.username,
-          avatar: userData.avatar,
+          accessToken: userData.accessToken,
+          tokenType: userData.tokenType,
+          supabaseAccessToken: userData.supabaseAccessToken,
           hwid,
         }),
       });
 
       if (res.ok) {
-        const synced = await res.json();
+        const synced: DiscordUser = await res.json();
         setUser(synced);
         localStorage.setItem('sotarium_discord_session', JSON.stringify(synced));
-      } else {
-        const fallbackUser: DiscordUser = {
-          ...userData,
-          role: userData.id === OWNER_DISCORD_ID ? 'owner' : (userData.role || 'member'),
-          hwid,
-        };
-        setUser(fallbackUser);
-        localStorage.setItem('sotarium_discord_session', JSON.stringify(fallbackUser));
-      }
-    } catch {
-      const fallbackUser: DiscordUser = {
-        ...userData,
-        role: userData.id === OWNER_DISCORD_ID ? 'owner' : (userData.role || 'member'),
-      };
-      setUser(fallbackUser);
-      localStorage.setItem('sotarium_discord_session', JSON.stringify(fallbackUser));
-    }
 
-    // Redirect based on role
-    if (userData.id === OWNER_DISCORD_ID || userData.role === 'owner' || userData.role === 'admin') {
-      router.push('/');
-    } else {
-      router.push('/ask-loan');
+        if (synced.id === OWNER_DISCORD_ID || synced.role === 'owner' || synced.role === 'admin') {
+          router.push('/');
+        } else {
+          router.push('/ask-loan');
+        }
+        return;
+      }
+    } catch (err) {
+      console.error('Login sync failed:', err);
     }
+    router.push('/login');
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('sotarium_discord_session');
     localStorage.removeItem('soteria_discord_session');
+    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
     router.push('/login');
   };
 
-  const isOwner = user?.role === 'owner' || user?.id === OWNER_DISCORD_ID || user?.username?.toLowerCase() === 'sotarium';
+  const isOwner = user?.id === OWNER_DISCORD_ID || user?.role === 'owner';
   const isAdmin = isOwner || user?.role === 'admin';
 
   return (

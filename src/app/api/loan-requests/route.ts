@@ -3,15 +3,23 @@ import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { getLiveDiscordAvatar } from '@/lib/discord-avatar';
 import { verifyUserSecurity } from '@/lib/anti-alt';
 import { checkIpReputation } from '@/lib/vpn-detector';
+import { getAuthenticatedSession } from '@/lib/session';
 
 export async function GET(req: Request) {
   try {
+    const session = await getAuthenticatedSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized: Sign in required' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
+    const requestedUserId = searchParams.get('userId');
 
     let query = supabase.from('loan_requests').select('*').order('created_at', { ascending: false });
-    if (userId) {
-      query = query.eq('user_id', userId);
+    if (!session.isAdmin) {
+      query = query.eq('user_id', session.userId);
+    } else if (requestedUserId) {
+      query = query.eq('user_id', requestedUserId);
     }
 
     const { data, error } = await query;
@@ -31,6 +39,7 @@ export async function GET(req: Request) {
 
     const enriched = (data || []).map((r) => ({
       ...r,
+      notes: session.isAdmin ? r.notes : null,
       user_avatar: avatarMap[r.user_id] || 'https://cdn.discordapp.com/embed/avatars/0.png',
     }));
 
@@ -43,10 +52,17 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { userId, userName, amount, reason, cryptoCurrency, walletAddress, fingerprint } = body;
+    const session = await getAuthenticatedSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized: Sign in required' }, { status: 401 });
+    }
 
-    if (!userId || !amount) {
+    const body = await req.json();
+    const { amount, reason, cryptoCurrency, walletAddress, fingerprint } = body;
+    const userId = session.userId;
+    const userName = session.username;
+
+    if (!amount) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -190,10 +206,13 @@ export async function POST(req: Request) {
         finalReason = finalReason ? `${finalReason} | Addy: ${walletAddress}` : `Addy: ${walletAddress}`;
       }
 
-      // Tag hardware footprint into notes for audit trail
+      // Tag hardware footprint into notes for audit trail (strictly sanitized)
       let securityNotes = '';
-      if (fingerprint && fingerprint !== 'server_env') {
-        securityNotes = `[HWID:${fingerprint}]`;
+      if (typeof fingerprint === 'string' && fingerprint !== 'server_env') {
+        const cleanFp = fingerprint.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 128);
+        if (cleanFp) {
+          securityNotes = `[HWID:${cleanFp}]`;
+        }
       }
 
       const insertPayload: Record<string, any> = {
@@ -217,30 +236,15 @@ export async function POST(req: Request) {
   }
 }
 
-const OWNER_DISCORD_ID = "1079074717799030824";
-
-async function verifyIsAdmin(userId?: string): Promise<boolean> {
-  if (!userId) return false;
-  if (userId === OWNER_DISCORD_ID) return true;
-
-  const { data: user } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', userId)
-    .single();
-
-  return user?.role === 'admin' || user?.role === 'owner';
-}
-
 export async function PATCH(req: Request) {
   try {
-    const body = await req.json();
-    const { id, status, due_date, notes, amount, reason, requesterId } = body;
-
-    const isAdmin = await verifyIsAdmin(requesterId);
-    if (!isAdmin) {
+    const session = await getAuthenticatedSession();
+    if (!session?.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized: Admin privileges required' }, { status: 403 });
     }
+
+    const body = await req.json();
+    const { id, status, due_date, notes, amount, reason } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
@@ -279,14 +283,13 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
-    const requesterId = searchParams.get('requesterId') || undefined;
-
-    const isAdmin = await verifyIsAdmin(requesterId);
-    if (!isAdmin) {
+    const session = await getAuthenticatedSession();
+    if (!session?.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized: Admin privileges required' }, { status: 403 });
     }
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
 
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });

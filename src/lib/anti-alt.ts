@@ -30,9 +30,8 @@ export interface SecurityCheckResult {
 export async function verifyUserSecurity(params: SecurityCheckParams): Promise<SecurityCheckResult> {
   const { userId, userName, fingerprint, walletAddress } = params;
 
-  // 0. OWNER IMMUNITY: The owner (and test accounts run by the owner) is immune to alt checks
-  const isOwner = userId === OWNER_DISCORD_ID || userName?.toLowerCase() === 'sotarium';
-  if (isOwner) {
+  // 0. OWNER IMMUNITY: Only the verified Owner Discord ID is immune to alt checks
+  if (userId === OWNER_DISCORD_ID) {
     return { isBlocked: false };
   }
 

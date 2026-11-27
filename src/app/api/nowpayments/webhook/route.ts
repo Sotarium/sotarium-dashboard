@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { getTotalDue } from '@/lib/interest';
 
@@ -11,18 +11,24 @@ const FINISHED_STATUSES = new Set(['finished', 'confirmed', 'sending', 'partiall
 
 export async function POST(req: Request) {
   try {
+    if (!NP_IPN_SECRET) {
+      console.error('[webhook] NOWPAYMENTS_IPN_SECRET is not configured');
+      return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
+    }
+
     const rawBody = await req.text();
     const payload = JSON.parse(rawBody);
 
-    // Verify HMAC signature from NOWPayments
-    if (NP_IPN_SECRET) {
-      const sig = req.headers.get('x-nowpayments-sig') || '';
-      const sorted = JSON.stringify(sortObjectKeys(payload));
-      const expected = createHmac('sha512', NP_IPN_SECRET).update(sorted).digest('hex');
-      if (sig !== expected) {
-        console.warn('[webhook] Invalid NOWPayments signature');
-        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-      }
+    // Strictly verify HMAC-SHA512 signature from NOWPayments
+    const sig = req.headers.get('x-nowpayments-sig') || '';
+    const sorted = JSON.stringify(sortObjectKeys(payload));
+    const expected = createHmac('sha512', NP_IPN_SECRET).update(sorted).digest('hex');
+
+    const sigBuf = Buffer.from(sig, 'utf8');
+    const expBuf = Buffer.from(expected, 'utf8');
+    if (sigBuf.length !== expBuf.length || !timingSafeEqual(sigBuf, expBuf)) {
+      console.warn('[webhook] Invalid NOWPayments signature');
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
     const { payment_status, order_id, actually_paid, actually_paid_at_fiat, price_amount, pay_address, payment_id } = payload;

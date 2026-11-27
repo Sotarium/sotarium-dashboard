@@ -37,6 +37,8 @@ export default function AuthCallback() {
                 id: discordData.id,
                 username: discordData.global_name || discordData.username,
                 avatar: avatarUrl,
+                accessToken,
+                tokenType,
               });
               return;
             }
@@ -49,14 +51,14 @@ export default function AuthCallback() {
       // 2. Check for Supabase session as fallback
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
+        if (session?.user && session.access_token) {
           const discordUser = session.user.user_metadata;
-          login({
+          await login({
             id: discordUser.provider_id || session.user.id,
             username: discordUser.custom_claims?.global_name || discordUser.full_name || discordUser.user_name || 'Discord User',
             avatar: discordUser.avatar_url || 'https://cdn.discordapp.com/embed/avatars/0.png',
+            supabaseAccessToken: session.access_token,
           });
-          router.push('/');
           return;
         }
       } catch (err) {

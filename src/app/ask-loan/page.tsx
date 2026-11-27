@@ -81,20 +81,23 @@ export default function AskLoanPage() {
   })();
 
   const manualLimit = (() => {
-    if (user?.role && user.role.includes(':limit:')) {
-      const match = user.role.match(/:limit:(\d+)/);
-      if (match) {
-        const checkmarkedTier = parseInt(match[1], 10);
-        let nextTier = 1;
-        for (let i = 0; i < TIERS.length; i++) {
-          if (checkmarkedTier >= TIERS[i]) {
-            nextTier = TIERS[Math.min(i + 1, TIERS.length - 1)];
-          }
-        }
-        return nextTier;
+    let checkmarkedTier = user?.limitTier || 1;
+    if (checkmarkedTier <= 1 && user?.role) {
+      if (user.role.includes(':limit:')) {
+        const match = user.role.match(/:limit:(\d+)/);
+        if (match) checkmarkedTier = parseInt(match[1], 10);
+      } else if (user.role.includes('bypass')) {
+        return 250;
       }
-    } else if (user?.role?.includes('bypass')) {
-      return 250;
+    }
+    if (checkmarkedTier >= 1) {
+      let nextTier = 1;
+      for (let i = 0; i < TIERS.length; i++) {
+        if (checkmarkedTier >= TIERS[i]) {
+          nextTier = TIERS[Math.min(i + 1, TIERS.length - 1)];
+        }
+      }
+      return nextTier;
     }
     return 1;
   })();

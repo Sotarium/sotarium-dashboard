@@ -2,9 +2,15 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { getInterestRate, getInterest, getTotalDue } from '@/lib/interest';
 import { getLiveDiscordAvatar } from '@/lib/discord-avatar';
+import { getAuthenticatedSession } from '@/lib/session';
 
 export async function GET() {
   try {
+    const session = await getAuthenticatedSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized: Sign in required' }, { status: 401 });
+    }
+
     const now = Date.now();
 
     const { data, error } = await supabase
@@ -76,7 +82,7 @@ export async function GET() {
           loanDate: item.created_at,
           dueDate,
           reason: item.reason || '',
-          notes: item.notes || '',
+          notes: session.isAdmin ? (item.notes || '') : '',
           cryptoCurrency: item.crypto_currency || 'SOL',
           addresses: {},
         };

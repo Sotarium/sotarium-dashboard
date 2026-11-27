@@ -216,7 +216,7 @@ export default function SupportWidget() {
 
   // Background polling every 7s when widget is closed to show unread red dot in real time
   useEffect(() => {
-    if (isOpen) return;
+    if (isOpen || !user?.id) return;
 
     fetchTickets(true);
     const interval = setInterval(() => {
@@ -228,7 +228,7 @@ export default function SupportWidget() {
 
   // On open or user load, fetch tickets & applicants
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && user?.id) {
       fetchTickets();
       fetchLoanApplicants();
     }

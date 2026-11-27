@@ -1,34 +1,18 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { getLiveDiscordAvatar } from '@/lib/discord-avatar';
+import { getAuthenticatedSession } from '@/lib/session';
 
-const OWNER_DISCORD_ID = "1079074717799030824";
-
-async function verifyIsOwner(userId?: string): Promise<boolean> {
-  if (!userId) return false;
-  if (userId === OWNER_DISCORD_ID) return true;
-
-  const { data: user } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', userId)
-    .single();
-
-  return user?.role === 'owner';
-}
+const ALLOWED_TIERS = new Set([1, 5, 10, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250]);
 
 // GET: list all registered users & borrowers with resolved Discord avatars and tier limits
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(req.url);
-    const requesterId = searchParams.get('requesterId');
-
-    const isOwner = await verifyIsOwner(requesterId || undefined);
-    if (!isOwner) {
+    const session = await getAuthenticatedSession();
+    if (!session?.isOwner) {
       return NextResponse.json({ error: 'Unauthorized: Owner access only' }, { status: 403 });
     }
 
-    // 1. Fetch all users from `users` table
     const { data: dbUsers, error: userErr } = await supabase
       .from('users')
       .select('id, username, avatar, role, created_at')
@@ -36,7 +20,6 @@ export async function GET(req: Request) {
 
     if (userErr) throw userErr;
 
-    // 2. Fetch borrowers from `loan_requests`
     const { data: loans } = await supabase
       .from('loan_requests')
       .select('user_id, user_name')
@@ -66,7 +49,6 @@ export async function GET(req: Request) {
 
     const userList = Object.values(userMap);
 
-    // Resolve Discord avatars for all users in parallel directly from Discord API
     const enriched = await Promise.all(
       userList.map(async (u) => {
         const resolved = await getLiveDiscordAvatar(u.id, u.avatar);
@@ -87,23 +69,28 @@ export async function GET(req: Request) {
 // POST: Update a user's maximum allowed loan limit
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { requesterId, targetUserId, targetUsername, maxLimit } = body;
-
-    const isOwner = await verifyIsOwner(requesterId);
-    if (!isOwner) {
+    const session = await getAuthenticatedSession();
+    if (!session?.isOwner) {
       return NextResponse.json({ error: 'Unauthorized: Owner access only' }, { status: 403 });
     }
 
+    const body = await req.json();
+    const { targetUserId, targetUsername, maxLimit } = body;
+
     if (!targetUserId) {
       return NextResponse.json({ error: 'Target User ID is required' }, { status: 400 });
+    }
+
+    const parsedLimit = Number(maxLimit);
+    if (!ALLOWED_TIERS.has(parsedLimit)) {
+      return NextResponse.json({ error: 'Invalid tier limit' }, { status: 400 });
     }
 
     const { data: existingUser } = await supabase
       .from('users')
       .select('*')
       .eq('id', targetUserId)
-      .single();
+      .maybeSingle();
 
     let baseRole = 'member';
     if (existingUser?.role) {
@@ -111,10 +98,9 @@ export async function POST(req: Request) {
       else if (existingUser.role.startsWith('admin')) baseRole = 'admin';
     }
 
-    let newRole = baseRole;
-    if (maxLimit && maxLimit > 1) {
-      newRole = `${baseRole}:limit:${maxLimit}`;
-    }
+    const existingHwid = existingUser?.role?.match(/\[HWID:[a-zA-Z0-9_-]+\]/)?.[0] || '';
+    const limitTag = parsedLimit >= 1 ? `:limit:${parsedLimit}` : '';
+    const newRole = `${baseRole}${limitTag}${existingHwid ? ` ${existingHwid}` : ''}`.trim();
 
     const { data, error } = await supabase
       .from('users')

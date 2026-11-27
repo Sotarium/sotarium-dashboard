@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { getTotalDue } from '@/lib/interest';
 import { getLiveDiscordAvatar } from '@/lib/discord-avatar';
+import { getAuthenticatedSession } from '@/lib/session';
 
 export async function GET() {
   try {
@@ -80,25 +81,12 @@ export async function GET() {
 
 export async function DELETE(req: Request) {
   try {
-    const { id, requesterId } = await req.json();
-    const OWNER_ID = '1079074717799030824';
-
-    // Allow Owner OR any Admin
-    let isAuthorized = requesterId === OWNER_ID;
-    if (!isAuthorized && requesterId) {
-      const { data: user } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', requesterId)
-        .single();
-      if (user?.role === 'admin' || user?.role === 'owner') {
-        isAuthorized = true;
-      }
-    }
-
-    if (!isAuthorized) {
+    const session = await getAuthenticatedSession();
+    if (!session?.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized: Admin privileges required' }, { status: 403 });
     }
+
+    const { id } = await req.json();
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
     const { error } = await supabase.from('loan_requests').delete().eq('id', id);

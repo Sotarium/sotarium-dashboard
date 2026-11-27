@@ -1,21 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { getLiveDiscordAvatar } from '@/lib/discord-avatar';
-
-const OWNER_DISCORD_ID = "1079074717799030824";
-
-async function verifyIsOwner(userId?: string): Promise<boolean> {
-  if (!userId) return false;
-  if (userId === OWNER_DISCORD_ID) return true;
-
-  const { data: user } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', userId)
-    .single();
-
-  return user?.role === 'owner';
-}
+import { getAuthenticatedSession } from '@/lib/session';
 
 export async function GET() {
   try {
@@ -124,14 +110,13 @@ export async function GET() {
 // DELETE: Owner-only action to mark a user as a scammer / remove from trusted
 export async function DELETE(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const targetUserId = searchParams.get('userId');
-    const requesterId = searchParams.get('requesterId');
-
-    const isOwner = await verifyIsOwner(requesterId || undefined);
-    if (!isOwner) {
+    const session = await getAuthenticatedSession();
+    if (!session?.isOwner) {
       return NextResponse.json({ error: 'Unauthorized: Owner access only' }, { status: 403 });
     }
+
+    const { searchParams } = new URL(req.url);
+    const targetUserId = searchParams.get('userId');
 
     if (!targetUserId) {
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 });

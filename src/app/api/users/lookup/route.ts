@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { getTotalDue } from '@/lib/interest';
 import { getLiveDiscordAvatar } from '@/lib/discord-avatar';
+import { getAuthenticatedSession } from '@/lib/session';
 
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
 
@@ -47,6 +48,11 @@ async function fetchDiscordProfile(userId: string, dbAvatar?: string) {
 
 export async function GET(req: Request) {
   try {
+    const session = await getAuthenticatedSession();
+    if (!session?.isOwner) {
+      return NextResponse.json({ error: 'Unauthorized: Owner access only' }, { status: 403 });
+    }
+
     const { searchParams } = new URL(req.url);
     const q = searchParams.get('q')?.trim() || '';
 

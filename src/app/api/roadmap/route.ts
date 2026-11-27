@@ -2,31 +2,16 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { getTotalDue } from '@/lib/interest';
 import { getLiveDiscordAvatar } from '@/lib/discord-avatar';
-
-const OWNER_DISCORD_ID = "1079074717799030824";
-
-async function verifyIsAdmin(userId?: string): Promise<boolean> {
-  if (!userId) return false;
-  if (userId === OWNER_DISCORD_ID) return true;
-
-  const { data: user } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', userId)
-    .single();
-
-  return user?.role === 'admin' || user?.role === 'owner';
-}
+import { getAuthenticatedSession } from '@/lib/session';
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const requesterId = searchParams.get('requesterId');
-
-    const isAdmin = await verifyIsAdmin(requesterId || undefined);
-    if (!isAdmin) {
+    const session = await getAuthenticatedSession();
+    if (!session?.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized: Admin privileges required' }, { status: 403 });
     }
+
+    const { searchParams } = new URL(req.url);
 
     const filterMode = searchParams.get('mode'); // 'completed' | 'all' | 'pending'
 
@@ -81,6 +66,11 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const session = await getAuthenticatedSession();
+    if (!session?.isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized: Admin privileges required' }, { status: 403 });
+    }
+
     const body = await req.json();
     const { userId, userName, amount, cryptoCurrency, reason, status } = body;
 
@@ -114,6 +104,11 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
+    const session = await getAuthenticatedSession();
+    if (!session?.isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized: Admin privileges required' }, { status: 403 });
+    }
+
     const body = await req.json();
     const { id, isPaid, status } = body;
 
@@ -141,6 +136,11 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const session = await getAuthenticatedSession();
+    if (!session?.isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized: Admin privileges required' }, { status: 403 });
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
